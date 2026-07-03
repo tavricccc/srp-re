@@ -17,7 +17,8 @@
 - package-lock.json：套件版本鎖定檔。
 - index.html：Vite 入口 HTML，掛載 Vue App，載入 favicon / PWA meta，並由 Vite env 注入標題。
 - eslint.config.js：ESLint 規則與 Vue / TypeScript 的 lint 設定。
-- firebase.json：Firebase Hosting-only 部署設定。
+- firebase.json：Firebase CLI 專案設定（不含 hosting 區塊，前端改由 Vercel 部署）。
+- vercel.json：Vercel 前端部署設定，包含靜態資源快取規則（assets 長快取、sw.js 不快取）與 SPA fallback rewrite。
 - supabase/config.toml：Supabase 本機與部署設定，限制 Data API 暴露 `app_api`，並設定登入同步、Cloudinary webhook、outbox worker 與刪除工作 Edge Functions 的 JWT 驗證模式。
 - .firebaserc：Firebase 專案綁定設定，請填入自己的 Firebase 專案 ID。
 - .env.example：本機與部署環境變數範本，包含 App 名稱、短名稱、Firebase Auth / FCM public config、Supabase public config 與 App Check site key。
@@ -269,8 +270,8 @@
 - scripts/generate-rate-limits.mjs：從 `config/rate-limits.config.json` 產生前端限流與圖片壓縮常數設定。
 - scripts/issue-category-config.mjs：提案分類 config 讀取、驗證與 TypeScript 產生 helper。
 - tests/architecture.test.mjs：防止舊 Firebase 資料路徑、舊部署目標、未受控後端 action、webhook 驗證與圖片解析流程回歸的靜態測試。
-- .github/workflows/firebase-hosting-merge.yml：前端相關檔案 merge 後，使用 GitHub Environment secrets 執行快速 Vite build 並以 Firebase CLI 部署 Hosting live channel。
-- .github/workflows/firebase-hosting-pull-request.yml：PR 型別、lint、build、架構測試與 audit 驗證工作流。
+- .github/workflows/deploy-frontend.yml：前端相關檔案 merge 後，使用 GitHub Environment secrets 執行 Vite build 並以 Vercel CLI 部署（main → production，dev → preview）。
+- .github/workflows/verify-pr.yml：PR 型別、lint、build、架構測試與 audit 驗證工作流。
 - .github/workflows/deploy-backend.yml：Supabase 後端部署工作流，推送 migrations、設定 Edge Function secrets 並部署 Supabase Edge Functions。
 
 ---

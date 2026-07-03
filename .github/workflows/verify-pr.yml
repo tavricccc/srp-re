@@ -1,4 +1,5 @@
 name: Verify PR
+
 on:
   pull_request:
     paths:
@@ -15,11 +16,13 @@ on:
       - 'tailwind.config.cjs'
       - 'tsconfig*.json'
       - 'vite.config.ts'
-      - 'firebase.json'
+      - 'vercel.json'
       - '.github/workflows/**'
+
 permissions:
   checks: write
   contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
