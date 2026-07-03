@@ -1,12 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireEnv } from "../_shared/env.ts";
 import { createCloudinaryUploadSignature } from "../_shared/cloudinary.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Origin": "*",
-};
+import { requireEligibleFirebaseUser } from "../_shared/firebase-auth.ts";
+import {
+  asRecord,
+  asString,
+  errorMessage,
+  errorStatus,
+  handleCorsPreflight,
+  jsonResponse,
+  readJsonRecord,
+  requireMethod,
+} from "../_shared/http.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -18,34 +23,12 @@ interface AuthContext {
   uid: string;
 }
 
-function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};
-}
-
-function asString(value: unknown, fallback = "") {
-  return typeof value === "string" ? value.trim() : fallback;
-}
-
 function asNumber(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function asBoolean(value: unknown, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
-}
-
-function decodeJwtPayload(token: string) {
-  const payload = token.split(".")[1] ?? "";
-  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-  return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), (char) => char.charCodeAt(0)))) as JsonRecord;
-}
-
-function requireAuthHeader(request: Request) {
-  const header = request.headers.get("Authorization") ?? "";
-  const match = /^Bearer\s+(.+)$/iu.exec(header);
-  if (!match) throw new Error("unauthenticated");
-  return match[1];
 }
 
 function toMs(value: unknown) {
@@ -83,24 +66,22 @@ function notificationToResponse(notification: JsonRecord, openedAt: string | nul
 }
 
 async function requireAuth(supabase: ReturnType<typeof createClient>, request: Request): Promise<AuthContext> {
-  const claims = decodeJwtPayload(requireAuthHeader(request));
-  const uid = asString(claims.sub);
-  if (!uid) throw new Error("unauthenticated");
+  const firebaseUser = await requireEligibleFirebaseUser(request);
 
   const { data: role, error } = await supabase
     .schema("app_private")
     .from("user_roles")
     .select("role")
-    .eq("uid", uid)
+    .eq("uid", firebaseUser.uid)
     .maybeSingle();
   if (error) throw error;
 
   return {
-    email: asString(claims.email),
+    email: firebaseUser.email,
     isAdmin: role?.role === "admin",
-    name: asString(claims.name, asString(claims.email, "匿名使用者")),
-    photoUrl: asString(claims.picture) || null,
-    uid,
+    name: firebaseUser.name,
+    photoUrl: firebaseUser.photoUrl,
+    uid: firebaseUser.uid,
   };
 }
 
@@ -668,9 +649,14 @@ async function handleAction(
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const preflight = handleCorsPreflight(request);
+  if (preflight) return preflight;
+
+  const methodFailure = requireMethod(request, "POST");
+  if (methodFailure) return methodFailure;
+
   try {
-    const body = asRecord(await request.json());
+    const body = await readJsonRecord(request);
     const action = asString(body.action);
     const payload = asRecord(body.payload);
     if (!action) throw new Error("missing action");
@@ -682,11 +668,8 @@ Deno.serve(async (request) => {
     );
     const auth = await requireAuth(supabase, request);
     const data = await handleAction(action, payload, auth, supabase);
-    return Response.json(data, { headers: corsHeaders });
+    return jsonResponse(data);
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : String(error) },
-      { headers: corsHeaders, status: 400 },
-    );
+    return jsonResponse({ error: errorMessage(error) }, { status: errorStatus(error) });
   }
 });

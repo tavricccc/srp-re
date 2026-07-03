@@ -7,7 +7,7 @@ schemas = ["app_api"]
 verify_jwt = false
 
 [functions.backendAction]
-verify_jwt = true
+verify_jwt = false
 
 [functions.cloudinaryWebhook]
 verify_jwt = false

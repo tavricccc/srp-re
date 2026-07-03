@@ -40,12 +40,14 @@
 - supabase/config.toml：Supabase 本機與部署設定，限制 Data API 暴露 `app_api`，並設定登入同步、受控 action、Cloudinary webhook、outbox worker 與刪除工作 Edge Functions 的 JWT 驗證模式。
 - supabase/migrations/202607020001_supabase_foundation.sql：Supabase 初始 migration，建立 `app_private` / `app_api` schema、Firebase JWT helper、RLS 基礎、核心資料檢查、查詢索引、hard delete RPC、outbox batch claim 與 statement-level worker wake-up。
 - supabase/migrations/202607020002_app_backend_actions.sql：補齊提案、公告、留言、通知、推播 token、使用者頭像、圖片 metadata、Notion page mapping 與維護紀錄等 Supabase app tables，並維護搜尋欄位、計數同步、updated_at 與常用查詢索引。
-- supabase/functions/backendAction/index.ts：前端受控 action 入口，依 action 處理提案、公告、留言、附議、通知、推播偏好、Dashboard、使用者角色與 Cloudinary 上傳 session。
-- supabase/functions/syncUser/index.ts：Firebase 登入後同步使用者 custom claim 的 Edge Function。
-- supabase/functions/cloudinaryWebhook/index.ts：Cloudinary 上傳完成 webhook，驗證簽章後將 pending upload 轉為 ready。
-- supabase/functions/outboxWorker/index.ts：Outbox worker wake-up endpoint，驗證 secret 後批次 claim pending events，寫入通知、派送 FCM，並將刪除事件對應的 Notion page 標記為「已刪除」。
-- supabase/functions/processDeletionJobs/index.ts：外部資源刪除工作入口，保留 Cloudinary / Notion 清理失敗的可重試 metadata。
+- supabase/functions/backendAction/index.ts：前端受控 action 入口，經共用 Firebase 驗證與 HTTP 邊界確認後查詢使用者角色，依 action 處理提案、公告、留言、附議、通知、推播偏好、Dashboard、使用者角色與 Cloudinary 上傳 session。
+- supabase/functions/syncUser/index.ts：Firebase 登入後同步使用者 custom claim 的 Edge Function，與受控 action 共用登入資格驗證。
+- supabase/functions/cloudinaryWebhook/index.ts：Cloudinary 上傳完成 webhook，限制 POST、驗證簽章並安全解析 payload 後將 pending upload 轉為 ready。
+- supabase/functions/outboxWorker/index.ts：Outbox worker wake-up endpoint，限制 POST 並驗證 secret 後批次 claim pending events，寫入通知、派送 FCM，並將刪除事件對應的 Notion page 標記為「已刪除」。
+- supabase/functions/processDeletionJobs/index.ts：外部資源刪除工作入口，限制 POST 並驗證 secret 後處理 Cloudinary / Notion 清理，保留失敗的可重試 metadata。
 - supabase/functions/_shared/env.ts：Edge Functions 環境變數讀取 helper。
+- supabase/functions/_shared/http.ts：Edge Functions 共用 CORS、POST method guard、JSON / text response、JSON body 解析與錯誤狀態對應 helper。
+- supabase/functions/_shared/firebase-auth.ts：Edge Functions 共用 Firebase ID token lookup、校內網域、email verified 與使用者身份正規化 helper。
 - supabase/functions/_shared/cloudinary.ts：Cloudinary 簽名、直傳參數與 asset 刪除 helper。
 - supabase/functions/_shared/google-oauth.ts：Edge Functions 使用 `npm:google-auth-library` 取得並快取 Google OAuth access token，供 Firebase custom claims 與 FCM HTTP v1 使用。
 - supabase/functions/_shared/fcm.ts：FCM HTTP v1 發送 helper，不依賴 Node Firebase Admin SDK。
@@ -272,6 +274,6 @@
 - tests/architecture.test.mjs：防止舊 Firebase 資料路徑、舊部署目標、未受控後端 action、webhook 驗證與圖片解析流程回歸的靜態測試。
 - .github/workflows/deploy-frontend.yml：前端相關檔案 merge 後，使用 GitHub Environment secrets 執行 Vite build 並以 Vercel CLI 部署（main → production，dev → preview）。
 - .github/workflows/verify-pr.yml：PR 型別、lint、build、架構測試與 audit 驗證工作流。
-- .github/workflows/deploy-backend.yml：Supabase 後端部署工作流，推送 migrations、設定 Edge Function secrets 並部署 Supabase Edge Functions。
+- .github/workflows/deploy-backend.yml：Supabase 後端部署工作流，使用 npm / node_modules 快取並先跑架構檢查，再推送 migrations、設定 Edge Function secrets 並部署 Supabase Edge Functions。
 
 ---

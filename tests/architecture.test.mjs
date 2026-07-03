@@ -53,6 +53,10 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
   const config = await read('supabase/config.toml');
 
   assert.match(workflow, /supabase\/setup-cli/u);
+  assert.match(workflow, /actions\/setup-node/u);
+  assert.match(workflow, /cache-node-modules/u);
+  assert.match(workflow, /npm ci --prefer-offline/u);
+  assert.match(workflow, /npm run test:architecture/u);
   assert.match(workflow, /supabase db push/u);
   assert.match(workflow, /supabase functions deploy backendAction/u);
   assert.match(workflow, /supabase functions deploy outboxWorker/u);
@@ -60,7 +64,7 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
   assert.match(workflow, /CLOUDINARY_API_SECRET/u);
   assert.doesNotMatch(workflow, /firebase-tools|firestore:rules|storage|Cloud Functions/u);
   assert.match(config, /\[functions\.backendAction\]/u);
-  assert.match(config, /verify_jwt = true/u);
+  assert.match(config, /\[functions\.backendAction\]\s*verify_jwt = false/u);
   assert.match(config, /schemas = \["app_api"\]/u);
 });
 
@@ -88,6 +92,8 @@ test('Supabase schema includes RLS helpers, app tables, and hard-delete support'
 
 test('backendAction covers frontend actions and Cloudinary direct upload', async () => {
   const backendAction = await read('supabase/functions/backendAction/index.ts');
+  const firebaseAuth = await read('supabase/functions/_shared/firebase-auth.ts');
+  const http = await read('supabase/functions/_shared/http.ts');
   const uploads = await read('src/services/uploads.ts');
   const session = await read('src/composables/useSession.ts');
 
@@ -111,10 +117,17 @@ test('backendAction covers frontend actions and Cloudinary direct upload', async
   assert.match(uploads, /FormData/u);
   assert.doesNotMatch(uploads, /firebase\/storage|uploadBytes/u);
   assert.match(session, /fetchCurrentUserRole/u);
+  assert.match(backendAction, /requireEligibleFirebaseUser/u);
+  assert.match(backendAction, /requireMethod\(request, "POST"\)/u);
+  assert.match(backendAction, /readJsonRecord/u);
+  assert.match(firebaseAuth, /accounts:lookup/u);
+  assert.match(firebaseAuth, /ALLOWED_DOMAIN/u);
+  assert.match(http, /errorStatus/u);
   assert.doesNotMatch(session, /adminEmails/u);
 });
 
 test('outbox, webhooks, FCM, and Notion deletion marks are guarded', async () => {
+  const syncUser = await read('supabase/functions/syncUser/index.ts');
   const outboxWorker = await read('supabase/functions/outboxWorker/index.ts');
   const cloudinary = await read('supabase/functions/_shared/cloudinary.ts');
   const googleOauth = await read('supabase/functions/_shared/google-oauth.ts');
@@ -124,7 +137,11 @@ test('outbox, webhooks, FCM, and Notion deletion marks are guarded', async () =>
   const deletionJobs = await read('supabase/functions/processDeletionJobs/index.ts');
   const notion = await read('supabase/functions/_shared/notion.ts');
 
+  assert.match(syncUser, /requireEligibleFirebaseUser/u);
+  assert.match(syncUser, /requireMethod\(request, "POST"\)/u);
   assert.match(outboxWorker, /requireBearerSecret/u);
+  assert.match(outboxWorker, /requireMethod\(request, "POST"\)/u);
+  assert.match(outboxWorker, /errorMessage/u);
   assert.match(outboxWorker, /claim_outbox_events/u);
   assert.match(outboxWorker, /batch_size: 100/u);
   assert.match(outboxWorker, /sendFcmMessage/u);
@@ -138,7 +155,10 @@ test('outbox, webhooks, FCM, and Notion deletion marks are guarded', async () =>
   assert.match(webhook, /x-cld-signature/u);
   assert.match(webhook, /timingSafeEqual/u);
   assert.match(cloudinaryWebhook, /verifyCloudinarySignature/u);
+  assert.match(cloudinaryWebhook, /requireMethod\(request, "POST"\)/u);
   assert.match(deletionJobs, /deleteCloudinaryAsset/u);
+  assert.match(deletionJobs, /requireMethod\(request, "POST"\)/u);
+  assert.match(deletionJobs, /errorMessage/u);
   assert.match(deletionJobs, /markNotionPageDeleted/u);
   assert.match(notion, /name: "已刪除"/u);
   assert.doesNotMatch(notion, /archived: true/u);

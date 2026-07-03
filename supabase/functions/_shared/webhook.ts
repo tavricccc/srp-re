@@ -1,4 +1,5 @@
 import { requireEnv } from "./env.ts";
+import { textResponse } from "./http.ts";
 
 function toHex(buffer: ArrayBuffer) {
   return Array.from(new Uint8Array(buffer))
@@ -22,7 +23,7 @@ export function requireBearerSecret(request: Request, envName = "WEBHOOK_SECRET"
   const expected = requireEnv(envName);
   const authorization = request.headers.get("authorization") ?? "";
   if (authorization !== `Bearer ${expected}`) {
-    return new Response("Unauthorized", { status: 401 });
+    return textResponse("Unauthorized", { status: 401 });
   }
   return null;
 }
@@ -34,7 +35,7 @@ export async function verifyCloudinarySignature(request: Request, rawBody: strin
   const timestampSeconds = Number(timestamp);
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (!Number.isFinite(timestampSeconds) || Math.abs(nowSeconds - timestampSeconds) > 60 * 60) {
-    return new Response("Invalid timestamp", { status: 401 });
+    return textResponse("Invalid timestamp", { status: 401 });
   }
 
   const digest = await crypto.subtle.digest(
@@ -42,7 +43,7 @@ export async function verifyCloudinarySignature(request: Request, rawBody: strin
     new TextEncoder().encode(`${rawBody}${timestamp}${secret}`),
   );
   if (!timingSafeEqual(toHex(digest), signature)) {
-    return new Response("Invalid signature", { status: 401 });
+    return textResponse("Invalid signature", { status: 401 });
   }
   return null;
 }

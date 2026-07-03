@@ -2,6 +2,37 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "提升後端服務穩定性",
+    version: "v1.8.35",
+    date: "2026-07-04",
+    time: "00:23",
+    items: [
+      {
+        title: "提升登入與資料讀取流程的穩定性。",
+      },
+      {
+        title: "強化背景處理與外部通知流程的錯誤處理。",
+      },
+      {
+        title: "改善部署前檢查流程，降低設定異常造成的服務中斷。",
+      },
+    ],
+  },
+  {
+    title: "修正登入後資料載入問題",
+    version: "v1.8.34",
+    date: "2026-07-04",
+    time: "00:14",
+    items: [
+      {
+        title: "修正登入後部分個人資料與提案狀態無法載入的問題。",
+      },
+      {
+        title: "提升登入完成後進入提案頁面的穩定性。",
+      },
+    ],
+  },
+  {
     title: "提升登入流程穩定性",
     version: "v1.8.33",
     date: "2026-07-04",

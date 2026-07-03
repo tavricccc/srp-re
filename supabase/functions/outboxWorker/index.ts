@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireEnv } from "../_shared/env.ts";
 import { sendFcmMessage } from "../_shared/fcm.ts";
+import { errorMessage, jsonResponse, requireMethod } from "../_shared/http.ts";
 import {
   markNotionPageDeleted,
   syncAnnouncementCreatedToNotion,
@@ -198,39 +199,46 @@ async function processEvent(supabase: ReturnType<typeof createClient>, event: Ou
 }
 
 Deno.serve(async (request) => {
+  const methodFailure = requireMethod(request, "POST");
+  if (methodFailure) return methodFailure;
+
   const authFailure = requireBearerSecret(request);
   if (authFailure) return authFailure;
 
-  const supabase = createClient(
-    requireEnv("SUPABASE_URL"),
-    requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
-    { auth: { persistSession: false } },
-  );
-  const { data, error } = await supabase
-    .schema("app_api")
-    .rpc("claim_outbox_events", { batch_size: 100 });
-  if (error) {
-    throw error;
-  }
-
-  const events = (data ?? []) as OutboxEvent[];
-  for (const event of events) {
-    try {
-      await processEvent(supabase, event);
-      const { error: completeError } = await supabase
-        .schema("app_api")
-        .rpc("complete_outbox_event", { event_id: event.id });
-      if (completeError) throw completeError;
-    } catch (error) {
-      const { error: failError } = await supabase
-        .schema("app_api")
-        .rpc("fail_outbox_event", {
-          event_id: event.id,
-          error_message: error instanceof Error ? error.message : String(error),
-        });
-      if (failError) throw failError;
+  try {
+    const supabase = createClient(
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      { auth: { persistSession: false } },
+    );
+    const { data, error } = await supabase
+      .schema("app_api")
+      .rpc("claim_outbox_events", { batch_size: 100 });
+    if (error) {
+      throw error;
     }
-  }
 
-  return Response.json({ ok: true, processedCount: events.length });
+    const events = (data ?? []) as OutboxEvent[];
+    for (const event of events) {
+      try {
+        await processEvent(supabase, event);
+        const { error: completeError } = await supabase
+          .schema("app_api")
+          .rpc("complete_outbox_event", { event_id: event.id });
+        if (completeError) throw completeError;
+      } catch (error) {
+        const { error: failError } = await supabase
+          .schema("app_api")
+          .rpc("fail_outbox_event", {
+            event_id: event.id,
+            error_message: errorMessage(error),
+          });
+        if (failError) throw failError;
+      }
+    }
+
+    return jsonResponse({ ok: true, processedCount: events.length });
+  } catch (error) {
+    return jsonResponse({ ok: false, error: errorMessage(error) }, { status: 500 });
+  }
 });
