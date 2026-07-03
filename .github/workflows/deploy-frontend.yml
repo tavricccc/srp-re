@@ -94,9 +94,17 @@ jobs:
             exit 1
           fi
 
-      - name: Build
-        run: npm run build:deploy
+      - name: Pull Vercel Project Info
+        run: npx -y vercel pull --yes --environment=${{ github.ref_name == 'main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project Artifacts
+        run: npx -y vercel build ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VITE_APP_TITLE: ${{ secrets.VITE_APP_TITLE }}
           VITE_APP_SHORT_NAME: ${{ secrets.VITE_APP_SHORT_NAME }}
           VITE_ALLOWED_DOMAIN: ${{ secrets.VITE_ALLOWED_DOMAIN }}
@@ -110,27 +118,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
-      - name: Deploy to Vercel (Production)
-        if: github.ref_name == 'main'
-        run: |
-          npx -y vercel --token "$VERCEL_TOKEN" \
-            --prod \
-            --yes \
-            --cwd . \
-            2>&1
+      - name: Deploy Project Artifacts to Vercel
+        run: npx -y vercel deploy --prebuilt ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy to Vercel (Preview)
-        if: github.ref_name != 'main'
-        run: |
-          npx -y vercel --token "$VERCEL_TOKEN" \
-            --yes \
-            --cwd . \
-            2>&1
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
