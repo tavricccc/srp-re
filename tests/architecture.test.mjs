@@ -69,13 +69,14 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
   assert.doesNotMatch(workflow, /firebase-tools|firestore:rules|storage|Cloud Functions/u);
   assert.match(config, /\[functions\.backendAction\]/u);
   assert.match(config, /\[functions\.backendAction\]\s*verify_jwt = false/u);
-  assert.match(config, /schemas = \["app_api", "app_private"\]/u);
+  assert.match(config, /schemas = \["public", "graphql_public", "app_api", "app_private"\]/u);
 });
 
 test('Supabase schema includes RLS helpers, app tables, and hard-delete support', async () => {
   const migrations = [
     await read('supabase/migrations/202607020001_supabase_foundation.sql'),
     await read('supabase/migrations/202607020002_app_backend_actions.sql'),
+    await read('supabase/migrations/202607041434_expose_app_schemas.sql'),
   ].join('\n');
 
   assert.match(migrations, /create schema if not exists app_private/u);
@@ -92,6 +93,8 @@ test('Supabase schema includes RLS helpers, app tables, and hard-delete support'
   assert.match(migrations, /delete from app_private\.issues/u);
   assert.match(migrations, /for update skip locked/u);
   assert.match(migrations, /for each statement/u);
+  assert.match(migrations, /alter role authenticator set pgrst\.db_schemas = 'public, graphql_public, app_api, app_private'/u);
+  assert.match(migrations, /notify pgrst, 'reload config'/u);
 });
 
 test('backendAction covers frontend actions and Cloudinary direct upload', async () => {

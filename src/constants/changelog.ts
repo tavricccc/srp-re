@@ -2,6 +2,20 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "修正後端資料存取設定",
+    version: "v1.8.42",
+    date: "2026-07-04",
+    time: "14:34",
+    items: [
+      {
+        title: "修正部署後後端服務無法讀取必要資料的問題。",
+      },
+      {
+        title: "提升部署後資料服務設定生效的可靠性。",
+      },
+    ],
+  },
+  {
     title: "修正後端資料讀取設定",
     version: "v1.8.41",
     date: "2026-07-04",
