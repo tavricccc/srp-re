@@ -2,6 +2,8 @@ import {
   createCloudinaryAuthenticatedImageUrl,
   createCloudinaryExpiringImageUrl,
   createCloudinaryUploadSignature,
+  getCloudinaryAuthenticatedImageMetadata,
+  verifyCloudinaryUploadResponseSignature,
 } from "../_shared/cloudinary.ts";
 import { requireEnv } from "../_shared/env.ts";
 import { asString } from "../_shared/http.ts";
@@ -174,22 +176,68 @@ export async function handleUploadAction(
 
   if (action === "finalizeImageUpload") {
     const uploadId = asString(payload.uploadId);
-    let data: JsonRecord | null = null;
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      const result = await supabase.schema("app_private").from("uploads")
-        .select("*")
+    const { data: upload, error: uploadError } = await supabase.schema("app_private").from("uploads")
+      .select("*")
+      .eq("id", uploadId)
+      .eq("owner_uid", auth.uid)
+      .maybeSingle();
+    if (uploadError) throw uploadError;
+    if (!upload) throw new Error("not-found");
+    if (upload.status === "failed") throw new Error("upload-validation-failed");
+
+    let data = upload as JsonRecord;
+    if (upload.status !== "ready") {
+      const responsePublicId = asString(payload.publicId);
+      const responseSignature = asString(payload.signature);
+      const responseVersion = Math.round(asNumber(payload.version, 0));
+      if (
+        responsePublicId !== upload.cloudinary_public_id
+        || !await verifyCloudinaryUploadResponseSignature(responsePublicId, responseVersion, responseSignature)
+      ) throw new Error("upload-response-invalid");
+
+      const metadata = await getCloudinaryAuthenticatedImageMetadata(responsePublicId);
+      const bytes = Math.round(asNumber(metadata.bytes, 0));
+      const width = Math.round(asNumber(metadata.width, 0));
+      const height = Math.round(asNumber(metadata.height, 0));
+      const validAsset = asString(metadata.format).toLowerCase() === "webp"
+        && asString(metadata.resource_type) === "image"
+        && asString(metadata.type) === "authenticated"
+        && bytes > 0
+        && bytes <= RATE_LIMITS.imageCompression.maxUploadBytes
+        && width > 0
+        && height > 0
+        && width <= RATE_LIMITS.imageCompression.maxDimension
+        && height <= RATE_LIMITS.imageCompression.maxDimension;
+      if (!validAsset) throw new Error("upload-validation-failed");
+
+      const { data: finalized, error: finalizeError } = await supabase.schema("app_private").from("uploads")
+        .update({
+          height,
+          size_bytes: bytes,
+          status: "ready",
+          updated_at: new Date().toISOString(),
+          width,
+        })
         .eq("id", uploadId)
         .eq("owner_uid", auth.uid)
+        .eq("status", "pending")
+        .select("*")
         .maybeSingle();
-      if (result.error) throw result.error;
-      if (result.data?.status === "failed") throw new Error("upload-validation-failed");
-      if (result.data?.status === "ready") {
-        data = result.data as JsonRecord;
-        break;
+      if (finalizeError) throw finalizeError;
+      if (finalized) {
+        data = finalized as JsonRecord;
+      } else {
+        const { data: webhookFinalized, error: webhookError } = await supabase.schema("app_private")
+          .from("uploads")
+          .select("*")
+          .eq("id", uploadId)
+          .eq("owner_uid", auth.uid)
+          .eq("status", "ready")
+          .single();
+        if (webhookError) throw webhookError;
+        data = webhookFinalized as JsonRecord;
       }
-      await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    if (!data) throw new Error("upload-not-ready");
     return {
       height: Number(data.height ?? 0),
       storagePath: data.cloudinary_public_id,

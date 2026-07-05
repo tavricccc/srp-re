@@ -40,6 +40,42 @@ export async function createCloudinaryUploadSignature(params: Record<string, str
   return signCloudinaryParams(params);
 }
 
+export async function verifyCloudinaryUploadResponseSignature(
+  publicId: string,
+  version: number,
+  signature: string,
+) {
+  if (!publicId || !Number.isSafeInteger(version) || version <= 0 || !/^[a-f0-9]{40}$/iu.test(signature)) {
+    return false;
+  }
+  const expected = await signCloudinaryParams({
+    public_id: publicId,
+    version: String(version),
+  });
+  if (expected.length !== signature.length) return false;
+  let difference = 0;
+  for (let index = 0; index < expected.length; index += 1) {
+    difference |= expected.charCodeAt(index) ^ signature.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+export async function getCloudinaryAuthenticatedImageMetadata(publicId: string) {
+  const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
+  const apiKey = requireEnv("CLOUDINARY_API_KEY");
+  const apiSecret = requireEnv("CLOUDINARY_API_SECRET");
+  const encodedPublicId = publicId.split("/").map((part) => encodeURIComponent(part)).join("/");
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/authenticated/${encodedPublicId}`,
+    {
+      headers: { authorization: `Basic ${btoa(`${apiKey}:${apiSecret}`)}` },
+      signal: AbortSignal.timeout(8_000),
+    },
+  );
+  if (!response.ok) throw new Error(`cloudinary-resource-lookup:${response.status}`);
+  return await response.json() as Record<string, unknown>;
+}
+
 export async function createCloudinaryAuthenticatedImageUrl(publicId: string) {
   const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
   const apiSecret = requireEnv("CLOUDINARY_API_SECRET");

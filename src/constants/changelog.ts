@@ -2,6 +2,17 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "提升圖片上傳穩定性",
+    version: "v1.8.54",
+    date: "2026-07-05",
+    time: "14:51",
+    items: [
+      {
+        title: "改善圖片上傳完成確認流程，避免處理時間差造成上傳失敗。",
+      },
+    ],
+  },
+  {
     title: "完善圖片與維護設定",
     version: "v1.8.53",
     date: "2026-07-05",

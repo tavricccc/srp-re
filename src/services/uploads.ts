@@ -36,6 +36,12 @@ interface ImageUploadSession {
   uploadId: string;
 }
 
+interface CloudinaryUploadResponse {
+  public_id?: string;
+  signature?: string;
+  version?: number;
+}
+
 function toReadableUploadError(error: unknown) {
   const message = error instanceof Error ? error.message : '';
   const uploadMessage = message.replace(/^FirebaseError:\s*/u, '').trim();
@@ -86,7 +92,7 @@ export async function createImageUploadPolicy(file: File, width: number, height:
       body.set('type', session.data.type);
     }
 
-    await withRequestTimeout(async () => {
+    const uploadResponse = await withRequestTimeout(async () => {
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${session.data.cloudName}/image/upload`,
         { method: 'POST', body },
@@ -94,12 +100,23 @@ export async function createImageUploadPolicy(file: File, width: number, height:
       if (!response.ok) {
         throw new Error(`圖片上傳失敗：${response.status}`);
       }
+      return await response.json() as CloudinaryUploadResponse;
     }, { label: '圖片上傳', timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 
-    const finalize = invokeBackendAction<{ uploadId: string }, ImageUploadPolicy>('finalizeImageUpload', {
+    const finalize = invokeBackendAction<{
+      publicId: string;
+      signature: string;
+      uploadId: string;
+      version: number;
+    }, ImageUploadPolicy>('finalizeImageUpload', {
       timeoutMs: LONG_REQUEST_TIMEOUT_MS,
     });
-    return (await finalize({ uploadId: session.data.uploadId })).data;
+    return (await finalize({
+      publicId: uploadResponse.public_id ?? '',
+      signature: uploadResponse.signature ?? '',
+      uploadId: session.data.uploadId,
+      version: uploadResponse.version ?? 0,
+    })).data;
   } catch (error) {
     throw toReadableUploadError(error);
   }
