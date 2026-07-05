@@ -157,17 +157,9 @@ begin
       and support_deadline_at <= now()
       and support_goal is not null
       and support_count < support_goal
-    returning *
-  ), queued as (
-    insert into app_private.outbox_events(event_type,target_type,target_id,actor_uid,payload)
-    select 'issue.status_changed', 'issue', id::text, 'system',
-      jsonb_build_object(
-        'author_uid', author_uid, 'old_status', 'pending', 'new_status', 'auto-rejected',
-        'issue_category', category, 'title', title, 'support_count', support_count, 'support_goal', support_goal
-      )
-    from expired returning 1
+    returning 1
   )
-  select count(*) into changed from queued;
+  select count(*) into changed from expired;
   return changed;
 end;
 $$;

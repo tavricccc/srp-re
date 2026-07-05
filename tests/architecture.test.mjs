@@ -268,18 +268,15 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
   ].join('\n');
   const outboxWorker = await read('supabase/functions/outboxWorker/index.ts');
   const securityMigration = await read('supabase/migrations/202607050001_supabase_baseline.sql');
+  const atomicOutboxMigration = await read('supabase/migrations/202607050006_atomic_content_outbox.sql');
 
-  assert.match(backendAction, /event_type: "issue\.comment_created"/u);
-  assert.match(backendAction, /content: data\.content/u);
-  assert.match(backendAction, /issue_author_uid: issue\.author_uid/u);
-  assert.match(backendAction, /issue_id: issueId/u);
-  assert.match(backendAction, /if \(outboxError\) throw outboxError/u);
-  assert.match(backendAction, /event_type: "issue\.status_changed"/u);
-  assert.match(backendAction, /issue_category: data\.category/u);
+  assert.match(atomicOutboxMigration, /'issue\.comment_created'/u);
+  assert.match(atomicOutboxMigration, /'issue_author_uid', issue_record\.author_uid/u);
+  assert.match(atomicOutboxMigration, /'issue\.status_changed'/u);
+  assert.match(atomicOutboxMigration, /queue_announcement_comment_created/u);
   assert.match(backendAction, /rpc\("backend_delete_issue"/u);
   assert.match(securityMigration, /'issue\.deleted'/u);
   assert.match(securityMigration, /'author_uid', issue_record\.author_uid/u);
-  assert.match(backendAction, /event_type: "announcement\.comment_created"/u);
   assert.match(outboxWorker, /async function findIssueAuthorUid/u);
   assert.match(outboxWorker, /async function resolveNotification/u);
   assert.match(outboxWorker, /recipientUid === event\.actor_uid/u);

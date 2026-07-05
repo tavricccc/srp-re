@@ -43,25 +43,6 @@ export async function createIssue(payload: JsonRecord, auth: AuthContext, supaba
   if (error) throw error;
   await markMarkdownUploadsAttached(supabase, auth.uid, content, "issue", data.id);
 
-  const { error: outboxError } = await supabase.schema("app_private").from("outbox_events").insert({
-    event_type: "issue.created",
-    target_type: "issue",
-    target_id: data.id,
-    actor_uid: auth.uid,
-    payload: {
-      author_name: auth.name,
-      author_uid: auth.uid,
-      category,
-      content,
-      issue_id: data.id,
-      status: data.status,
-      support_count: data.support_count,
-      support_goal: data.support_goal,
-      title,
-    },
-  });
-  if (outboxError) throw outboxError;
-
   if (issueStoresAuthorPrivately(category)) {
     const { error: privateAuthorError } = await supabase.schema("app_private").from("private_issue_authors").upsert({
       author_name: auth.name,

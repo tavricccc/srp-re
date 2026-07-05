@@ -18,6 +18,7 @@ export async function moderateIssueStatus(payload: JsonRecord, auth: AuthContext
   if (!VALID_STATUSES.has(nextStatus)) throw new Error("invalid-status");
   const categoryConfig = getIssueCategoryConfigOrDefault(asString(oldIssue.category));
   const updateFields: JsonRecord = {
+    last_actor_uid: auth.uid,
     review_rejection_reason: optionalText(payload.reason, "reason", INPUT_LIMITS.rejectionReason) || null,
     status: nextStatus,
   };
@@ -31,22 +32,5 @@ export async function moderateIssueStatus(payload: JsonRecord, auth: AuthContext
   }
   const { data, error } = await supabase.schema("app_private").from("issues").update(updateFields).eq("id", issueId).select("*").single();
   if (error) throw error;
-  const { error: outboxError } = await supabase.schema("app_private").from("outbox_events").insert({
-    event_type: "issue.status_changed",
-    target_type: "issue",
-    target_id: issueId,
-    actor_uid: auth.uid,
-    payload: {
-      author_uid: data.author_uid,
-      new_status: data.status,
-      old_status: oldIssue.status,
-      reason: data.review_rejection_reason,
-      support_count: data.support_count,
-      support_goal: data.support_goal,
-      title: data.title,
-      issue_category: data.category,
-    },
-  });
-  if (outboxError) throw outboxError;
   return { issue: issueToReadableResponse(data as JsonRecord, auth) };
 }

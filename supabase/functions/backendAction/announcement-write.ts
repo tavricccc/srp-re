@@ -20,14 +20,6 @@ async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
   }).select("*").single();
   if (error) throw error;
   await markMarkdownUploadsAttached(supabase, auth.uid, content, "announcement", data.id);
-  const { error: outboxError } = await supabase.schema("app_private").from("outbox_events").insert({
-    event_type: "announcement.created",
-    target_type: "announcement",
-    target_id: data.id,
-    actor_uid: auth.uid,
-    payload: { author_name: data.author_name, content: data.content, title: data.title },
-  });
-  if (outboxError) throw outboxError;
   return { announcement: announcementToResponse(data as JsonRecord) };
 }
 
@@ -51,14 +43,6 @@ async function updateAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
   if (removedUploads.length > 0) {
     await queueUploadIdsForDeletion(supabase, removedUploads.map((upload) => upload.id));
   }
-  const { error: outboxError } = await supabase.schema("app_private").from("outbox_events").insert({
-    event_type: "announcement.updated",
-    target_type: "announcement",
-    target_id: data.id,
-    actor_uid: auth.uid,
-    payload: { author_name: data.author_name, content: data.content, title: data.title },
-  });
-  if (outboxError) throw outboxError;
   return { announcement: announcementToResponse(data as JsonRecord) };
 }
 
@@ -72,14 +56,6 @@ async function deleteAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
     { id: announcementId, type: "announcement" },
     ...(comments ?? []).map((comment) => ({ id: comment.id, type: "announcement_comment" as const })),
   ]);
-  const { error: outboxError } = await supabase.schema("app_private").from("outbox_events").insert({
-    event_type: "announcement.deleted",
-    target_type: "announcement",
-    target_id: announcementId,
-    actor_uid: auth.uid,
-    payload: { announcement_id: announcementId },
-  });
-  if (outboxError) throw outboxError;
   const { error } = await supabase.schema("app_private").from("announcements").delete().eq("id", announcementId);
   if (error) throw error;
   return { success: true };
