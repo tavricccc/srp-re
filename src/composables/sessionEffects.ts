@@ -23,8 +23,8 @@ export async function initActiveSessionData(uid: string) {
     if (token === activeSessionToken) {
       mySupportedIssueIds.value = ids;
     }
-  } catch (error) {
-    console.warn('[supported-issues]', error);
+  } catch {
+    void 0;
   }
 }
 
@@ -34,15 +34,15 @@ export async function cacheUserAvatarOnLogin(photoURL: string) {
     if (photoUrl) {
       customPhotoUrl.value = photoUrl;
     }
-  } catch (error) {
-    console.warn('[avatar-cache]', error);
+  } catch {
+    void 0;
   }
 }
 
 export async function recordPlatformVisitOnLogin() {
   try {
     await recordPlatformVisit();
-  } catch (error) {
-    console.warn('[platform-visit]', error);
+  } catch {
+    void 0;
   }
 }

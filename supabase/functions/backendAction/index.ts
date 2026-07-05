@@ -8,6 +8,7 @@ import {
   errorStatus,
   handleCorsPreflight,
   jsonResponse,
+  publicError,
   readJsonRecord,
   requireMethod,
 } from "../_shared/http.ts";
@@ -148,6 +149,6 @@ Deno.serve(async (request) => {
       stack: error instanceof Error ? error.stack : undefined,
       status,
     }));
-    return jsonResponse({ error: errorMessage(error), requestId }, { status });
+    return jsonResponse({ error: publicError(error), requestId }, { status });
   }
 });

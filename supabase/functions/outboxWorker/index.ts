@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { Database } from "../_shared/database.ts";
 import { requireEnv } from "../_shared/env.ts";
 import { isInvalidFcmTokenError, sendFcmMessage } from "../_shared/fcm.ts";
-import { errorMessage, jsonResponse, requireMethod } from "../_shared/http.ts";
+import { errorMessage, jsonResponse, operationalErrorSummary, requireMethod } from "../_shared/http.ts";
 import {
   markNotionPageDeleted,
   syncAnnouncementCreatedToNotion,
@@ -274,6 +274,7 @@ async function syncNotionForEvent(
       break;
     }
     case "announcement.created":
+    case "announcement.updated":
       await syncAnnouncementCreatedToNotion(supabase, event.target_id, event.payload);
       break;
     default:
@@ -359,7 +360,7 @@ async function sendPushes(
         await supabase.schema("app_private").from("push_tokens").delete().eq("token", row.token);
       }
       await supabase.schema("app_private").from("push_delivery_logs").insert({
-        error_message: errorMessage(error),
+        error_message: operationalErrorSummary(error),
         notification_type: notificationType,
         status: "failed",
         target_id: asString(notification.target_id),
@@ -391,7 +392,7 @@ async function sendPushesWithoutBlockingOutbox(
     await sendPushes(supabase, notification);
   } catch (error) {
     await supabase.schema("app_private").from("push_delivery_logs").insert({
-      error_message: errorMessage(error),
+      error_message: operationalErrorSummary(error),
       notification_type: asString(notification.type),
       status: "failed",
       target_id: asString(notification.target_id),
@@ -475,7 +476,7 @@ Deno.serve(async (request) => {
           .schema("app_api")
           .rpc("fail_outbox_event", {
             event_id: event.id,
-            error_message: errorMessage(error),
+            error_message: operationalErrorSummary(error),
           });
         if (failError) throw failError;
       }
@@ -483,6 +484,7 @@ Deno.serve(async (request) => {
 
     return jsonResponse({ ok: true, processedCount: events.length });
   } catch (error) {
-    return jsonResponse({ ok: false, error: errorMessage(error) }, { status: 500 });
+    console.error(errorMessage(error));
+    return jsonResponse({ ok: false, error: "worker-failed" }, { status: 500 });
   }
 });

@@ -131,6 +131,8 @@ interface UploadRow {
   expires_at: string;
   resource_type: string;
   secure_url: string | null;
+  delivery_url: string | null;
+  delivery_url_expires_at: string | null;
   size_bytes: number | null;
   original_url: string | null;
   preview_url: string | null;
@@ -162,6 +164,7 @@ interface NotionPageRow {
   notion_page_id: string;
   created_at: string;
   updated_at: string;
+  managed_block_ids: Json;
 }
 
 interface PushTokenRow {
@@ -246,6 +249,7 @@ interface AppPrivateTables {
     created_at: string;
     updated_at: string;
   }>;
+  runtime_settings: Table<{ key: string; value: string; updated_at: string }>;
   push_tokens: Table<PushTokenRow>;
   supports: Table<{ issue_id: string; uid: string; created_at: string }>;
   uploads: Table<UploadRow>;
@@ -266,6 +270,7 @@ interface AppApiFunctions {
   complete_outbox_event: AppFunction<{ event_id: string }, void>;
   fail_deletion_job: AppFunction<{ error_message: string; job_id: string }, void>;
   fail_outbox_event: AppFunction<{ error_message: string; event_id: string }, void>;
+  backend_delete_issue: AppFunction<{ actor_is_admin: boolean; actor_uid: string; issue_id: string }, void>;
   release_idempotency_key: AppFunction<{ action_name: string; actor_uid: string; request_id: string }, void>;
   run_maintenance_cleanup: AppFunction<Record<string, never>, Json>;
 }

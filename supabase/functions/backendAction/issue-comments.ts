@@ -4,8 +4,9 @@ import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import { canReadIssue, commentCursor, commentToResponse, selectIssue } from "./issue-shared.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
-import { markMarkdownUploadsAttached } from "./uploads.ts";
+import { markMarkdownUploadsAttached, queueAttachedUploadsForDeletion } from "./uploads.ts";
 import { applyAscendingDateCursor, asBoolean, readCursor, utcHourWindow } from "./utils.ts";
+import { INPUT_LIMITS, requiredText } from "./validation.ts";
 
 async function listComments(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   const pageSize = 20;
@@ -33,7 +34,7 @@ async function createComment(payload: JsonRecord, auth: AuthContext, supabase: B
   if (!canReadIssue(issue, auth) || !issueAllowsCommentsForStatus(asString(issue.category), asString(issue.status))) {
     throw new Error("permission-denied");
   }
-  const content = asString(payload.content);
+  const content = requiredText(payload.content, "comment", INPUT_LIMITS.comment);
   const { data, error } = await supabase.schema("app_private").from("comments").insert({
     issue_id: issueId,
     author_uid: auth.uid,
@@ -66,6 +67,7 @@ async function deleteComment(payload: JsonRecord, auth: AuthContext, supabase: B
   const commentId = asString(payload.commentId);
   const { data } = await supabase.schema("app_private").from("comments").select("*").eq("id", commentId).maybeSingle();
   if (data && data.author_uid !== auth.uid && !auth.isAdmin) throw new Error("permission-denied");
+  if (data) await queueAttachedUploadsForDeletion(supabase, [{ id: commentId, type: "comment" }]);
   await supabase.schema("app_private").from("comments").delete().eq("id", commentId);
   return { success: true };
 }

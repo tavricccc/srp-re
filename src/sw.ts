@@ -75,9 +75,7 @@ if (hasFirebaseMessagingConfig()) {
         icon: withAppVersion('/pwa-192x192.png'),
       });
     });
-  }).catch((error) => {
-    console.error('[sw] Firebase Messaging unavailable', error);
-  });
+  }).catch(() => {});
 }
 
 precacheAndRoute(self.__WB_MANIFEST);

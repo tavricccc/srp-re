@@ -22,8 +22,21 @@ Deno.serve(async (request) => {
       .rpc("run_maintenance_cleanup");
     if (error) throw error;
 
-    return jsonResponse({ ok: true, result: data });
+    const baseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/u, "");
+    const authorization = `Bearer ${requireEnv("WEBHOOK_SECRET")}`;
+    const workerResults = await Promise.all(["processDeletionJobs", "outboxWorker"].map(async (functionName) => {
+      const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
+        method: "POST",
+        headers: { authorization, "content-type": "application/json" },
+        body: JSON.stringify({ signal: "daily_maintenance" }),
+      });
+      if (!response.ok) throw new Error(`${functionName}-failed`);
+      return await response.json();
+    }));
+
+    return jsonResponse({ ok: true, result: data, workers: workerResults });
   } catch (error) {
-    return jsonResponse({ ok: false, error: errorMessage(error) }, { status: 500 });
+    console.error(errorMessage(error));
+    return jsonResponse({ ok: false, error: "maintenance-failed" }, { status: 500 });
   }
 });

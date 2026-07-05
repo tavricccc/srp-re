@@ -214,8 +214,8 @@ async function openNotifications() {
       admin: isAdmin.value ? openedAt : readState.value.admin,
       personalPreferences: readState.value.personalPreferences,
     };
-  } catch (nextError) {
-    console.warn('[notifications]', nextError);
+  } catch {
+    void 0;
   }
 }
 

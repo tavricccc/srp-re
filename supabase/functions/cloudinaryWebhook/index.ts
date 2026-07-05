@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import type { Database } from "../_shared/database.ts";
 import { requireEnv } from "../_shared/env.ts";
-import { errorMessage, errorStatus, jsonResponse, requireMethod, textResponse } from "../_shared/http.ts";
+import { errorMessage, errorStatus, jsonResponse, publicError, requireMethod, textResponse } from "../_shared/http.ts";
 import { verifyCloudinarySignature } from "../_shared/webhook.ts";
 
 Deno.serve(async (request) => {
@@ -23,6 +23,21 @@ Deno.serve(async (request) => {
     if (!publicId) {
       return textResponse("Missing public_id", { status: 400 });
     }
+    const format = String(payload.format ?? "").toLowerCase();
+    const resourceType = String(payload.resource_type ?? "");
+    const deliveryType = String(payload.type ?? "");
+    const bytes = Number(payload.bytes ?? 0);
+    const width = Number(payload.width ?? 0);
+    const height = Number(payload.height ?? 0);
+    const validAsset = format === "webp"
+      && resourceType === "image"
+      && deliveryType === "authenticated"
+      && bytes > 0
+      && bytes <= 800 * 1024
+      && width > 0
+      && height > 0
+      && width <= 2000
+      && height <= 2000;
 
     const supabase = createClient<Database>(
       requireEnv("SUPABASE_URL"),
@@ -33,7 +48,10 @@ Deno.serve(async (request) => {
       .schema("app_private")
       .from("uploads")
       .update({
-        status: "ready",
+        status: validAsset ? "ready" : "failed",
+        size_bytes: Number.isFinite(bytes) ? bytes : null,
+        width: Number.isFinite(width) ? width : null,
+        height: Number.isFinite(height) ? height : null,
         updated_at: new Date().toISOString(),
       })
       .eq("cloudinary_public_id", publicId)
@@ -42,9 +60,17 @@ Deno.serve(async (request) => {
     if (error) {
       throw error;
     }
+    if (!validAsset) {
+      await supabase.schema("app_private").from("deletion_jobs").insert({
+        target_type: "upload",
+        target_id: publicId,
+        cloudinary_public_id: publicId,
+      });
+    }
 
     return jsonResponse({ ok: true });
   } catch (error) {
-    return jsonResponse({ ok: false, error: errorMessage(error) }, { status: errorStatus(error) });
+    console.error(errorMessage(error));
+    return jsonResponse({ ok: false, error: publicError(error) }, { status: errorStatus(error) });
   }
 });

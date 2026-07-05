@@ -3,7 +3,7 @@ import type { Database } from "../_shared/database.ts";
 import { requireEnv } from "../_shared/env.ts";
 import { requireEligibleFirebaseUser } from "../_shared/firebase-auth.ts";
 import { getGoogleAccessToken } from "../_shared/google-oauth.ts";
-import { errorMessage, errorStatus, handleCorsPreflight, jsonResponse, requireMethod } from "../_shared/http.ts";
+import { errorMessage, errorStatus, handleCorsPreflight, jsonResponse, publicError, requireMethod } from "../_shared/http.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 
@@ -86,6 +86,7 @@ Deno.serve(async (request) => {
 
     return jsonResponse({ ok: true, role: "authenticated", userRole: appRole });
   } catch (error) {
-    return jsonResponse({ ok: false, error: errorMessage(error) }, { status: errorStatus(error) });
+    console.error(errorMessage(error));
+    return jsonResponse({ ok: false, error: publicError(error) }, { status: errorStatus(error) });
   }
 });

@@ -54,5 +54,24 @@ export async function handleHealthcheck(request: Request, supabase: BackendSupab
     .limit(1);
   if (error) throw error;
 
+  const supabaseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/u, "");
+  const { error: settingsError } = await supabase
+    .schema("app_private")
+    .from("runtime_settings")
+    .upsert([
+      {
+        key: "maintenance_worker_url",
+        value: `${supabaseUrl}/functions/v1/maintenanceCleanup`,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        key: "outbox_worker_url",
+        value: `${supabaseUrl}/functions/v1/outboxWorker`,
+        updated_at: new Date().toISOString(),
+      },
+      { key: "webhook_secret", value: expected, updated_at: new Date().toISOString() },
+    ], { onConflict: "key" });
+  if (settingsError) throw settingsError;
+
   return { ok: true };
 }

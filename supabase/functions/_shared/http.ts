@@ -3,6 +3,7 @@ export const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Origin": "*",
 };
+const MAX_JSON_BODY_BYTES = 64 * 1024;
 
 export function handleCorsPreflight(request: Request) {
   return request.method === "OPTIONS" ? new Response("ok", { headers: corsHeaders }) : null;
@@ -72,7 +73,9 @@ export function errorStatus(error: unknown) {
   if (message === "not-found") return 404;
   if (message === "missing action" || message.startsWith("Unsupported action:")) return 400;
   if (message === "invalid-json") return 400;
+  if (message === "request-too-large") return 413;
   if (message === "invalid-issue-category" || message === "support-not-available") return 400;
+  if (message.endsWith("-required") || message.endsWith("-too-long") || message === "invalid-status") return 400;
   if (message === "request-in-progress") return 409;
   if (message.includes("達到上限") || message.includes("上傳額度已用完")) return 429;
   if (message.endsWith(" is not configured.")) return 503;
@@ -81,11 +84,49 @@ export function errorStatus(error: unknown) {
 }
 
 export async function readJsonRecord(request: Request) {
+  const declaredLength = Number(request.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_JSON_BODY_BYTES) {
+    throw new Error("request-too-large");
+  }
+  const body = await request.text();
+  if (new TextEncoder().encode(body).byteLength > MAX_JSON_BODY_BYTES) {
+    throw new Error("request-too-large");
+  }
   try {
-    return asRecord(await request.json());
+    return asRecord(JSON.parse(body) as unknown);
   } catch {
     throw new Error("invalid-json");
   }
+}
+
+export function publicError(error: unknown) {
+  const message = errorMessage(error);
+  if (message.includes("達到上限") || message.includes("上傳額度已用完")) return message;
+  const safeMessages: Record<string, string> = {
+    "invalid-json": "請求格式不正確。",
+    "invalid-issue-category": "提案分類不正確。",
+    "invalid-status": "提案狀態不正確。",
+    "not-found": "找不到指定內容。",
+    "permission-denied": "沒有執行此操作的權限。",
+    "request-in-progress": "操作處理中，請稍後再試。",
+    "request-too-large": "送出的內容超過限制。",
+    "support-not-available": "此提案目前無法附議。",
+    "unauthenticated": "請先登入後再操作。",
+  };
+  if (safeMessages[message]) return safeMessages[message];
+  if (message.endsWith("-required")) return "請完整填寫必要內容。";
+  if (message.endsWith("-too-long")) return "送出的文字超過長度限制。";
+  return "服務暫時無法處理請求，請稍後再試。";
+}
+
+export function operationalErrorSummary(error: unknown) {
+  const message = errorMessage(error).toLowerCase();
+  if (message.includes("notion")) return "notion-request-failed";
+  if (message.includes("cloudinary") || message.includes("upload")) return "media-operation-failed";
+  if (message.includes("fcm") || message.includes("firebase")) return "notification-provider-failed";
+  if (message.includes("rate-limit")) return "rate-limit-provider-failed";
+  if (message.includes("permission")) return "permission-check-failed";
+  return "internal-operation-failed";
 }
 
 export function asRecord(value: unknown): Record<string, unknown> {

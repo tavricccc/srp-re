@@ -152,6 +152,9 @@
                 </div>
                 <p class="mt-1 text-xs font-semibold text-error">{{ failure.status }}</p>
                 <p class="mt-2 text-xs leading-5 text-ink-500 dark:text-ink-400">{{ failure.message }}</p>
+                <p class="mt-1 break-all text-[11px] font-medium text-ink-400 dark:text-ink-500">
+                  追蹤碼：{{ failure.id }}
+                </p>
               </div>
             </div>
             <p v-else class="mt-4 rounded-xl bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-500 dark:bg-ink-950/50 dark:text-ink-400">

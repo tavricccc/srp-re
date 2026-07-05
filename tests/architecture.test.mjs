@@ -74,15 +74,7 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
 });
 
 test('Supabase schema includes RLS helpers, app tables, and hard-delete support', async () => {
-  const migrations = [
-    await read('supabase/migrations/202607020001_supabase_foundation.sql'),
-    await read('supabase/migrations/202607020002_app_backend_actions.sql'),
-    await read('supabase/migrations/202607041434_expose_app_schemas.sql'),
-    await read('supabase/migrations/202607041437_grant_service_role_app_private.sql'),
-    await read('supabase/migrations/202607041517_enable_notification_realtime.sql'),
-    await read('supabase/migrations/202607041750_add_backend_action_idempotency.sql'),
-    await read('supabase/migrations/202607050004_add_push_delivery_logs.sql'),
-  ].join('\n');
+  const migrations = await read('supabase/migrations/202607050001_supabase_baseline.sql');
 
   assert.match(migrations, /create schema if not exists app_private/u);
   assert.match(migrations, /create schema if not exists app_api/u);
@@ -274,14 +266,16 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
     await read('supabase/functions/backendAction/announcement-comments.ts'),
   ].join('\n');
   const outboxWorker = await read('supabase/functions/outboxWorker/index.ts');
+  const securityMigration = await read('supabase/migrations/202607050001_supabase_baseline.sql');
 
   assert.match(backendAction, /event_type: "issue\.comment_created"/u);
   assert.match(backendAction, /content: data\.content/u);
   assert.match(backendAction, /issue_id: issueId/u);
   assert.match(backendAction, /event_type: "issue\.status_changed"/u);
   assert.match(backendAction, /issue_category: data\.category/u);
-  assert.match(backendAction, /event_type: "issue\.deleted"/u);
-  assert.match(backendAction, /author_uid: issue\.author_uid/u);
+  assert.match(backendAction, /rpc\("backend_delete_issue"/u);
+  assert.match(securityMigration, /'issue\.deleted'/u);
+  assert.match(securityMigration, /'author_uid', issue_record\.author_uid/u);
   assert.match(backendAction, /event_type: "announcement\.comment_created"/u);
   assert.match(outboxWorker, /async function findIssueAuthorUid/u);
   assert.match(outboxWorker, /async function resolveNotification/u);
@@ -290,6 +284,19 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
   assert.match(outboxWorker, /query = query\.eq\("uid", recipientUid\)/u);
   assert.match(outboxWorker, /source === "admin"/u);
   assert.match(outboxWorker, /\.from\("user_roles"\)/u);
+});
+
+test('private issue data and upload URLs stay behind backend authorization', async () => {
+  const migration = await read('supabase/migrations/202607050001_supabase_baseline.sql');
+  const uploads = await read('supabase/functions/backendAction/uploads.ts');
+  const support = await read('supabase/functions/backendAction/issue-support.ts');
+
+  assert.match(migration, /revoke all on app_api\.issues from anon, authenticated/u);
+  assert.match(uploads, /async function uploadAccess/u);
+  assert.match(uploads, /canReadIssue\(issue, auth\)/u);
+  assert.match(uploads, /issueIsPrivateToOwner/u);
+  assert.match(support, /issueAllowsSupport/u);
+  assert.match(support, /issue\.support_enabled !== true/u);
 });
 
 test('Markdown upload images support batch cache bypass for expired URLs', async () => {

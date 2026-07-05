@@ -2,6 +2,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { Database } from "./database.ts";
 import { optionalEnv, requireEnv } from "./env.ts";
 import { getIssueCategoryLabel } from "./issue-categories.ts";
+import { createCloudinaryExpiringImageUrl } from "./cloudinary.ts";
 
 // ---------------------------------------------------------------------------
 // Status label translation (matches ISSUE_STATUS_LABELS in src/constants/statuses.ts)
@@ -50,20 +51,20 @@ function notionEnabled(): boolean {
   return Boolean(optionalEnv("NOTION_TOKEN") && optionalEnv("NOTION_DATABASE_ID"));
 }
 
-async function callNotionAPI(path: string, method: string, body?: unknown): Promise<unknown> {
+async function callNotionAPI(path: string, method: string, body?: unknown, version?: string): Promise<unknown> {
   const response = await fetch(`https://api.notion.com/v1${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${requireEnv("NOTION_TOKEN")}`,
       "Content-Type": "application/json",
-      "Notion-Version": optionalEnv("NOTION_VERSION") || "2022-06-28",
+      "Notion-Version": version || optionalEnv("NOTION_VERSION") || "2022-06-28",
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
     throw new Error(`Notion API error (${response.status}): ${await response.text()}`);
   }
-  return response.json();
+  return response.status === 204 ? {} : response.json();
 }
 
 async function ensureSelectOption(propertyName: "分類" | "狀態", label: string): Promise<void> {
@@ -104,6 +105,105 @@ function appendBlock(pageId: string, content: string): Promise<unknown> {
       paragraph: { rich_text: [{ text: { content } }] },
     }],
   });
+}
+
+const UPLOAD_PATTERN = /!\[([^\]]*)\]\(srp-upload:\/\/([0-9a-fA-F-]{36})\)/gu;
+const NOTION_FILE_VERSION = "2026-03-11";
+
+async function uploadImageToNotion(publicId: string, filename: string) {
+  const sourceUrl = await createCloudinaryExpiringImageUrl(
+    publicId,
+    new Date(Date.now() + 15 * 60 * 1000),
+  );
+  const source = await fetch(sourceUrl, { signal: AbortSignal.timeout(15_000) });
+  if (!source.ok) throw new Error("notion-image-source-failed");
+  const bytes = await source.arrayBuffer();
+  const created = await fetch("https://api.notion.com/v1/file_uploads", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requireEnv("NOTION_TOKEN")}`,
+      "Content-Type": "application/json",
+      "Notion-Version": NOTION_FILE_VERSION,
+    },
+    body: JSON.stringify({ mode: "single_part", filename, content_type: "image/webp" }),
+  });
+  if (!created.ok) throw new Error(`notion-file-create:${created.status}`);
+  const upload = await created.json() as { id?: string };
+  if (!upload.id) throw new Error("notion-file-id-missing");
+  const form = new FormData();
+  form.set("file", new Blob([bytes], { type: "image/webp" }), filename);
+  const sent = await fetch(`https://api.notion.com/v1/file_uploads/${upload.id}/send`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requireEnv("NOTION_TOKEN")}`,
+      "Notion-Version": NOTION_FILE_VERSION,
+    },
+    body: form,
+  });
+  if (!sent.ok) throw new Error(`notion-file-send:${sent.status}`);
+  return upload.id;
+}
+
+function textBlocks(content: string) {
+  const text = content.replace(UPLOAD_PATTERN, "").trim();
+  const chunks = text.match(/[\s\S]{1,1900}/gu) ?? [];
+  return chunks.map((chunk) => ({
+    object: "block",
+    type: "paragraph",
+    paragraph: { rich_text: [{ type: "text", text: { content: chunk } }] },
+  }));
+}
+
+async function replaceManagedContent(
+  supabase: AppSupabase,
+  targetType: string,
+  targetId: string,
+  pageId: string,
+  content: string,
+) {
+  const { data: mapping, error } = await supabase.schema("app_private").from("notion_pages")
+    .select("managed_block_ids").eq("target_type", targetType).eq("target_id", targetId).single();
+  if (error) throw error;
+  const oldIds = Array.isArray(mapping.managed_block_ids)
+    ? mapping.managed_block_ids.filter((id): id is string => typeof id === "string")
+    : [];
+  await Promise.all(oldIds.map((id) => callNotionAPI(`/blocks/${id}`, "DELETE")));
+
+  const uploadMatches = [...content.matchAll(UPLOAD_PATTERN)];
+  const uploadIds = uploadMatches.map((match) => match[2]).filter(Boolean);
+  const { data: uploads, error: uploadError } = uploadIds.length
+    ? await supabase.schema("app_private").from("uploads")
+      .select("id,cloudinary_public_id").in("id", uploadIds).in("status", ["ready", "attached"])
+    : { data: [], error: null };
+  if (uploadError) throw uploadError;
+  const publicIds = new Map((uploads ?? []).map((upload) => [upload.id, upload.cloudinary_public_id]));
+  const imageBlocks = [];
+  for (const [index, match] of uploadMatches.entries()) {
+    const publicId = publicIds.get(match[2]);
+    if (!publicId) continue;
+    const fileUploadId = await uploadImageToNotion(publicId, `${targetType}-${targetId}-${index + 1}.webp`);
+    imageBlocks.push({
+      object: "block",
+      type: "image",
+      image: {
+        type: "file_upload",
+        file_upload: { id: fileUploadId },
+        caption: match[1] ? [{ type: "text", text: { content: match[1].slice(0, 500) } }] : [],
+      },
+    });
+  }
+  const blocks = [...textBlocks(content), ...imageBlocks];
+  const createdIds: string[] = [];
+  for (let offset = 0; offset < blocks.length; offset += 100) {
+    const response = await callNotionAPI(`/blocks/${pageId}/children`, "PATCH", {
+      children: blocks.slice(offset, offset + 100),
+    }, NOTION_FILE_VERSION) as { results?: Array<{ id?: string }> };
+    createdIds.push(...(response.results ?? []).map((block) => block.id ?? "").filter(Boolean));
+  }
+  const { error: updateError } = await supabase.schema("app_private").from("notion_pages")
+    .update({ managed_block_ids: createdIds, updated_at: new Date().toISOString() })
+    .eq("target_type", targetType).eq("target_id", targetId);
+  if (updateError) throw updateError;
 }
 
 /**
@@ -202,11 +302,11 @@ export async function syncIssueCreatedToNotion(
   const { data: issue } = await supabase
     .schema("app_private")
     .from("issues")
-    .select("title, category, status, author_name, support_count, support_goal")
+    .select("title, content, category, status, author_name, support_count, support_goal")
     .eq("id", targetId)
     .maybeSingle();
 
-  await getOrCreateNotionPage(
+  const pageId = await getOrCreateNotionPage(
     supabase,
     "issue",
     targetId,
@@ -216,6 +316,13 @@ export async function syncIssueCreatedToNotion(
     String(issue?.author_name ?? "匿名使用者"),
     issue?.support_count ?? payload.support_count,
     issue?.support_goal ?? payload.support_goal,
+  );
+  if (pageId) await replaceManagedContent(
+    supabase,
+    "issue",
+    targetId,
+    pageId,
+    String(issue?.content ?? payload.content ?? ""),
   );
 }
 
@@ -350,11 +457,11 @@ export async function syncAnnouncementCreatedToNotion(
   const { data: announcement } = await supabase
     .schema("app_private")
     .from("announcements")
-    .select("title, author_name")
+    .select("title,content,author_name")
     .eq("id", targetId)
     .maybeSingle();
 
-  await getOrCreateNotionPage(
+  const pageId = await getOrCreateNotionPage(
     supabase,
     "announcement",
     targetId,
@@ -365,4 +472,19 @@ export async function syncAnnouncementCreatedToNotion(
     0,
     null,
   );
+  if (pageId) {
+    await callNotionAPI(`/pages/${pageId}`, "PATCH", {
+      properties: {
+        "名稱": { title: [{ text: { content: String(announcement?.title ?? payload.title ?? "未命名公告") } }] },
+        "作者": { rich_text: [{ text: { content: String(announcement?.author_name ?? "管理員") } }] },
+      },
+    });
+    await replaceManagedContent(
+      supabase,
+      "announcement",
+      targetId,
+      pageId,
+      String(announcement?.content ?? payload.content ?? ""),
+    );
+  }
 }

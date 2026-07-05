@@ -11,11 +11,12 @@ import { issueToReadableResponse } from "./issue-shared.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { markMarkdownUploadsAttached } from "./uploads.ts";
 import { taipeiDayWindow } from "./utils.ts";
+import { INPUT_LIMITS, requiredText } from "./validation.ts";
 
 export async function createIssue(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   await claimFixedWindowRateLimit(auth.uid, "issue.create", taipeiDayWindow(), RATE_LIMITS.issueCreateDaily);
-  const title = asString(payload.title);
-  const content = asString(payload.content);
+  const title = requiredText(payload.title, "title", INPUT_LIMITS.title);
+  const content = requiredText(payload.content, "content", INPUT_LIMITS.content);
   const category = asString(payload.category, "general");
   if (!isIssueCategory(category)) throw new Error("invalid-issue-category");
 

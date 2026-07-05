@@ -10,6 +10,29 @@ import type { SessionState } from '@/composables/sessionTypes';
 import { withRequestTimeout } from '@/lib/request';
 import { debugLog } from '@/composables/sessionDebug';
 
+const LOGIN_ATTEMPT_KEY = 'srp-login-attempts';
+const LOGIN_ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_ATTEMPT_LIMIT = 30;
+const LOGIN_CLICK_COOLDOWN_MS = 2_000;
+let lastLoginAttemptAt = 0;
+
+function claimLoginAttempt() {
+  const now = Date.now();
+  if (now - lastLoginAttemptAt < LOGIN_CLICK_COOLDOWN_MS) return false;
+  lastLoginAttemptAt = now;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LOGIN_ATTEMPT_KEY) ?? '[]') as unknown;
+    const attempts = Array.isArray(parsed)
+      ? parsed.filter((value): value is number => typeof value === 'number' && value > now - LOGIN_ATTEMPT_WINDOW_MS)
+      : [];
+    if (attempts.length >= LOGIN_ATTEMPT_LIMIT) return false;
+    localStorage.setItem(LOGIN_ATTEMPT_KEY, JSON.stringify([...attempts, now]));
+  } catch {
+    // Storage may be unavailable; the in-memory click cooldown still applies.
+  }
+  return true;
+}
+
 function shouldFallbackToRedirect(error: unknown) {
   return error instanceof FirebaseError && [
     'auth/popup-blocked',
@@ -36,6 +59,10 @@ export async function loginWithGoogle(state: SessionState, options: { selectAcco
     allowedDomain,
   });
   state.error = '';
+  if (!claimLoginAttempt()) {
+    state.error = '登入操作太頻繁，請稍候再試。';
+    return;
+  }
   state.loading = true;
 
   if (!auth) {

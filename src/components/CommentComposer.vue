@@ -97,8 +97,8 @@
           <button
             type="button"
             class="button-toolbar h-10 min-h-10 w-10 rounded-full p-0 sm:h-8 sm:min-h-8 sm:w-8"
-            :disabled="uploading || imageUrls.length >= 1"
-            :title="uploading ? '圖片處理中...' : imageUrls.length >= 1 ? '留言最多 1 張圖片' : '加入圖片'"
+            :disabled="uploading || imageUrls.length >= RATE_LIMITS.imageUploads.commentMaxImages"
+            :title="uploading ? '圖片處理中...' : imageUrls.length >= RATE_LIMITS.imageUploads.commentMaxImages ? `留言最多 ${RATE_LIMITS.imageUploads.commentMaxImages} 張圖片` : '加入圖片'"
             aria-label="插入圖片"
             @click="commentFileInputRef?.click()"
           >
@@ -114,7 +114,9 @@
             @change="handleImagePicked"
           />
           <span v-if="uploading" class="hidden text-xs text-ink-400 sm:inline">{{ props.submitting ? '圖片上傳中…' : '圖片壓縮中…' }}</span>
-          <span v-else class="hidden text-xs text-ink-400 sm:inline">{{ imageUrls.length }} / 1</span>
+          <span v-else class="hidden text-xs text-ink-400 sm:inline">
+            {{ imageUrls.length }} / {{ RATE_LIMITS.imageUploads.commentMaxImages }}
+          </span>
           <button
             type="button"
             class="button-secondary h-10 min-h-10 px-3 text-xs font-semibold sm:h-9 sm:min-h-9"
@@ -157,6 +159,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import { useMarkdownImageUpload } from '@/composables/useMarkdownImageUpload';
 import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
+import { RATE_LIMITS } from '@/generated/rate-limits';
 
 const props = defineProps<{
   error: string;
@@ -191,7 +194,9 @@ const {
   uploadError,
   uploadImagesAndBuildContent,
   uploading,
-} = useMarkdownImageUpload(commentContent, { maxImages: 1 });
+} = useMarkdownImageUpload(commentContent, {
+  maxImages: RATE_LIMITS.imageUploads.commentMaxImages,
+});
 const submittedImages = ref<Awaited<ReturnType<typeof uploadImagesAndBuildContent>>['uploadedImages']>([]);
 
 const commentModeOptions: Array<{ value: 'public' | 'admin'; label: string }> = [

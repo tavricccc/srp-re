@@ -10,10 +10,10 @@
 
 - README.md：專案摘要。
 - config/issue-categories.config.json：提案分類與細部權限設定唯一編輯入口，定義分類 id、顯示名稱、讀取權限、附議限制與回覆期限等詳細配置。
-- config/rate-limits.config.json：限流閾值與圖片壓縮設定編輯入口，定義提案/留言/上傳上限，以及圖片寬高與 WebP 品質等參數。
+- config/rate-limits.config.json：限流閾值、各內容圖片數量與圖片壓縮設定編輯入口，定義提案／公告／留言上傳張數，以及圖片寬高與 WebP 品質等參數。
 - structure.md：本檔案，維護全站模組結構地圖。
 - AGENTS.md：給 AI 代理人的開發規範與維護要求。
-- package.json：專案名稱、依賴與 npm scripts 入口，包含前端型別 / lint / build、Edge Functions Deno check、架構測試與僅供部署使用的快速 Vite build。
+- package.json：專案名稱、依賴與 npm scripts 入口，包含前端型別 / lint / build、Edge Functions Deno check、架構測試、Supabase 本機啟動／重置／lint 與僅供部署使用的快速 Vite build。
 - package-lock.json：套件版本鎖定檔。
 - index.html：Vite 入口 HTML，掛載 Vue App，載入 favicon / PWA meta，並由 Vite env 注入標題。
 - eslint.config.js：ESLint 規則與 Vue / TypeScript 的 lint 設定。
@@ -34,18 +34,11 @@
 ## Supabase 後端服務 (supabase/)
 
 - supabase/config.toml：Supabase 本機與部署設定，暴露 Supabase 預設 schema、`app_api` 與供 service role Edge Functions 使用的 `app_private` schema，並設定登入同步、受控 action、Cloudinary webhook、outbox worker、刪除工作與維護清理 Edge Functions 的 JWT 驗證模式。
-- supabase/migrations/202607020001_supabase_foundation.sql：Supabase 初始 migration，建立 `app_private` / `app_api` schema、Firebase JWT helper、RLS 基礎、核心資料檢查、查詢索引、hard delete RPC、outbox batch claim 與 statement-level worker wake-up。
-- supabase/migrations/202607020002_app_backend_actions.sql：補齊提案、公告、留言、通知、推播 token、使用者頭像、圖片 metadata、Notion page mapping 與維護紀錄等 Supabase app tables，並維護搜尋欄位、計數同步、updated_at 與常用查詢索引。
-- supabase/migrations/202607041434_expose_app_schemas.sql：設定 hosted PostgREST exposed schemas，讓部署後的 Edge Functions 可透過 service role 存取 `app_private`，並 reload PostgREST 設定與 schema cache。
-- supabase/migrations/202607041437_grant_service_role_app_private.sql：授權 service role 存取 `app_private` tables 與 sequences，供 Edge Functions 以後端身份執行受控資料操作。
-- supabase/migrations/202607041517_enable_notification_realtime.sql：授權登入使用者依 RLS 讀取通知 realtime 所需資料，並將通知與通知狀態表加入 Supabase Realtime publication。
-- supabase/migrations/202607041750_add_backend_action_idempotency.sql：建立受控 action 冪等鍵資料表與 claim / complete / release RPC，避免同一請求重送造成重複寫入。
-- supabase/migrations/202607050004_add_push_delivery_logs.sql：建立推播送達紀錄表與查詢索引，供管理員統計頁彙整推播異常。
-- supabase/migrations/202607050005_avatar_cloudinary_cache.sql：擴充使用者頭像快取欄位，記錄 Cloudinary 頭像 public id、來源 URL、雜湊與版本，供登入同步更新頭像並排程刪除舊版本。
-- supabase/migrations/202607050006_maintenance_cleanup_schedule.sql：建立維護清理 RPC、相關清理索引與 Supabase cron 排程，定期清理過期通知、同步紀錄、未附加圖片、推播紀錄、冪等鍵與失效裝置 token，並保留最近維護結果供 Dashboard 顯示。
+- supabase/migrations/202607050001_supabase_baseline.sql：單一 Supabase 基線 migration，完整建立 schema、RLS、資料表、RPC、trigger、Realtime publication、索引、冪等、清理排程、圖片時效網址與維護重試設定。
 - supabase/functions/backendAction/index.ts：前端受控 action HTTP 入口，集中 CORS、Firebase 驗證、使用者角色查詢、healthcheck、action 分派與冪等保護，不直接承載各領域資料流程。
 - supabase/functions/backendAction/types.ts：受控 action 共用 Supabase client、身份與 JSON record 型別。
 - supabase/functions/backendAction/utils.ts：受控 action 共用 cursor、時間、數值、布林與台北日界限工具。
+- supabase/functions/backendAction/validation.ts：受控 action 共用標題、正文、留言、搜尋與審核原因長度驗證。
 - supabase/functions/backendAction/auth.ts：管理員權限檢查與目前使用者角色回應。
 - supabase/functions/backendAction/users.ts：使用者登入紀錄、Cloudinary 頭像快取、舊版頭像清理排程與批次讀取 action。
 - supabase/functions/backendAction/uploads.ts：Cloudinary 上傳 session、上傳完成確認、Markdown 圖片附加標記、圖片 URL 解析與外部圖片清理 action。
@@ -77,7 +70,7 @@
 - supabase/functions/_shared/google-oauth.ts：Edge Functions 使用 `npm:google-auth-library` 取得並快取 Google OAuth access token，供 Firebase custom claims 與 FCM HTTP v1 使用。
 - supabase/functions/_shared/issue-categories.ts：由提案分類 config 產生的 Edge Functions 分類權限與行為常數，供受控 action 套用審核、私密讀取、作者隱藏與留言規則。
 - supabase/functions/_shared/fcm.ts：FCM HTTP v1 發送 helper，不依賴 Node Firebase Admin SDK。
-- supabase/functions/_shared/notion.ts：Notion 同步 helper，以中文欄位與中文 select label 寫入名稱、分類、狀態、作者與附議數，缺少 select 選項時自動補齊，並將外部頁面狀態更新為「已刪除」保留可查。
+- supabase/functions/_shared/notion.ts：Notion 同步 helper，以中文欄位寫入提案與公告資料、管理受控正文區塊、將 Cloudinary 圖片上傳為 Notion 檔案，並在刪除時只標記頁面狀態。
 - supabase/functions/_shared/rate-limits.ts：由 rate limit config 產生的 Edge Functions 限流常數，供受控 action 套用提案、留言與圖片上傳頻率限制。
 - supabase/functions/_shared/upstash-rate-limit.ts：Upstash Redis REST 固定時間窗限流 helper，集中計數 key、TTL 與服務不可用錯誤處理。
 - supabase/functions/_shared/webhook.ts：Supabase / Cloudinary webhook shared secret 與簽章驗證 helper。
@@ -300,13 +293,13 @@
 - public/maskable-icon-512x512.png：PWA maskable 圖示。
 - public/apple-touch-icon-180x180.png：iOS 加入主畫面圖示。
 - scripts/generate-issue-categories.mjs：從 `config/issue-categories.config.json` 產生前端、Functions 與 Supabase Edge Functions 共用的 typed 分類設定。
-- scripts/generate-rate-limits.mjs：從 `config/rate-limits.config.json` 產生前端、Functions 與 Supabase Edge Functions 共用的限流與圖片壓縮常數設定。
+- scripts/generate-rate-limits.mjs：從 `config/rate-limits.config.json` 產生前端與 Edge Functions 共用的限流、圖片數量與圖片壓縮常數設定。
 - scripts/issue-category-config.mjs：提案分類 config 讀取、驗證與 TypeScript 產生 helper。
 - tests/architecture.test.mjs：防止舊 Firebase 資料路徑、舊部署目標、未受控後端 action、webhook 驗證與圖片解析流程回歸的靜態測試。
 - .github/workflows/deploy-frontend.yml：前端相關檔案 merge 後，使用 GitHub Environment secrets 執行 Vite build 並以 Vercel CLI 部署（main → production，dev → preview）。
 - .github/workflows/verify-pr.yml：PR 型別、lint、build、架構測試與 audit 驗證工作流；Edge Functions Deno 檢查保留為本機手動指令，不放入 PR workflow 以維持速度。
 - .github/workflows/deploy-backend.yml：Supabase 後端部署工作流，使用 npm / node_modules 快取並先跑架構檢查，再推送 migrations、以非保留名稱設定 Edge Function secrets、部署 Supabase Edge Functions（含維護清理入口）並打正式 endpoint 做健康檢查。
-- .github/workflows/reset-db.yml：手動觸發的 Supabase 資料庫重置工作流，重置資料庫架構並自動寫入對應環境的 outbox 與 Firebase 參數設定。
+- .github/workflows/reset-db.yml：手動觸發的 Supabase 資料庫重置工作流，重置資料庫架構並重新建立每日維護入口設定。
 - .github/workflows/reset-cloudinary.yml：手動觸發的 Cloudinary 資源重置工作流，使用 Admin API 分批刪除目前 cloud 內 image / video / raw 的 upload、authenticated 與 private 資源。
 
 

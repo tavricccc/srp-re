@@ -95,8 +95,8 @@ const handleLogout = async () => {
   if (pushEnabled.value) {
     try {
       await disablePushNotifications();
-    } catch (e) {
-      console.warn('[logout-push-cleanup]', e);
+    } catch {
+      void 0;
     }
   }
   await logout();
@@ -107,8 +107,8 @@ async function switchAccount() {
   if (pushEnabled.value) {
     try {
       await disablePushNotifications();
-    } catch (e) {
-      console.warn('[switch-push-cleanup]', e);
+    } catch {
+      void 0;
     }
   }
   await login({ selectAccount: true });

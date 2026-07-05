@@ -58,7 +58,7 @@
           label="詳細說明"
           placeholder="在此輸入詳細說明..."
           :images="editorImages"
-          :max-images="5"
+          :max-images="RATE_LIMITS.imageUploads.issueMaxImages"
           max-images-label="提案"
           :max-length="5000"
           :warning-length="4800"
@@ -111,6 +111,7 @@ import { useIssueComposerForm } from '@/composables/useIssueComposerForm';
 import DialogOverlay from '@/components/ui/DialogOverlay.vue';
 import MarkdownImageEditor from '@/components/ui/MarkdownImageEditor.vue';
 import type { IssueRecord, WritableIssueCategory } from '@/types';
+import { RATE_LIMITS } from '@/generated/rate-limits';
 
 const props = defineProps<{
   open: boolean;

@@ -34,6 +34,11 @@ export const RATE_LIMITS = {
     "limit": 120,
     "message": "通知裝置設定太頻繁，請稍後再試。"
   },
+  "imageUploads": {
+    "issueMaxImages": 5,
+    "announcementMaxImages": 5,
+    "commentMaxImages": 1
+  },
   "imageCompression": {
     "maxUploadKilobytes": 800,
     "maxUploadBytes": 819200,

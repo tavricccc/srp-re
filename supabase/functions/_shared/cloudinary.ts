@@ -48,12 +48,32 @@ export async function createCloudinaryAuthenticatedImageUrl(publicId: string) {
   return `https://res.cloudinary.com/${cloudName}/image/authenticated/s--${signature}--/${encodedPublicId}`;
 }
 
+export async function createCloudinaryExpiringImageUrl(publicId: string, expiresAt: Date) {
+  const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
+  const apiKey = requireEnv("CLOUDINARY_API_KEY");
+  const params = {
+    expires_at: Math.floor(expiresAt.getTime() / 1000).toString(),
+    format: "webp",
+    public_id: publicId,
+    resource_type: "image",
+    timestamp: Math.floor(Date.now() / 1000).toString(),
+    type: "authenticated",
+  };
+  const query = new URLSearchParams({
+    ...params,
+    api_key: apiKey,
+    signature: await signCloudinaryParams(params),
+  });
+  return `https://api.cloudinary.com/v1_1/${cloudName}/image/download?${query.toString()}`;
+}
+
 export async function uploadCloudinaryAuthenticatedImageFromUrl(publicId: string, sourceUrl: string) {
   const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
   const apiKey = requireEnv("CLOUDINARY_API_KEY");
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const params = {
     allowed_formats: "jpg,jpeg,png,webp",
+    format: "webp",
     overwrite: "false",
     public_id: publicId,
     timestamp,

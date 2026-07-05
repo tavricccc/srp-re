@@ -3,8 +3,9 @@ import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import { commentCursor, commentToResponse } from "./issue-shared.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
-import { markMarkdownUploadsAttached } from "./uploads.ts";
+import { markMarkdownUploadsAttached, queueAttachedUploadsForDeletion } from "./uploads.ts";
 import { applyAscendingDateCursor, asBoolean, readCursor, utcHourWindow } from "./utils.ts";
+import { INPUT_LIMITS, requiredText } from "./validation.ts";
 
 async function listAnnouncementComments(payload: JsonRecord, supabase: BackendSupabase) {
   const pageSize = 20;
@@ -24,7 +25,7 @@ async function listAnnouncementComments(payload: JsonRecord, supabase: BackendSu
 async function createAnnouncementComment(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   await claimFixedWindowRateLimit(auth.uid, "comment.create", utcHourWindow(), RATE_LIMITS.commentCreateHourly);
   const announcementId = asString(payload.announcementId);
-  const content = asString(payload.content);
+  const content = requiredText(payload.content, "comment", INPUT_LIMITS.comment);
   const { data, error } = await supabase.schema("app_private").from("announcement_comments").insert({
     announcement_id: announcementId,
     author_uid: auth.uid,
@@ -58,6 +59,7 @@ async function deleteAnnouncementComment(payload: JsonRecord, auth: AuthContext,
   const commentId = asString(payload.commentId);
   const { data } = await supabase.schema("app_private").from("announcement_comments").select("*").eq("id", commentId).maybeSingle();
   if (data && data.author_uid !== auth.uid && !auth.isAdmin) throw new Error("permission-denied");
+  if (data) await queueAttachedUploadsForDeletion(supabase, [{ id: commentId, type: "announcement_comment" }]);
   const announcementId = data?.announcement_id ?? "";
   await supabase.schema("app_private").from("announcement_comments").delete().eq("id", commentId);
   const { data: announcement } = announcementId

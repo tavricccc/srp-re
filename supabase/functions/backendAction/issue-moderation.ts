@@ -3,15 +3,22 @@ import { getIssueCategoryConfigOrDefault } from "../_shared/issue-categories.ts"
 import { requireAdmin } from "./auth.ts";
 import { issueToReadableResponse, selectIssue } from "./issue-shared.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
+import { INPUT_LIMITS, optionalText } from "./validation.ts";
+
+const VALID_STATUSES = new Set([
+  "under-review", "pending", "processing", "auto-rejected",
+  "review-rejected", "infeasible", "completed",
+]);
 
 export async function moderateIssueStatus(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   requireAdmin(auth);
   const issueId = asString(payload.issueId);
   const oldIssue = await selectIssue(supabase, issueId);
   const nextStatus = asString(payload.status, "pending");
+  if (!VALID_STATUSES.has(nextStatus)) throw new Error("invalid-status");
   const categoryConfig = getIssueCategoryConfigOrDefault(asString(oldIssue.category));
   const updateFields: JsonRecord = {
-    review_rejection_reason: asString(payload.reason) || null,
+    review_rejection_reason: optionalText(payload.reason, "reason", INPUT_LIMITS.rejectionReason) || null,
     status: nextStatus,
   };
   if (nextStatus === "pending" && categoryConfig.responseDeadline.start === "support-met") {

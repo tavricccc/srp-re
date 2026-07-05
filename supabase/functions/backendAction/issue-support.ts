@@ -4,13 +4,19 @@ import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import { canReadIssue, selectIssue } from "./issue-shared.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { utcHourWindow } from "./utils.ts";
+import { issueAllowsSupport } from "../_shared/issue-categories.ts";
 
 export async function updateSupport(action: string, payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   await claimFixedWindowRateLimit(auth.uid, "support.toggle", utcHourWindow(), RATE_LIMITS.supportToggleHourly);
   const issueId = asString(payload.issueId);
   const issue = await selectIssue(supabase, issueId);
   if (!canReadIssue(issue, auth)) throw new Error("not-found");
-  if (asString(issue.status) !== "pending") throw new Error("support-not-available");
+  if (
+    asString(issue.status) !== "pending"
+    || issue.support_enabled !== true
+    || !issueAllowsSupport(asString(issue.category))
+    || (typeof issue.support_deadline_at === "string" && Date.parse(issue.support_deadline_at) <= Date.now())
+  ) throw new Error("support-not-available");
 
   const { data: existing, error: existingError } = await supabase.schema("app_private").from("supports").select("issue_id").eq("issue_id", issueId).eq("uid", auth.uid).maybeSingle();
   if (existingError) throw existingError;

@@ -33,3 +33,19 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase db reset --linked --yes
+
+      - name: Restore maintenance runtime settings
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          response="$(curl -sS -w '\n%{http_code}' \
+            -X POST "https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/backendAction" \
+            -H "content-type: application/json" \
+            -H "x-healthcheck-secret: ${WEBHOOK_SECRET}" \
+            --data '{"action":"healthcheck","payload":{}}')"
+          status="$(printf '%s' "$response" | tail -n 1)"
+          if [ "$status" != "200" ]; then
+            printf 'Failed to restore maintenance settings (HTTP %s)\n' "$status" >&2
+            exit 1
+          fi

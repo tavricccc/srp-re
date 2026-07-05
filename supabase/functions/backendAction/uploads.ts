@@ -1,12 +1,58 @@
-import { createCloudinaryAuthenticatedImageUrl, createCloudinaryUploadSignature } from "../_shared/cloudinary.ts";
+import {
+  createCloudinaryAuthenticatedImageUrl,
+  createCloudinaryExpiringImageUrl,
+  createCloudinaryUploadSignature,
+} from "../_shared/cloudinary.ts";
 import { requireEnv } from "../_shared/env.ts";
 import { asString } from "../_shared/http.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { asNumber, taipeiDayWindow } from "./utils.ts";
+import { canReadIssue, selectIssue } from "./issue-shared.ts";
+import { issueIsPrivateToOwner, issueRequiresReview } from "../_shared/issue-categories.ts";
 
 const MARKDOWN_UPLOAD_ID_PATTERN = /srp-upload:\/\/([0-9a-fA-F-]{36})/gu;
+const PRIVATE_URL_LIFETIME_MS = 60 * 60 * 1000;
+const PRIVATE_URL_REFRESH_BUFFER_MS = 5 * 60 * 1000;
+const PUBLIC_URL_CACHE_MS = 365 * 24 * 60 * 60 * 1000;
+
+async function uploadAccess(
+  upload: JsonRecord,
+  auth: AuthContext,
+  supabase: BackendSupabase,
+) {
+  const targetType = asString(upload.attached_target_type);
+  const targetId = asString(upload.attached_target_id);
+  if (!targetType || !targetId) {
+    return { allowed: asString(upload.owner_uid) === auth.uid, privateDelivery: true };
+  }
+  if (targetType === "issue") {
+    const issue = await selectIssue(supabase, targetId);
+    return {
+      allowed: canReadIssue(issue, auth),
+      privateDelivery: issueIsPrivateToOwner(asString(issue.category))
+        || (issueRequiresReview(asString(issue.category))
+          && ["under-review", "review-rejected"].includes(asString(issue.status))),
+    };
+  }
+  if (targetType === "comment") {
+    const { data } = await supabase.schema("app_private").from("comments")
+      .select("issue_id").eq("id", targetId).maybeSingle();
+    if (!data) return { allowed: false, privateDelivery: true };
+    const issue = await selectIssue(supabase, data.issue_id);
+    return {
+      allowed: canReadIssue(issue, auth),
+      privateDelivery: issueIsPrivateToOwner(asString(issue.category))
+        || (issueRequiresReview(asString(issue.category))
+          && ["under-review", "review-rejected"].includes(asString(issue.status))),
+    };
+  }
+  if (targetType === "announcement" || targetType === "announcement_comment") {
+    return { allowed: true, privateDelivery: false };
+  }
+  return { allowed: false, privateDelivery: true };
+}
 
 export function isUploadAction(action: string) {
   return action === "createImageUploadSession"
@@ -28,6 +74,12 @@ export async function markMarkdownUploadsAttached(
       .filter(Boolean),
   )];
   if (uploadIds.length === 0) return;
+  const maxImages = targetType === "issue"
+    ? RATE_LIMITS.imageUploads.issueMaxImages
+    : targetType === "announcement"
+      ? RATE_LIMITS.imageUploads.announcementMaxImages
+      : RATE_LIMITS.imageUploads.commentMaxImages;
+  if (uploadIds.length > maxImages) throw new Error("too-many-images");
 
   const { error } = await supabase.schema("app_private").from("uploads").update({
     attached_target_id: targetId,
@@ -39,6 +91,31 @@ export async function markMarkdownUploadsAttached(
     .in("id", uploadIds)
     .in("status", ["ready", "attached"]);
   if (error) throw error;
+}
+
+export async function queueAttachedUploadsForDeletion(
+  supabase: BackendSupabase,
+  targets: Array<{ id: string; type: "announcement" | "announcement_comment" | "comment" | "issue" }>,
+) {
+  for (const target of targets) {
+    const { data, error } = await supabase.schema("app_private").from("uploads")
+      .select("id,cloudinary_public_id")
+      .eq("attached_target_type", target.type)
+      .eq("attached_target_id", target.id);
+    if (error) throw error;
+    if (!data?.length) continue;
+    const { error: jobError } = await supabase.schema("app_private").from("deletion_jobs").insert(
+      data.map((upload) => ({
+        target_type: "upload",
+        target_id: upload.id,
+        cloudinary_public_id: upload.cloudinary_public_id,
+      })),
+    );
+    if (jobError) throw jobError;
+    const { error: deleteError } = await supabase.schema("app_private").from("uploads")
+      .delete().in("id", data.map((upload) => upload.id));
+    if (deleteError) throw deleteError;
+  }
 }
 
 export async function handleUploadAction(
@@ -58,9 +135,11 @@ export async function handleUploadAction(
     const timestamp = Math.floor(Date.now() / 1000);
     const folder = `srp/${auth.uid}`;
     const publicId = uploadId;
+    const notificationUrl = `${requireEnv("SUPABASE_URL").replace(/\/+$/u, "")}/functions/v1/cloudinaryWebhook`;
     const params = {
       allowed_formats: "webp",
       folder,
+      notification_url: notificationUrl,
       overwrite: "false",
       public_id: publicId,
       timestamp: String(timestamp),
@@ -83,6 +162,7 @@ export async function handleUploadAction(
       allowedFormats: params.allowed_formats,
       cloudName: requireEnv("CLOUDINARY_CLOUD_NAME"),
       folder,
+      notificationUrl,
       overwrite: params.overwrite,
       publicId,
       signature: await createCloudinaryUploadSignature(params),
@@ -94,18 +174,27 @@ export async function handleUploadAction(
 
   if (action === "finalizeImageUpload") {
     const uploadId = asString(payload.uploadId);
-    const { data, error } = await supabase.schema("app_private").from("uploads")
-      .update({ status: "ready", updated_at: new Date().toISOString() })
-      .eq("id", uploadId)
-      .eq("owner_uid", auth.uid)
-      .select("*")
-      .single();
-    if (error) throw error;
+    let data: JsonRecord | null = null;
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const result = await supabase.schema("app_private").from("uploads")
+        .select("*")
+        .eq("id", uploadId)
+        .eq("owner_uid", auth.uid)
+        .maybeSingle();
+      if (result.error) throw result.error;
+      if (result.data?.status === "failed") throw new Error("upload-validation-failed");
+      if (result.data?.status === "ready") {
+        data = result.data as JsonRecord;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    if (!data) throw new Error("upload-not-ready");
     return {
-      height: data.height ?? 0,
+      height: Number(data.height ?? 0),
       storagePath: data.cloudinary_public_id,
       uploadId: data.id,
-      width: data.width ?? 0,
+      width: Number(data.width ?? 0),
     };
   }
 
@@ -130,18 +219,46 @@ export async function handleUploadAction(
 
   const uploadIds = Array.isArray(payload.uploadIds) ? payload.uploadIds.map((id) => asString(id)).filter(Boolean).slice(0, 50) : [];
   const { data, error } = await supabase.schema("app_private").from("uploads")
-    .select("id,cloudinary_public_id")
+    .select("id,owner_uid,cloudinary_public_id,attached_target_type,attached_target_id,delivery_url,delivery_url_expires_at")
     .in("id", uploadIds)
     .in("status", ["ready", "attached"]);
   if (error) throw error;
-  const expiresAtMs = Date.now() + 15 * 60 * 1000;
+  const resolved = await Promise.all((data ?? []).map(async (upload) => {
+    const access = await uploadAccess(upload as JsonRecord, auth, supabase);
+    if (!access.allowed || !upload.cloudinary_public_id) return null;
+    if (!access.privateDelivery) {
+      return {
+        expiresAtMs: Date.now() + PUBLIC_URL_CACHE_MS,
+        id: upload.id,
+        url: await createCloudinaryAuthenticatedImageUrl(upload.cloudinary_public_id),
+      };
+    }
+    const cachedExpiresAtMs = Date.parse(upload.delivery_url_expires_at ?? "");
+    if (
+      upload.delivery_url
+      && Number.isFinite(cachedExpiresAtMs)
+      && cachedExpiresAtMs > Date.now() + PRIVATE_URL_REFRESH_BUFFER_MS
+    ) {
+      return { expiresAtMs: cachedExpiresAtMs, id: upload.id, url: upload.delivery_url };
+    }
+    const expiresAt = new Date(Date.now() + PRIVATE_URL_LIFETIME_MS);
+    const url = await createCloudinaryExpiringImageUrl(upload.cloudinary_public_id, expiresAt);
+    const { error: cacheError } = await supabase.schema("app_private").from("uploads").update({
+      delivery_url: url,
+      delivery_url_expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", upload.id);
+    if (cacheError) throw cacheError;
+    return { expiresAtMs: expiresAt.getTime(), id: upload.id, url };
+  }));
+  const available = resolved.filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  const expiresAtMs = available.length
+    ? Math.min(...available.map((entry) => entry.expiresAtMs))
+    : Date.now();
   return {
-    errors: {},
-    expiresAtByUploadId: Object.fromEntries((data ?? []).map((upload) => [upload.id, expiresAtMs])),
+    errors: Object.fromEntries(uploadIds.filter((id) => !available.some((entry) => entry.id === id)).map((id) => [id, "not-found"])),
+    expiresAtByUploadId: Object.fromEntries(available.map((entry) => [entry.id, entry.expiresAtMs])),
     expiresAtMs,
-    urls: Object.fromEntries(await Promise.all((data ?? []).map(async (upload) => [
-      upload.id,
-      await createCloudinaryAuthenticatedImageUrl(upload.cloudinary_public_id),
-    ]))),
+    urls: Object.fromEntries(available.map((entry) => [entry.id, entry.url])),
   };
 }

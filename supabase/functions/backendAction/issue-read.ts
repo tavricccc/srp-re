@@ -14,6 +14,7 @@ import {
   readCursorDate,
 } from "./utils.ts";
 import { canReadIssue, issueToReadableResponse, selectIssue } from "./issue-shared.ts";
+import { INPUT_LIMITS, optionalText } from "./validation.ts";
 
 const ACTIVE_PUBLIC_STATUSES = ["pending", "processing"];
 const ACTIVE_PRIVATE_STATUSES = ["under-review", "pending", "processing"];
@@ -58,7 +59,8 @@ async function listIssues(
 
   query = query.in("status", getReadableStatusValues(category, asString(payload.statusBucket, "active"), auth));
   if (action === "searchIssues") {
-    query = query.ilike("title_search", `%${asString(payload.titleQuery).toLowerCase()}%`);
+    const titleQuery = optionalText(payload.titleQuery, "search", INPUT_LIMITS.search).toLowerCase();
+    query = query.ilike("title_search", `%${titleQuery.replace(/[%_]/gu, "\\$&")}%`);
   }
 
   const cursor = readCursor(payload);

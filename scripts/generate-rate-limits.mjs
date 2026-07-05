@@ -39,6 +39,7 @@ async function readRateLimitsConfig(projectRoot) {
   const supportToggleHourly = raw.supportToggleHourly || {};
   const announcementLikeHourly = raw.announcementLikeHourly || {};
   const pushTokenWriteHourly = raw.pushTokenWriteHourly || {};
+  const imageUploads = raw.imageUploads || {};
   const imageCompression = raw.imageCompression || {};
 
   function readLimitConfig(name, value) {
@@ -57,6 +58,11 @@ async function readRateLimitsConfig(projectRoot) {
     supportToggleHourly: readLimitConfig('supportToggleHourly', supportToggleHourly),
     announcementLikeHourly: readLimitConfig('announcementLikeHourly', announcementLikeHourly),
     pushTokenWriteHourly: readLimitConfig('pushTokenWriteHourly', pushTokenWriteHourly),
+    imageUploads: {
+      issueMaxImages: assertPositiveInteger(imageUploads.issueMaxImages, 'imageUploads.issueMaxImages 必須是正整數。'),
+      announcementMaxImages: assertPositiveInteger(imageUploads.announcementMaxImages, 'imageUploads.announcementMaxImages 必須是正整數。'),
+      commentMaxImages: assertPositiveInteger(imageUploads.commentMaxImages, 'imageUploads.commentMaxImages 必須是正整數。'),
+    },
     imageCompression: {
       maxUploadKilobytes: assertPositiveInteger(imageCompression.maxUploadKilobytes, 'imageCompression.maxUploadKilobytes 必須是正整數。'),
       maxUploadBytes: assertPositiveInteger(imageCompression.maxUploadKilobytes, '') * 1024,

@@ -4,17 +4,18 @@ import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import { requireAdmin } from "./auth.ts";
 import { announcementToResponse } from "./announcement-shared.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
-import { markMarkdownUploadsAttached } from "./uploads.ts";
+import { markMarkdownUploadsAttached, queueAttachedUploadsForDeletion } from "./uploads.ts";
 import { asBoolean, utcHourWindow } from "./utils.ts";
+import { INPUT_LIMITS, requiredText } from "./validation.ts";
 
 async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   requireAdmin(auth);
-  const content = asString(payload.content);
+  const content = requiredText(payload.content, "content", INPUT_LIMITS.content);
   const { data, error } = await supabase.schema("app_private").from("announcements").insert({
     author_uid: auth.uid,
     author_name: auth.name || "管理員",
     author_photo_url: auth.photoUrl,
-    title: asString(payload.title),
+    title: requiredText(payload.title, "title", INPUT_LIMITS.title),
     content,
   }).select("*").single();
   if (error) throw error;
@@ -31,9 +32,9 @@ async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
 
 async function updateAnnouncement(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   requireAdmin(auth);
-  const content = asString(payload.content);
+  const content = requiredText(payload.content, "content", INPUT_LIMITS.content);
   const { data, error } = await supabase.schema("app_private").from("announcements").update({
-    title: asString(payload.title),
+    title: requiredText(payload.title, "title", INPUT_LIMITS.title),
     content,
   }).eq("id", asString(payload.announcementId)).select("*").single();
   if (error) throw error;
@@ -51,6 +52,13 @@ async function updateAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
 async function deleteAnnouncement(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
   requireAdmin(auth);
   const announcementId = asString(payload.announcementId);
+  const { data: comments, error: commentsError } = await supabase.schema("app_private")
+    .from("announcement_comments").select("id").eq("announcement_id", announcementId);
+  if (commentsError) throw commentsError;
+  await queueAttachedUploadsForDeletion(supabase, [
+    { id: announcementId, type: "announcement" },
+    ...(comments ?? []).map((comment) => ({ id: comment.id, type: "announcement_comment" as const })),
+  ]);
   await supabase.schema("app_private").from("outbox_events").insert({
     event_type: "announcement.deleted",
     target_type: "announcement",

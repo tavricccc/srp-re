@@ -28,6 +28,7 @@ interface ImageUploadSession {
   cloudName: string;
   folder?: string;
   overwrite?: string;
+  notificationUrl?: string;
   publicId: string;
   signature: string;
   timestamp: number;
@@ -77,6 +78,9 @@ export async function createImageUploadPolicy(file: File, width: number, height:
     }
     if (session.data.overwrite) {
       body.set('overwrite', session.data.overwrite);
+    }
+    if (session.data.notificationUrl) {
+      body.set('notification_url', session.data.notificationUrl);
     }
     if (session.data.type) {
       body.set('type', session.data.type);

@@ -39,9 +39,13 @@ export async function handleUserAction(
 
   if (action === "cacheUserAvatar") {
     await claimFixedWindowRateLimit(auth.uid, "avatar.cache", taipeiDayWindow(), RATE_LIMITS.avatarCacheDaily);
-    const photoURL = asString(payload.photoURL);
-    const sourceUrl = photoURL || auth.photoUrl;
+    const sourceUrl = auth.photoUrl;
     if (!sourceUrl) return { photoUrl: null };
+    const parsedSourceUrl = new URL(sourceUrl);
+    if (
+      parsedSourceUrl.protocol !== "https:"
+      || !parsedSourceUrl.hostname.toLowerCase().endsWith(".googleusercontent.com")
+    ) throw new Error("avatar-source-not-allowed");
 
     const { data: existing, error: existingError } = await supabase
       .schema("app_private")
@@ -51,11 +55,20 @@ export async function handleUserAction(
       .maybeSingle();
     if (existingError) throw existingError;
 
-    const imageResponse = await fetch(sourceUrl);
+    const imageResponse = await fetch(sourceUrl, {
+      redirect: "error",
+      signal: AbortSignal.timeout(8_000),
+    });
     if (!imageResponse.ok) {
       throw new Error(`avatar-fetch-failed:${imageResponse.status}`);
     }
+    const contentType = imageResponse.headers.get("content-type") ?? "";
+    const contentLength = Number(imageResponse.headers.get("content-length") ?? 0);
+    if (!contentType.startsWith("image/") || contentLength > 5 * 1024 * 1024) {
+      throw new Error("avatar-source-invalid");
+    }
     const imageBuffer = await imageResponse.arrayBuffer();
+    if (imageBuffer.byteLength > 5 * 1024 * 1024) throw new Error("avatar-source-invalid");
     const avatarHash = await sha256Hex(imageBuffer);
     if (existing?.avatar_hash === avatarHash && existing.cached_photo_url) {
       const { error } = await supabase.schema("app_private").from("user_profiles").upsert({

@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import type { Database } from "../_shared/database.ts";
 import { deleteCloudinaryAsset } from "../_shared/cloudinary.ts";
 import { requireEnv } from "../_shared/env.ts";
-import { errorMessage, jsonResponse, requireMethod } from "../_shared/http.ts";
+import { errorMessage, jsonResponse, operationalErrorSummary, requireMethod } from "../_shared/http.ts";
 import { markNotionPageDeleted } from "../_shared/notion.ts";
 import { requireBearerSecret } from "../_shared/webhook.ts";
 
@@ -51,7 +51,7 @@ Deno.serve(async (request) => {
           .schema("app_api")
           .rpc("fail_deletion_job", {
             job_id: job.id,
-            error_message: errorMessage(error),
+            error_message: operationalErrorSummary(error),
           });
         if (failError) throw failError;
       }
@@ -59,6 +59,7 @@ Deno.serve(async (request) => {
 
     return jsonResponse({ ok: true, processedCount: jobs.length });
   } catch (error) {
-    return jsonResponse({ ok: false, error: errorMessage(error) }, { status: 500 });
+    console.error(errorMessage(error));
+    return jsonResponse({ ok: false, error: "worker-failed" }, { status: 500 });
   }
 });

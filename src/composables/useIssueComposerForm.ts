@@ -4,6 +4,7 @@ import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
 import { createIssue } from '@/services/issues';
 import type { IssueRecord, WritableIssueCategory } from '@/types';
+import { RATE_LIMITS } from '@/generated/rate-limits';
 
 interface IssueComposerFormOptions {
   category: Ref<WritableIssueCategory>;
@@ -31,7 +32,9 @@ export function useIssueComposerForm(open: Ref<boolean>, options: IssueComposerF
     uploadError,
     uploadImagesAndBuildContent,
     uploading,
-  } = useMarkdownImageUpload(toRef(form, 'content'), { maxImages: 5 });
+  } = useMarkdownImageUpload(toRef(form, 'content'), {
+    maxImages: RATE_LIMITS.imageUploads.issueMaxImages,
+  });
 
   const submitting = ref(false);
   const showPreview = ref(false);

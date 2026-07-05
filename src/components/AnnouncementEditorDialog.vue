@@ -118,6 +118,7 @@ import { useMarkdownImageUpload } from '@/composables/useMarkdownImageUpload';
 import { useResolvedMarkdown } from '@/composables/useResolvedMarkdown';
 import { extractMarkdownImages, stripMarkdownImages } from '@/lib/markdown-images';
 import type { UploadedImage } from '@/composables/useImageUpload';
+import { RATE_LIMITS } from '@/generated/rate-limits';
 
 const props = defineProps<{
   announcement: AnnouncementRecord | null;
@@ -138,7 +139,7 @@ type ExistingEditorImage = MarkdownImageRecord & {
 const title = ref('');
 const content = ref('');
 const existingImages = ref<ExistingEditorImage[]>([]);
-const maxImages = 5;
+const maxImages = RATE_LIMITS.imageUploads.announcementMaxImages;
 const isOpen = computed(() => props.open);
 const sourceContent = computed(() => props.open ? props.announcement?.content ?? '' : '');
 const { images: resolvedExistingImages } = useResolvedMarkdown(sourceContent);
