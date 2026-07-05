@@ -48,16 +48,12 @@
         />
       </transition>
     </template>
-
-    <template v-else>
-      <GoogleLoginButton :loading="loading" @login="login" />
-    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import GoogleLoginButton from '@/components/ui/GoogleLoginButton.vue';
+
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
 import SettingsPanelContent from '@/components/SettingsPanelContent.vue';
