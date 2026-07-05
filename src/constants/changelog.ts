@@ -23,6 +23,9 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
         title: "調整提案與公告通知文字，提升通知內容一致性。",
       },
       {
+        title: "簡化主導覽項目，統一管理員統計入口位置。",
+      },
+      {
         title: "提升維護穩定性。",
       },
     ],

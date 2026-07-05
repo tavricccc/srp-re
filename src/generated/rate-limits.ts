@@ -3,15 +3,15 @@
 
 export const RATE_LIMITS = {
   "issueCreateDaily": {
-    "limit": 3,
+    "limit": 30,
     "message": "達到上限，明天才能再發。"
   },
   "commentCreateHourly": {
-    "limit": 20,
+    "limit": 200,
     "message": "留言達到上限，稍後再試。"
   },
   "imageUploadDaily": {
-    "limit": 20,
+    "limit": 200,
     "message": "今天的圖片上傳額度已用完。"
   },
   "imageCompression": {

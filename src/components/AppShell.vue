@@ -116,7 +116,7 @@ import { useIssueRouteFilter } from '@/composables/useIssueRouteFilter';
 import { useSession } from '@/composables/useSession';
 import { useNotifications } from '@/composables/useNotifications';
 
-const { isAdmin, isAllowedUser } = useSession();
+const { isAllowedUser } = useSession();
 const { activeFilter } = useIssueRouteFilter();
 const { hasUnread } = useNotifications();
 const route = useRoute();
@@ -147,14 +147,6 @@ const navItems = computed(() => {
       to: { name: 'issues', params: { filter: 'my-proposals' } },
     },
   ];
-  if (isAdmin.value) {
-    items.push({
-      isActive: route.name === 'dashboard',
-      key: 'dashboard',
-      label: '管理員統計',
-      to: { name: 'dashboard' },
-    });
-  }
   return items;
 });
 const mobileRouteNavItems = computed(() => [
@@ -237,7 +229,7 @@ function updateUnderline() {
 }
 
 watch(
-  [activeFilter, isAllowedUser, isAdmin, () => route.name],
+  [activeFilter, isAllowedUser, () => route.name],
   () => {
     updateUnderline();
   },
