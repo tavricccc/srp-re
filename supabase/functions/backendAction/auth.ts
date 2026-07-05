@@ -60,6 +60,11 @@ export async function handleHealthcheck(request: Request, supabase: BackendSupab
     .from("runtime_settings")
     .upsert([
       {
+        key: "firebase_project_id",
+        value: requireEnv("FIREBASE_PROJECT_ID"),
+        updated_at: new Date().toISOString(),
+      },
+      {
         key: "maintenance_worker_url",
         value: `${supabaseUrl}/functions/v1/maintenanceCleanup`,
         updated_at: new Date().toISOString(),

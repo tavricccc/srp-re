@@ -21,12 +21,11 @@ const ACTIVE_PRIVATE_STATUSES = ["under-review", "pending", "processing"];
 const CLOSED_PUBLIC_STATUSES = ["auto-rejected", "infeasible", "completed"];
 const CLOSED_PRIVATE_STATUSES = ["auto-rejected", "review-rejected", "infeasible", "completed"];
 
-function getReadableStatusValues(category: string, statusBucket: string, auth: AuthContext) {
-  const canQueryPrivateStatuses = auth.isAdmin || issueIsPrivateToOwner(category) || issueRequiresReview(category);
+function getStatusValues(statusBucket: string, includePrivate: boolean) {
   if (statusBucket === "closed") {
-    return canQueryPrivateStatuses ? CLOSED_PRIVATE_STATUSES : CLOSED_PUBLIC_STATUSES;
+    return includePrivate ? CLOSED_PRIVATE_STATUSES : CLOSED_PUBLIC_STATUSES;
   }
-  return canQueryPrivateStatuses ? ACTIVE_PRIVATE_STATUSES : ACTIVE_PUBLIC_STATUSES;
+  return includePrivate ? ACTIVE_PRIVATE_STATUSES : ACTIVE_PUBLIC_STATUSES;
 }
 
 async function listIssues(
@@ -57,7 +56,21 @@ async function listIssues(
     query = query.order("created_at", { ascending: false }).order("id", { ascending: false });
   }
 
-  query = query.in("status", getReadableStatusValues(category, asString(payload.statusBucket, "active"), auth));
+  const statusBucket = asString(payload.statusBucket, "active");
+  if (auth.isAdmin || issueIsPrivateToOwner(category)) {
+    query = query.in("status", getStatusValues(statusBucket, true));
+  } else {
+    const publicStatuses = getStatusValues(statusBucket, false);
+    if (issueRequiresReview(category)) {
+      const privateStatuses = getStatusValues(statusBucket, true)
+        .filter((status) => !publicStatuses.includes(status));
+      query = query.or(
+        `status.in.(${publicStatuses.join(",")}),and(author_uid.eq.${auth.uid},status.in.(${privateStatuses.join(",")}))`,
+      );
+    } else {
+      query = query.in("status", publicStatuses);
+    }
+  }
   if (action === "searchIssues") {
     const titleQuery = optionalText(payload.titleQuery, "search", INPUT_LIMITS.search).toLowerCase();
     query = query.ilike("title_search", `%${titleQuery.replace(/[%_]/gu, "\\$&")}%`);

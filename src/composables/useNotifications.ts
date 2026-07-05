@@ -38,21 +38,6 @@ function notificationLoadFailureMessage() {
     : '目前已離線，請恢復網路連線後重新整理。';
 }
 
-function isPersonalNotificationVisible(notification: NotificationRecord, state: NotificationReadState) {
-  if (notification.source !== 'user') return true;
-  if (notification.type === 'announcement_comment_created' || notification.type === 'issue_comment_created') {
-    return state.personalPreferences.comments;
-  }
-  if (
-    notification.type === 'issue_status_changed'
-    || notification.type === 'support_goal_met'
-    || notification.type === 'issue_deleted'
-  ) {
-    return state.personalPreferences.issueUpdates;
-  }
-  return true;
-}
-
 const { user, isAdmin } = useSession();
 const firstPages = ref(emptySourceRecord<NotificationRecord[]>(() => []));
 const extraPages = ref(emptySourceRecord<NotificationRecord[]>(() => []));
@@ -67,7 +52,6 @@ const readState = ref<NotificationReadState>({
 const loading = ref(false);
 const loadingMore = ref(false);
 const error = ref('');
-let firstPageIds = emptySourceRecord(() => '');
 let initialized = false;
 let loadingTimer: number | null = null;
 let subscriptionVersion = 0;
@@ -87,7 +71,6 @@ const notifications = computed(() => {
   });
 
   return items
-    .filter((notification) => isPersonalNotificationVisible(notification, readState.value))
     .map((notification) => ({
       ...notification,
       is_read: Boolean(
@@ -123,7 +106,13 @@ function clearSubscriptions() {
     personalPreferences: { ...defaultPersonalPreferences },
     user: null,
   };
-  firstPageIds = emptySourceRecord(() => '');
+}
+
+function insertRealtimeNotification(source: NotificationSource, notification: NotificationRecord) {
+  const alreadyLoaded = [...firstPages.value[source], ...extraPages.value[source]]
+    .some((item) => item.id === notification.id);
+  if (alreadyLoaded) return;
+  firstPages.value[source] = [notification, ...firstPages.value[source]];
 }
 
 function startSubscriptions() {
@@ -135,6 +124,20 @@ function startSubscriptions() {
   error.value = '';
   const currentVersion = subscriptionVersion;
   const pendingSources = new Set(activeSources.value);
+  const failedSources = new Set<NotificationSource>();
+  const finishSourceLoad = (source: NotificationSource, failed: boolean) => {
+    pendingSources.delete(source);
+    if (failed) failedSources.add(source);
+    else failedSources.delete(source);
+    loading.value = pendingSources.size > 0;
+    if (!loading.value) {
+      clearLoadingTimer();
+      error.value = failedSources.size === activeSources.value.length
+        && notifications.value.length === 0
+        ? notificationLoadFailureMessage()
+        : '';
+    }
+  };
   loadingTimer = window.setTimeout(() => {
     if (currentVersion !== subscriptionVersion) return;
     loading.value = false;
@@ -149,24 +152,24 @@ function startSubscriptions() {
       uid,
       (page) => {
         if (currentVersion !== subscriptionVersion) return;
-        const nextIds = page.notifications.map((notification) => notification.id).join(':');
-        if (firstPageIds[source] && firstPageIds[source] !== nextIds) {
-          extraPages.value[source] = [];
-        }
-        firstPageIds[source] = nextIds;
-        firstPages.value[source] = page.notifications;
+        const merged = new Map([
+          ...firstPages.value[source],
+          ...page.notifications,
+        ].map((notification) => [notification.id, notification]));
+        firstPages.value[source] = [...merged.values()].sort((left, right) =>
+          (right.created_at?.getTime() ?? 0) - (left.created_at?.getTime() ?? 0)
+        );
         cursors.value[source] = page.cursor;
         sourceHasMore.value[source] = page.hasMore;
-        pendingSources.delete(source);
-        loading.value = pendingSources.size > 0;
-        if (!loading.value) clearLoadingTimer();
+        finishSourceLoad(source, false);
+      },
+      (notification) => {
+        if (currentVersion !== subscriptionVersion) return;
+        insertRealtimeNotification(source, notification);
       },
       () => {
         if (currentVersion !== subscriptionVersion) return;
-        pendingSources.delete(source);
-        error.value = notificationLoadFailureMessage();
-        loading.value = pendingSources.size > 0;
-        if (!loading.value) clearLoadingTimer();
+        finishSourceLoad(source, true);
       },
     ));
   });
@@ -177,7 +180,10 @@ function startSubscriptions() {
       if (currentVersion === subscriptionVersion) readState.value = state;
     },
     () => {
-      if (currentVersion === subscriptionVersion) {
+      if (
+        currentVersion === subscriptionVersion
+        && notifications.value.length === 0
+      ) {
         error.value = '通知狀態載入失敗，請稍後再試。';
       }
     },

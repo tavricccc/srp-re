@@ -35,6 +35,7 @@
 
 - supabase/config.toml：Supabase 本機與部署設定，暴露 Supabase 預設 schema、`app_api` 與供 service role Edge Functions 使用的 `app_private` schema，並設定登入同步、受控 action、Cloudinary webhook、outbox worker、刪除工作與維護清理 Edge Functions 的 JWT 驗證模式。
 - supabase/migrations/202607050001_supabase_baseline.sql：單一 Supabase 基線 migration，完整建立 schema、RLS、資料表、RPC、trigger、Realtime publication、索引、冪等、清理排程、圖片時效網址與維護重試設定。
+- supabase/migrations/202607050002_fix_notification_realtime_rls.sql：讓通知 Realtime 的 RLS 依部署 healthcheck 保存的 Firebase project ID 驗證 token audience，確保重置後仍可正常訂閱。
 - supabase/functions/backendAction/index.ts：前端受控 action HTTP 入口，集中 CORS、Firebase 驗證、使用者角色查詢、healthcheck、action 分派與冪等保護，不直接承載各領域資料流程。
 - supabase/functions/backendAction/types.ts：受控 action 共用 Supabase client、身份與 JSON record 型別。
 - supabase/functions/backendAction/utils.ts：受控 action 共用 cursor、時間、數值、布林與台北日界限工具。
@@ -44,7 +45,7 @@
 - supabase/functions/backendAction/uploads.ts：Cloudinary 上傳 session、上傳完成確認、Markdown 圖片附加標記、圖片 URL 解析與外部圖片清理 action。
 - supabase/functions/backendAction/issue-shared.ts：提案讀取權限、作者欄位清洗、提案/留言回應正規化與單筆提案查詢 helper。
 - supabase/functions/backendAction/issues.ts：提案 action 分派器，依 read / write / comments 子模組處理。
-- supabase/functions/backendAction/issue-read.ts：提案列表、搜尋、我的提案、已附議 id 與私密作者資料讀取；審核類別會先納入本人可看的私密狀態再由權限過濾。
+- supabase/functions/backendAction/issue-read.ts：提案列表、搜尋、我的提案、已附議 id 與私密作者資料讀取；審核類別在查詢階段合併公開狀態與本人可讀私密狀態，避免分頁後過濾漏資料。
 - supabase/functions/backendAction/issue-create.ts：新增提案、分類審核狀態、作者私密保存、限流與建立通知/同步事件。
 - supabase/functions/backendAction/issue-moderation.ts：管理員提案狀態調整、審核退回原因、期限更新與狀態通知事件。
 - supabase/functions/backendAction/issue-support.ts：提案附議/取消附議、附議數同步事件與達標通知事件。
@@ -59,7 +60,7 @@
 - supabase/functions/backendAction/dashboard.ts：管理員統計資料、同步/通知/推播/清理異常、最近維護排程結果彙整與分類使用概況。
 - supabase/functions/syncUser/index.ts：Firebase 登入後同步使用者 custom claim 與 Supabase app role 的 Edge Function，依 ADMIN_EMAILS 將使用者角色寫入 user_roles，與受控 action 共用登入資格驗證。
 - supabase/functions/cloudinaryWebhook/index.ts：Cloudinary 上傳完成 webhook，限制 POST、驗證簽章並安全解析 payload 後將 pending upload 轉為 ready。
-- supabase/functions/outboxWorker/index.ts：Outbox worker wake-up endpoint，限制 POST 並驗證 secret 後批次 claim pending events，依事件建立廣播、管理員或個人通知，依收件人與推播偏好送出 FCM 並記錄送達結果，同步 Notion 狀態、留言、附議數與刪除標記。
+- supabase/functions/outboxWorker/index.ts：Outbox worker wake-up endpoint，限制 POST 並驗證 secret 後批次 claim pending events，依固定事件規格建立廣播、管理員或作者通知，依收件人與推播偏好送出 FCM 並記錄送達結果，同步 Notion 狀態、留言、附議數與刪除標記。
 - supabase/functions/processDeletionJobs/index.ts：外部資源刪除工作入口，限制 POST 並驗證 secret 後處理 Cloudinary / Notion 清理，保留失敗的可重試 metadata。
 - supabase/functions/maintenanceCleanup/index.ts：維護清理手動入口，限制 POST 並驗證 secret 後呼叫資料庫清理 RPC；日常清理由 Supabase cron 直接執行同一 RPC。
 - supabase/functions/_shared/env.ts：Edge Functions 環境變數讀取 helper。
@@ -214,7 +215,8 @@
 - src/composables/useShareUrl.ts：分享 URL 複製 helper，優先使用 Clipboard API 並在失敗時 fallback 到 textarea copy。
 - src/composables/useMarkdown.ts：Markdown 解析與 DOMPurify 消毒，支援 `![alt|寬x高](url)` 圖片尺寸語法、清單續行顯示修正，並輸出 lazy/decode 屬性。
 - src/composables/useResolvedMarkdown.ts：解析 Markdown 中的 `srp-upload://` 圖片，透過 Cloud Function 換取 preview/full signed URL 後供渲染元件使用。
-- src/composables/useNotifications.ts：以共享通知資料源合併 broadcast/admin/user 三來源通知、分來源 cursor 載入更多、閱讀游標與紅點狀態；集中管理 realtime 訂閱與版本，避免多個通知入口建立重複連線或回寫舊帳號快照。
+- src/composables/useNotifications.ts：以共享通知資料源合併 broadcast/admin/user 三來源通知、分來源 cursor 載入更多、閱讀游標與紅點狀態；集中管理 realtime 訂閱並將新通知增量合併到本地分頁，避免覆蓋已載入內容。
+- src/composables/useNotificationNavigation.ts：通知目標導航流程，先經受控讀取確認公告或提案仍存在且目前使用者可讀，再使用後端回傳的真實分類開啟詳情。
 - src/composables/useContentUpdatePrompt.ts：監聽通知 realtime 中的新增提案與公告事件，只維護列表有新內容提示狀態，資料本體仍交由既有 backendAction 分頁刷新。
 - src/composables/usePushNotifications.ts：Web Push 推播偏好管理，負責瀏覽器支援與權限狀態、目前裝置 service worker token 註冊 / 關閉、通知分類偏好、跨裝置狀態校正與前景訊息 toast。
 - src/composables/useAnnouncements.ts：公告列表依排序快取分段讀取、依螢幕高度決定讀取批量、手動重新整理、底部自動載入更多與載入 / 錯誤狀態管理。
@@ -277,7 +279,7 @@
 - src/services/issues-read-comments.ts：提案留言讀取、日期與 cursor 正規化。
 - src/services/issues-read-shared.ts：提案 read service 共用 response 型別。
 - src/services/issues-write.ts：所有寫入、附議、留言與審核異動，統一呼叫 Supabase 後端安全端點。
-- src/services/notifications.ts：App 內通知來源訂閱、閱讀狀態、單裝置 Web Push token 與通知分類偏好服務；realtime channel 使用唯一 topic，並正規化通知分頁 cursor，避免重新連線時與尚未移除的舊訂閱衝突。
+- src/services/notifications.ts：App 內通知來源訂閱、閱讀狀態、單裝置 Web Push token 與通知分類偏好服務；realtime channel 依 broadcast/admin/user 來源或 recipient 過濾 INSERT，並正規化通知與分頁 cursor。
 - src/services/announcements.ts：公告排序分頁、單筆讀取、讚與留言異動服務，並在服務邊界正規化公告與留言分頁 cursor。
 - src/services/dashboard.ts：平台 Dashboard 與登入使用紀錄服務，將後端 stats / operations response 正規化為前端 Date 型別。
 - src/services/uploads.ts：Cloudinary authenticated 圖片直傳服務，向後端取得簽名 session 後直傳 Cloudinary，並提供 signed delivery URL 解析、快取與刪除 action。

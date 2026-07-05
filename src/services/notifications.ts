@@ -193,24 +193,36 @@ export function subscribeNotificationSource(
   source: NotificationSource,
   uid: string,
   callback: (page: NotificationSourcePage) => void,
+  onInsert: (notification: NotificationRecord) => void,
   onError?: (error: Error) => void,
 ) {
   const client = getSupabaseClient();
   const channelName = `notifications:${source}:${uid}:${realtimeChannelSerial += 1}`;
-  const refresh = () => {
+  const loadFirstPage = () => {
     void fetchNotificationSourcePage(source, uid, null)
       .then(callback)
       .catch((error) => onError?.(toReadableBackendError(error)));
   };
+  const filter = source === "user" ? `recipient_uid=eq.${uid}` : `source=eq.${source}`;
   const channel = client
     .channel(channelName)
     .on('postgres_changes', {
-      event: '*',
+      event: 'INSERT',
+      filter,
       schema: 'app_private',
       table: 'notifications',
-    }, refresh)
-    .subscribe();
-  refresh();
+    }, (payload) => {
+      const data = payload.new as Record<string, unknown>;
+      if (data.source !== source) return;
+      if (source === 'user' && data.recipient_uid !== uid) return;
+      onInsert(normalizeNotificationRecord(source, data));
+    })
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        onError?.(new Error('notification-realtime-unavailable'));
+      }
+    });
+  loadFirstPage();
 
   return () => {
     void client.removeChannel(channel);
@@ -254,10 +266,15 @@ export function subscribeNotificationReadState(
     .channel(channelName)
     .on('postgres_changes', {
       event: '*',
+      filter: `uid=eq.${uid}`,
       schema: 'app_private',
       table: 'notification_states',
     }, refresh)
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        onError?.(new Error('notification-state-realtime-unavailable'));
+      }
+    });
   refresh();
 
   return () => {

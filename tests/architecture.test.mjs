@@ -284,6 +284,16 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
   assert.match(outboxWorker, /query = query\.eq\("uid", recipientUid\)/u);
   assert.match(outboxWorker, /source === "admin"/u);
   assert.match(outboxWorker, /\.from\("user_roles"\)/u);
+  assert.match(outboxWorker, /title: "新提案待審核"/u);
+  assert.match(outboxWorker, /title: "新提案待處理"/u);
+  assert.match(outboxWorker, /title: isReviewApproved \? "提案審核已通過" : "提案狀態已變更"/u);
+  assert.match(outboxWorker, /`\$\{title\}已通過審核並開放附議。`/u);
+  assert.match(outboxWorker, /title: "提案有新的留言"/u);
+  assert.match(outboxWorker, /title: "提案已達附議門檻"/u);
+  assert.match(outboxWorker, /title: "提案已被刪除"/u);
+  assert.match(outboxWorker, /title: "有新的公告"/u);
+  assert.match(outboxWorker, /title: "公告有新的留言"/u);
+  assert.match(outboxWorker, /return text\.slice\(0, 80\)/u);
 });
 
 test('private issue data and upload URLs stay behind backend authorization', async () => {
@@ -317,6 +327,8 @@ test('notification realtime subscriptions are shared and collision-resistant', a
   const notificationsComposable = await read('src/composables/useNotifications.ts');
   const notificationsService = await read('src/services/notifications.ts');
   const appResume = await read('src/composables/useAppResume.ts');
+  const realtimeMigration = await read('supabase/migrations/202607050002_fix_notification_realtime_rls.sql');
+  const backendAuth = await read('supabase/functions/backendAction/auth.ts');
 
   assert.match(notificationsComposable, /let initialized = false/u);
   assert.match(notificationsComposable, /ensureNotificationsInitialized/u);
@@ -325,5 +337,29 @@ test('notification realtime subscriptions are shared and collision-resistant', a
   assert.match(notificationsService, /let realtimeChannelSerial = 0/u);
   assert.match(notificationsService, /channelName = `notifications:\$\{source\}:\$\{uid\}:\$\{realtimeChannelSerial \+= 1\}`/u);
   assert.match(notificationsService, /channelName = `notification-state:\$\{uid\}:\$\{realtimeChannelSerial \+= 1\}`/u);
+  assert.match(notificationsService, /event: 'INSERT'/u);
+  assert.match(notificationsService, /recipient_uid=eq\.\$\{uid\}/u);
+  assert.match(notificationsService, /source=eq\.\$\{source\}/u);
+  assert.match(notificationsService, /filter: `uid=eq\.\$\{uid\}`/u);
+  assert.match(notificationsComposable, /insertRealtimeNotification/u);
+  assert.doesNotMatch(notificationsComposable, /isPersonalNotificationVisible/u);
+  assert.match(realtimeMigration, /where key = 'firebase_project_id'/u);
+  assert.match(backendAuth, /key: "firebase_project_id"/u);
   assert.match(appResume, /export function registerAppResumeHandler/u);
+});
+
+test('notification navigation verifies target access before routing', async () => {
+  const navigation = await read('src/composables/useNotificationNavigation.ts');
+  const notificationBell = await read('src/components/NotificationBell.vue');
+  const notificationsView = await read('src/views/NotificationsView.vue');
+  const issueRead = await read('supabase/functions/backendAction/issue-read.ts');
+
+  assert.match(navigation, /await fetchIssueRecordById\(notification\.target_id\)/u);
+  assert.match(navigation, /filter: issue\.category/u);
+  assert.match(navigation, /notification\.type === 'issue_deleted'/u);
+  assert.match(notificationBell, /return notification\.title/u);
+  assert.match(notificationBell, /return notification\.body_preview \|\| ''/u);
+  assert.match(notificationsView, /return notification\.title/u);
+  assert.match(notificationsView, /return notification\.body_preview \|\| ''/u);
+  assert.match(issueRead, /and\(author_uid\.eq\.\$\{auth\.uid\},status\.in\./u);
 });

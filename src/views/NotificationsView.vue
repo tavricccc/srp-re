@@ -95,16 +95,13 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import AuthorAvatar from '@/components/AuthorAvatar.vue';
-import { ISSUE_STATUS_LABELS } from '@/constants/statuses';
-import { useFilter } from '@/composables/useFilter';
+import { useNotificationNavigation } from '@/composables/useNotificationNavigation';
 import { useNotifications } from '@/composables/useNotifications';
 import { formatDate } from '@/lib/format';
 import type { NotificationRecord } from '@/types';
 
-const router = useRouter();
-const { activeFilter } = useFilter();
+const { openNotificationTarget } = useNotificationNavigation();
 const {
   notifications,
   hasMore,
@@ -121,60 +118,11 @@ onMounted(async () => {
 });
 
 function notificationTitle(notification: NotificationRecord) {
-  if (notification.type === 'announcement_created' || notification.type === 'issue_created') {
-    return notification.title;
-  }
-  if (notification.type === 'announcement_comment_created' || notification.type === 'issue_comment_created') {
-    return notification.body_preview || '留言內容';
-  }
-  if (notification.type === 'issue_deleted') {
-    return notification.title;
-  }
-  if (notification.type === 'support_goal_met') {
-    return notification.title;
-  }
-  if (notification.type === 'issue_status_changed' && notification.old_status === 'under-review' && notification.new_status === 'pending') {
-    return '提案審核已通過';
-  }
-  if (notification.type === 'issue_status_changed' && notification.new_status === 'review-rejected') {
-    return '提案審核未通過';
-  }
-  return '提案狀態已更新';
+  return notification.title;
 }
 
 function notificationBody(notification: NotificationRecord) {
-  const actor = notification.actor_name ?? '有人';
-  if (notification.type === 'announcement_created') {
-    return `${actor}發布了一則新公告`;
-  }
-  if (notification.type === 'issue_created') {
-    return `${actor}發布了一則新提案`;
-  }
-  if (notification.type === 'announcement_comment_created') {
-    return `${actor}在公告下留言`;
-  }
-  if (notification.type === 'issue_comment_created') {
-    return `${actor}在提案下留言`;
-  }
-  if (notification.type === 'issue_deleted') {
-    if (notification.body_preview === 'comment') {
-      return '該留言已被刪除';
-    }
-    return '該提案已被刪除';
-  }
-  if (notification.type === 'support_goal_met') {
-    return '提案附議已達標';
-  }
-  if (notification.type === 'issue_status_changed' && notification.new_status === 'review-rejected' && notification.body_preview) {
-    return `${notification.title}：${notification.body_preview}`;
-  }
-  if (notification.type === 'issue_status_changed' && notification.new_status) {
-    if (notification.body_preview) {
-      return `${notification.title}：${ISSUE_STATUS_LABELS[notification.new_status]}，${notification.body_preview}`;
-    }
-    return `${notification.title}：${ISSUE_STATUS_LABELS[notification.new_status]}`;
-  }
-  return notification.title;
+  return notification.body_preview || '';
 }
 
 function notificationIcon(notification: NotificationRecord) {
@@ -200,17 +148,6 @@ function isCommentNotification(notification: NotificationRecord) {
 }
 
 function openNotification(notification: NotificationRecord) {
-  if (notification.target_type === 'announcement') {
-    router.push({ name: 'announcement-detail', params: { announcementId: notification.target_id } });
-    return;
-  }
-
-  router.push({
-    name: 'issue-detail',
-    params: {
-      filter: notification.issue_category ?? activeFilter.value,
-      issueId: notification.target_id,
-    },
-  });
+  void openNotificationTarget(notification);
 }
 </script>

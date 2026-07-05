@@ -40,7 +40,7 @@ function asString(value: unknown, fallback = "") {
 
 function preview(value: unknown) {
   const text = asString(value).replace(/\s+/gu, " ").trim();
-  return text.length > 80 ? `${text.slice(0, 80)}...` : text;
+  return text.slice(0, 80);
 }
 
 function issueStatusLabel(status: string) {
@@ -108,9 +108,11 @@ function notificationForEvent(event: OutboxEvent): Record<string, unknown> | nul
       type: "issue_status_changed",
       target_type: "issue",
       target_id: event.target_id,
-      title: isReviewApproved ? `提案審核已通過：${title}` : "提案狀態已變更",
+      title: isReviewApproved ? "提案審核已通過" : "提案狀態已變更",
       actor_uid: event.actor_uid,
-      body_preview: isReviewApproved ? "你的提案已通過審核並開放附議。" : `${title}現在狀態為${issueStatusLabel(newStatus)}`,
+      body_preview: isReviewApproved
+        ? `${title}已通過審核並開放附議。`
+        : `${title}現在狀態為${issueStatusLabel(newStatus)}`,
       old_status: oldStatus,
       new_status: newStatus,
       issue_category: asString(event.payload.issue_category),
