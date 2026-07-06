@@ -140,6 +140,16 @@ export function usePushNotifications() {
         token: currentToken || undefined,
       });
       applyPreference(preference);
+
+      if (permission.value !== 'granted' && preference.deviceEnabled) {
+        const cleaned = await unregisterPushToken({
+          deviceId,
+          permission: permission.value,
+          token: currentToken || undefined,
+        });
+        applyPreference(cleaned);
+      }
+
       initialized.value = true;
     } catch (caught) {
       error.value = readableError(caught);
@@ -278,7 +288,7 @@ export function usePushNotifications() {
   }
 
   return {
-    enabled: readonly(deviceEnabled),
+    enabled: computed(() => deviceEnabled.value && permission.value === 'granted'),
     error: readonly(error),
     initialized: readonly(initialized),
     loading: readonly(loading),

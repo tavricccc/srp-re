@@ -2,6 +2,23 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "修正推播通知設定狀態",
+    version: "v2.0.58",
+    date: "2026-07-06",
+    time: "22:33",
+    items: [
+      {
+        title: "修正未授權裝置上推播通知開關錯誤顯示為開啟的問題。",
+      },
+      {
+        title: "強化推播狀態判定，結合瀏覽器權限與伺服器端裝置 Token 狀態。",
+      },
+      {
+        title: "新增推播權限失效時的自動清理機制，維護系統資料整潔。",
+      },
+    ],
+  },
+  {
     title: "調整提案分類維護方式",
     version: "v2.0.57",
     date: "2026-07-06",

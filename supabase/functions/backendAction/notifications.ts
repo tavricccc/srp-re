@@ -130,10 +130,24 @@ export async function handleNotificationAction(
     state.push_comments_enabled = comments;
     state.push_issue_updates_enabled = issueUpdates;
   }
+  const deviceId = asString(payload.deviceId);
+  let isDeviceEnabled = false;
+  if (deviceId) {
+    const { data: deviceToken, error: deviceTokenError } = await supabase
+      .schema("app_private")
+      .from("push_tokens")
+      .select("token")
+      .eq("uid", auth.uid)
+      .eq("device_id", deviceId)
+      .maybeSingle();
+    if (deviceTokenError) throw deviceTokenError;
+    isDeviceEnabled = Boolean(deviceToken);
+  }
+
   const { count, error: countError } = await supabase.schema("app_private").from("push_tokens").select("*", { count: "exact", head: true }).eq("uid", auth.uid);
   if (countError) throw countError;
   return {
-    deviceEnabled: Boolean(asString(payload.deviceId)),
+    deviceEnabled: isDeviceEnabled,
     enabled: (count ?? 0) > 0,
     personalPreferences: {
       comments: state.push_comments_enabled !== false,
