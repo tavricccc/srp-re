@@ -2,6 +2,17 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "提升系統穩定性",
+    version: "v2.0.46",
+    date: "2026-07-06",
+    time: "12:46",
+    items: [
+      {
+        title: "強化重複送出與推播設定流程的處理穩定性，降低異常操作造成資料重複或無效設定的風險。",
+      },
+    ],
+  },
+  {
     title: "提升頁面載入速度",
     version: "v2.0.45",
     date: "2026-07-06",

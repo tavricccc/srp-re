@@ -3,6 +3,12 @@ import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { applyDescendingDateCursor, asNumber, readCursor, toMs, utcHourWindow } from "./utils.ts";
+import { requiredText } from "./validation.ts";
+
+const PUSH_TOKEN_LIMITS = {
+  deviceId: 160,
+  token: 4096,
+} as const;
 
 function notificationToResponse(notification: JsonRecord, openedAt: string | null) {
   return {
@@ -90,10 +96,12 @@ export async function handleNotificationAction(
   const state = await upsertNotificationState(supabase, auth.uid);
   if (action === "registerPushToken") {
     await claimFixedWindowRateLimit(auth.uid, "push-token.write", utcHourWindow(), RATE_LIMITS.pushTokenWriteHourly);
+    const deviceId = requiredText(payload.deviceId, "deviceId", PUSH_TOKEN_LIMITS.deviceId);
+    const token = requiredText(payload.token, "token", PUSH_TOKEN_LIMITS.token);
     const { error } = await supabase.schema("app_private").from("push_tokens").upsert({
       uid: auth.uid,
-      device_id: asString(payload.deviceId),
-      token: asString(payload.token),
+      device_id: deviceId,
+      token,
       permission: asString(payload.permission, "default"),
       platform: asString(payload.platform),
       user_agent: asString(payload.userAgent),

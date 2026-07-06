@@ -64,18 +64,9 @@ async function runWithIdempotency(
   if (claim.completed === true) return asRecord(claim.response);
   if (claim.claimed !== true) throw new Error("request-in-progress");
 
+  let response: JsonRecord;
   try {
-    const response = await execute();
-    const { error: completeError } = await supabase
-      .schema("app_api")
-      .rpc("complete_idempotency_key", {
-        action_name: action,
-        action_response: response,
-        actor_uid: auth.uid,
-        request_id: requestId,
-      });
-    if (completeError) throw completeError;
-    return response;
+    response = await execute();
   } catch (error) {
     await supabase
       .schema("app_api")
@@ -86,6 +77,17 @@ async function runWithIdempotency(
       });
     throw error;
   }
+
+  const { error: completeError } = await supabase
+    .schema("app_api")
+    .rpc("complete_idempotency_key", {
+      action_name: action,
+      action_response: response,
+      actor_uid: auth.uid,
+      request_id: requestId,
+    });
+  if (completeError) throw completeError;
+  return response;
 }
 
 async function handleAction(
