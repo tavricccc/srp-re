@@ -4,14 +4,14 @@
     :class="{ 'z-50': isDropdownOpen }"
   >
     <!-- Mobile view (condensed card/row format, hidden on md) -->
-    <div class="issue-row-mobile md:hidden">
+    <div class="issue-row-mobile list-row-trigger md:hidden">
       <div class="flex min-w-0 items-center gap-2 w-full">
         <span class="tag shrink-0 px-2 py-0.5 text-xs border-ink-200 bg-ink-100/50 text-ink-700 dark:border-ink-800 dark:bg-ink-950/50">
           公告
         </span>
         <AuthorAvatar :author-uid="announcement.author_uid" :photo-url="announcement.author_photo_url" :name="announcement.author_name" size="sm" :alt-text="`${announcement.author_name} 的頭像`" class="shrink-0" />
         <button
-          class="text-trigger -my-1 flex min-h-10 flex-1 items-center text-left"
+          class="list-row-title-trigger -my-1 flex min-h-10 flex-1 items-center text-left"
           type="button"
           @click.stop="emit('open', announcement)"
         >
@@ -68,6 +68,7 @@
     <!-- Desktop view (md:grid, hidden on mobile) -->
     <div
       class="issue-table-row hidden md:grid"
+      data-list-row-trigger
       :style="{ 'grid-template-columns': tableCols }"
       role="row"
     >
@@ -94,7 +95,7 @@
       <div class="flex items-center gap-2 flex-1 min-w-0 pr-3">
         <button
           type="button"
-          class="text-trigger w-full py-1 text-left text-sm font-semibold tracking-tight text-ink-900 hover:text-ink-950 hover:underline dark:text-ink-100 dark:hover:text-white sm:text-base truncate"
+          class="list-row-title-trigger w-full py-1 text-left text-sm font-semibold tracking-tight text-ink-900 hover:text-ink-950 hover:underline dark:text-ink-100 dark:hover:text-white sm:text-base truncate"
           :title="announcement.title"
           @click="emit('open', announcement)"
         >

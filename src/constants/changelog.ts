@@ -2,6 +2,20 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善手機操作回饋",
+    version: "v2.0.63",
+    date: "2026-07-07",
+    time: "01:28",
+    items: [
+      {
+        title: "改善底部導覽與主要操作按下時的視覺回饋。",
+      },
+      {
+        title: "調整提案與公告列表，點選標題時整列會顯示按下狀態。",
+      },
+    ],
+  },
+  {
     title: "調整留言操作呈現",
     version: "v2.0.62",
     date: "2026-07-07",

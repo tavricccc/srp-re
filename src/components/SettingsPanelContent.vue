@@ -51,7 +51,7 @@
           type="button"
           class="flex w-full items-center justify-between gap-4 text-left"
           :class="[
-            flat ? 'px-1 py-3.5' : 'content-trigger px-3 py-3.5',
+            flat ? 'content-trigger px-1 py-3.5' : 'content-trigger px-3 py-3.5',
             (pushLoading || !pushActionLabel) ? 'opacity-60 cursor-not-allowed' : ''
           ]"
           :disabled="pushLoading || !pushActionLabel"
@@ -88,7 +88,7 @@
             :key="option.key"
             type="button"
             class="flex w-full items-center justify-between gap-4 text-left"
-            :class="flat ? 'px-1 py-3.5 border-b border-ink-100/60 dark:border-ink-800/40 last:border-b-0' : 'content-trigger border border-ink-100 px-3 py-3.5 dark:border-ink-800'"
+            :class="flat ? 'content-trigger px-1 py-3.5 border-b border-ink-100/60 dark:border-ink-800/40 last:border-b-0' : 'content-trigger border border-ink-100 px-3 py-3.5 dark:border-ink-800'"
             :disabled="pushLoading"
             @click="emit('setPreference', option.key, !personalPreferences[option.key])"
           >
@@ -118,7 +118,7 @@
           <RouterLink
             to="/changelog"
             class="flex w-full items-center justify-between gap-3 text-left"
-            :class="flat ? 'px-1 py-4' : 'content-trigger px-3 py-3'"
+            :class="flat ? 'content-trigger px-1 py-4' : 'content-trigger px-3 py-3'"
             @click="emit('close')"
           >
             <span class="flex min-w-0 items-center gap-3">
@@ -136,7 +136,7 @@
             v-if="isAdmin"
             to="/dashboard"
             class="flex w-full items-center justify-between gap-3 text-left"
-            :class="flat ? 'px-1 py-4' : 'content-trigger px-3 py-3'"
+            :class="flat ? 'content-trigger px-1 py-4' : 'content-trigger px-3 py-3'"
             @click="emit('close')"
           >
             <span class="flex min-w-0 items-center gap-3">
