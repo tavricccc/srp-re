@@ -451,33 +451,6 @@
         {{ content.length }} / {{ maxLength }}
       </span>
     </div>
-
-    <!-- Slash Command Floating Menu -->
-    <div
-      v-if="showSlashMenu && filteredCommands.length > 0"
-      ref="slashMenuRef"
-      class="absolute z-[110] max-h-60 w-64 overflow-y-auto rounded-xl border border-ink-200 bg-white p-1.5 shadow-lg dark:border-ink-800 dark:bg-ink-900"
-      :style="{ top: `${slashPosition.top}px`, left: `${slashPosition.left}px` }"
-      @pointerdown.stop
-    >
-      <button
-        v-for="(cmd, index) in filteredCommands"
-        :key="cmd.id"
-        type="button"
-        class="flex w-full items-center gap-3 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors"
-        :class="index === slashMenuIndex ? 'bg-ink-100 dark:bg-ink-800 text-ink-950 dark:text-ink-50' : 'text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-800/50'"
-        @pointerdown.prevent.stop
-        @click="executeCommand(cmd)"
-      >
-        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-ink-50 text-ink-600 dark:bg-ink-950 dark:text-ink-400 shrink-0">
-          <AppIcon :name="cmd.iconName" />
-        </span>
-        <div class="min-w-0 flex-1">
-          <p class="font-semibold leading-normal truncate">{{ cmd.title }}</p>
-          <p class="text-xs text-ink-400 truncate">{{ cmd.subtitle }}</p>
-        </div>
-      </button>
-    </div>
   </div>
 </template>
 
@@ -489,14 +462,11 @@ import VisualTableEditor from './VisualTableEditor.vue';
 import MarkdownToolbar from './MarkdownToolbar.vue';
 import MarkdownImagePreviews from './MarkdownImagePreviews.vue';
 import TableGridPicker from './TableGridPicker.vue';
-import { getCaretCoordinates } from '@/lib/caret';
 import {
   hasMarkdownTables,
   splitMarkdownTextTableBlocks,
 } from '@/lib/markdown-tables';
 import {
-  filterMarkdownEditorCommands,
-  type MarkdownEditorCommand,
   type MarkdownEditorCommandId,
 } from '@/lib/markdown-editor-commands';
 
@@ -506,9 +476,7 @@ export interface MarkdownEditorImage {
   src: string;
 }
 
-const DEFAULT_HELPER_TEXT = '可輸入文字或加入圖片，輸入 / 展開指令選單';
-const MOBILE_HELPER_TEXT = '可輸入文字或加入圖片，使用工具列插入格式';
-const MOBILE_EDITOR_MEDIA_QUERY = '(max-width: 767px)';
+const DEFAULT_HELPER_TEXT = '可輸入文字或加入圖片，使用工具列插入格式';
 
 const props = withDefaults(defineProps<{
   busyLabel?: string;
@@ -612,20 +580,10 @@ watch(textModeBlocks, (blocks) => {
 }, { deep: true });
 
 // Slash command states
-const showSlashMenu = ref(false);
-const slashMenuIndex = ref(0);
-const slashQuery = ref('');
-const slashTriggerIndex = ref(-1);
-const slashPosition = ref({ top: 0, left: 0 });
-const isSlashCommandEnabled = ref(true);
 const isComposingText = ref(false);
 
 // Table Grid Picker states
 const showTablePicker = ref(false);
-
-const filteredCommands = computed(() => {
-  return filterMarkdownEditorCommands(slashQuery.value);
-});
 
 const activeTextarea = computed(() => {
   const currentId = activeTextBlockId.value;
@@ -637,13 +595,7 @@ const activeTextarea = computed(() => {
   return firstTextBlock ? textareaRefs.value[firstTextBlock.id] ?? null : null;
 });
 
-const effectiveHelperText = computed(() => {
-  if (!isSlashCommandEnabled.value && props.helperText === DEFAULT_HELPER_TEXT) {
-    return MOBILE_HELPER_TEXT;
-  }
-
-  return props.helperText;
-});
+const effectiveHelperText = computed(() => props.helperText);
 
 const textBlockTextareaClass = computed(() => (hasTables.value ? 'min-h-[1.75rem]' : props.textareaClass));
 
@@ -725,7 +677,7 @@ function rememberTextareaSelection(blockId: string, textarea: HTMLTextAreaElemen
   };
 }
 
-function insertAtCursor(textToInsert: string, cursorOffsetAfterInsert = 0, removeSlashLength = 0, isBlock = false) {
+function insertAtCursor(textToInsert: string, cursorOffsetAfterInsert = 0, isBlock = false) {
   const blockId = activeTextBlockId.value;
   if (!blockId) return;
 
@@ -734,7 +686,7 @@ function insertAtCursor(textToInsert: string, cursorOffsetAfterInsert = 0, remov
   const currentVal = textBlock.content;
   const { start, end } = getActiveSelection(blockId, currentVal.length);
 
-  const insertStartIdx = start - removeSlashLength;
+  const insertStartIdx = start;
   let prefix = '';
   if (isBlock && insertStartIdx > 0 && currentVal[insertStartIdx - 1] !== '\n') {
     prefix = '\n';
@@ -750,59 +702,48 @@ function insertAtCursor(textToInsert: string, cursorOffsetAfterInsert = 0, remov
   focusTextBlock(blockId, newCursorPos);
 }
 
-function runMarkdownCommand(commandId: MarkdownEditorCommandId, removeSlashLength = 0) {
+function runMarkdownCommand(commandId: MarkdownEditorCommandId) {
   if (commandId === 'h1') {
-    insertAtCursor('# ', 0, removeSlashLength, true);
+    insertAtCursor('# ', 0, true);
     return;
   }
 
   if (commandId === 'h2') {
-    insertAtCursor('## ', 0, removeSlashLength, true);
+    insertAtCursor('## ', 0, true);
     return;
   }
 
   if (commandId === 'list') {
-    insertAtCursor('- ', 0, removeSlashLength, true);
+    insertAtCursor('- ', 0, true);
     return;
   }
 
   if (commandId === 'numlist') {
-    insertAtCursor('1. ', 0, removeSlashLength, true);
+    insertAtCursor('1. ', 0, true);
     return;
   }
 
   if (commandId === 'quote') {
-    insertAtCursor('> ', 0, removeSlashLength, true);
+    insertAtCursor('> ', 0, true);
     return;
   }
 
   if (commandId === 'code') {
-    insertAtCursor('```\n\n```', 4, removeSlashLength, true);
+    insertAtCursor('```\n\n```', 4, true);
     return;
   }
 
   if (commandId === 'divider') {
-    insertAtCursor('---\n', 0, removeSlashLength, true);
+    insertAtCursor('---\n', 0, true);
     return;
   }
 
-  insertAtCursor('', 0, removeSlashLength, false);
-  showSlashMenu.value = false;
+  insertAtCursor('', 0, false);
   showTablePicker.value = true;
 }
 
 function executeToolbarCommand(commandId: MarkdownEditorCommandId) {
   runMarkdownCommand(commandId);
-}
-
-function executeCommand(cmd: MarkdownEditorCommand) {
-  const blockId = activeTextBlockId.value;
-  if (!blockId) return;
-
-  const selection = getActiveSelection(blockId);
-  const lengthToRemove = selection.start - slashTriggerIndex.value;
-  runMarkdownCommand(cmd.id, lengthToRemove);
-  showSlashMenu.value = false;
 }
 
 function onTextBlockInput(blockId: string, e: Event) {
@@ -818,89 +759,16 @@ function onTextBlockInput(blockId: string, e: Event) {
 
   nextTick(() => {
     rememberTextareaSelection(blockId, target);
-    detectSlashCommand();
   });
 }
 
 function handleCompositionStart() {
   isComposingText.value = true;
-  showSlashMenu.value = false;
 }
 
 function handleCompositionEnd(blockId: string, e: CompositionEvent) {
   isComposingText.value = false;
   onTextBlockInput(blockId, e);
-}
-
-function detectSlashCommand() {
-  if (!isSlashCommandEnabled.value || isComposingText.value) {
-    showSlashMenu.value = false;
-    return;
-  }
-
-  const textarea = activeTextarea.value;
-  if (!textarea) return;
-
-  const cursor = textarea.selectionStart;
-  const text = textarea.value.substring(0, cursor);
-
-  const lastNewline = text.lastIndexOf('\n');
-  const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
-  const currentLineText = text.substring(lineStart);
-
-  const slashIdx = currentLineText.lastIndexOf('/');
-  if (slashIdx !== -1) {
-    const query = currentLineText.substring(slashIdx + 1);
-    if (!query.includes(' ')) {
-      showSlashMenu.value = true;
-      slashQuery.value = query;
-      slashTriggerIndex.value = lineStart + slashIdx;
-
-      try {
-        const coords = getCaretCoordinates(textarea, cursor);
-        const textareaRect = textarea.getBoundingClientRect();
-        const rootRect = editorRootRef.value?.getBoundingClientRect();
-        if (!rootRect) return;
-        const caretLeft = textareaRect.left - rootRect.left + coords.left;
-        const desiredLeft = caretLeft + SLASH_MENU_CARET_GAP;
-        const desiredTop = textareaRect.top - rootRect.top + coords.top + coords.height + 6;
-        const maxLeft = rootRect.width - SLASH_MENU_WIDTH - VIEWPORT_PADDING;
-        const fallbackLeft = Math.max(VIEWPORT_PADDING, maxLeft);
-
-        slashPosition.value = {
-          top: Math.max(VIEWPORT_PADDING, desiredTop),
-          left: desiredLeft <= maxLeft ? desiredLeft : fallbackLeft
-        };
-      } catch (err) {
-        slashPosition.value = { top: 40, left: 10 };
-      }
-
-      if (slashMenuIndex.value >= filteredCommands.value.length) {
-        slashMenuIndex.value = 0;
-      }
-      return;
-    }
-  }
-  showSlashMenu.value = false;
-}
-
-function scrollActiveCommandIntoView() {
-  nextTick(() => {
-    const menuEl = slashMenuRef.value;
-    if (!menuEl) return;
-    const items = menuEl.querySelectorAll('button');
-    const activeItem = items[slashMenuIndex.value];
-    if (activeItem) {
-      activeItem.scrollIntoView({ block: 'nearest' });
-    }
-  });
-}
-
-function syncSlashCommandAvailability() {
-  isSlashCommandEnabled.value = !window.matchMedia(MOBILE_EDITOR_MEDIA_QUERY).matches;
-  if (!isSlashCommandEnabled.value) {
-    showSlashMenu.value = false;
-  }
 }
 
 function handleListEnter(e: KeyboardEvent, blockId: string, textarea: HTMLTextAreaElement): boolean {
@@ -953,34 +821,12 @@ function onTextareaKeyDown(e: KeyboardEvent) {
     return;
   }
 
-  if (showSlashMenu.value && filteredCommands.value.length > 0) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      slashMenuIndex.value = (slashMenuIndex.value + 1) % filteredCommands.value.length;
-      scrollActiveCommandIntoView();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      slashMenuIndex.value = (slashMenuIndex.value - 1 + filteredCommands.value.length) % filteredCommands.value.length;
-      scrollActiveCommandIntoView();
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const cmd = filteredCommands.value[slashMenuIndex.value];
-      if (cmd) {
-        executeCommand(cmd);
-      }
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      showSlashMenu.value = false;
-    }
-  } else {
-    if (handleListEnter(e, blockId, textarea)) return;
-    if (e.key === 'Backspace' || e.key === 'Delete') return;
-  }
+  if (handleListEnter(e, blockId, textarea)) return;
+  if (e.key === 'Backspace' || e.key === 'Delete') return;
 }
 
 function deleteTableBlock(tableId: string, focusBlockId?: string, cursorPosition = 0) {
   localContent.value = rebuildContent({}, tableId);
-  showSlashMenu.value = false;
   if (focusBlockId) {
     activeTextBlockId.value = focusBlockId;
     focusTextBlock(focusBlockId, cursorPosition);
@@ -1040,9 +886,6 @@ function insertTableBlock(markdownTable: string) {
   });
 
   focusTextBlock(blockId, start + insertText.length);
-  nextTick(() => {
-    detectSlashCommand();
-  });
 }
 
 function createTable(rows: number, cols: number) {
@@ -1073,7 +916,6 @@ function handleTextareaCursorChange(blockId: string) {
   if (textarea) {
     rememberTextareaSelection(blockId, textarea);
   }
-  detectSlashCommand();
 }
 
 function handleTextBlockFocus(blockId: string) {
@@ -1102,7 +944,6 @@ function deleteTableBlockFromCard(tableId: string) {
 function switchToTableMode(tableId: string) {
   selectedTableId.value = tableId;
   activeMode.value = 'table';
-  showSlashMenu.value = false;
 }
 
 function exitTableMode() {
@@ -1111,20 +952,6 @@ function exitTableMode() {
 }
 
 function handleDocumentClick(e: MouseEvent) {
-  if (showSlashMenu.value) {
-    const slashMenu = slashMenuRef.value;
-    if (
-      slashMenu &&
-      !slashMenu.contains(e.target as Node)
-    ) {
-      const textareas = Object.values(textareaRefs.value).filter(Boolean) as HTMLTextAreaElement[];
-      if (textareas.some((textarea) => textarea.contains(e.target as Node))) {
-        return;
-      }
-      showSlashMenu.value = false;
-    }
-  }
-
   if (showTablePicker.value) {
     const tablePicker = tablePickerRef.value?.$el || tablePickerRef.value;
     const triggerButtons = document.querySelectorAll('.table-btn-trigger');
@@ -1142,14 +969,11 @@ function handleDocumentClick(e: MouseEvent) {
 }
 
 onMounted(() => {
-  syncSlashCommandAvailability();
   document.addEventListener('click', handleDocumentClick);
-  window.addEventListener('resize', syncSlashCommandAvailability);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);
-  window.removeEventListener('resize', syncSlashCommandAvailability);
 });
 </script>
 

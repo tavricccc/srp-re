@@ -13,6 +13,9 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
       {
         title: "將編輯器圖片上傳按鈕與計數整合至 Markdown 工具列中，簡化版面配置。",
       },
+      {
+        title: "移除編輯器輸入區域的「/」指令選單功能，提升輸入流暢度。",
+      },
     ],
   },
   {
