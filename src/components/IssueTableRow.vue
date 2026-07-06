@@ -3,14 +3,14 @@
     class="relative"
     :class="{ 'z-50': isDropdownOpen }"
   >
-    <div class="issue-row-mobile md:hidden">
+    <div class="issue-row-mobile list-row-trigger md:hidden">
       <div class="flex min-w-0 items-center gap-2 w-full">
         <span class="tag shrink-0 px-2 py-0.5 text-xs" :class="statusClass">
           {{ statusLabel }}
         </span>
         <UserAvatar v-if="isOwnIssue" :photo-url="displayPhotoUrl" :name="displayAuthorName" size="sm" :alt-text="`${displayAuthorName} 的頭像`" class="shrink-0" />
         <button
-          class="text-trigger -my-1 flex min-h-10 flex-1 items-center text-left"
+          class="list-row-title-trigger -my-1 flex min-h-10 flex-1 items-center text-left"
           type="button"
           @click.stop="openDetails()"
         >
@@ -70,6 +70,7 @@
     <!-- Desktop full row (hidden below md) -->
     <div
       class="issue-table-row hidden md:grid"
+      data-list-row-trigger
       :style="{ 'grid-template-columns': tableCols }"
       role="row"
     >
@@ -96,7 +97,7 @@
         <UserAvatar v-if="isOwnIssue && issueStoresAuthorPrivately(issue.category) && !isAdmin" :photo-url="displayPhotoUrl" :name="displayAuthorName" size="sm" :alt-text="`${displayAuthorName} 的頭像`" class="shrink-0" />
         <button
           type="button"
-          class="text-trigger w-full py-1 text-left text-sm font-semibold tracking-tight text-ink-900 hover:text-ink-950 hover:underline dark:text-ink-100 dark:hover:text-white sm:text-base truncate"
+          class="list-row-title-trigger w-full py-1 text-left text-sm font-semibold tracking-tight text-ink-900 hover:text-ink-950 hover:underline dark:text-ink-100 dark:hover:text-white sm:text-base truncate"
           :title="issue.title"
           @click="openDetails()"
         >
