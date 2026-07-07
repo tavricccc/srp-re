@@ -65,6 +65,11 @@ if (hasFirebaseMessagingConfig()) {
     const app = firebaseApp.initializeApp(firebaseConfig);
     const messaging = firebaseMessaging.getMessaging(app);
     firebaseMessaging.onBackgroundMessage(messaging, (payload) => {
+      // If the payload contains a notification block, FCM/browser displays it natively.
+      // Do not call showNotification to avoid duplicate notifications on the device.
+      if (payload.notification) {
+        return;
+      }
       const title = payload.data?.title ?? '收到新通知';
       const body = payload.data?.body ?? '';
       const link = payload.data?.link ?? '/';
