@@ -2,6 +2,39 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善頁面載入回饋",
+    version: "v2.0.73",
+    date: "2026-07-07",
+    time: "16:15",
+    items: [
+      {
+        title: "統一頁面切換時的載入提示，讓內容骨架出現前先提供明確回饋。",
+      },
+    ],
+  },
+  {
+    title: "改善手機詳情頁底部操作",
+    version: "v2.0.72",
+    date: "2026-07-07",
+    time: "16:13",
+    items: [
+      {
+        title: "調整手機詳情頁底部間距，避免操作按鈕與留言輸入區被底部導覽列遮住。",
+      },
+    ],
+  },
+  {
+    title: "調整頁面內容寬度",
+    version: "v2.0.71",
+    date: "2026-07-07",
+    time: "16:11",
+    items: [
+      {
+        title: "放寬頁面主要內容寬度限制，讓詳情頁與列表在大螢幕上使用更多可用空間。",
+      },
+    ],
+  },
+  {
     title: "提升提案狀態同步可靠性",
     version: "v2.0.70",
     date: "2026-07-07",

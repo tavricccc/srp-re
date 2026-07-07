@@ -1,7 +1,16 @@
 <template>
   <AppStartupScreen v-if="startupGateOpen" />
   <AppShell v-else>
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <Suspense>
+        <component :is="Component" />
+        <template #fallback>
+          <div class="flex min-h-[40dvh] items-center justify-center" aria-label="正在載入頁面" aria-busy="true">
+            <LoadingSpinner :size="8" />
+          </div>
+        </template>
+      </Suspense>
+    </RouterView>
     <ToastViewport />
     <PushPermissionPromptDialog
       :open="isPushPromptOpen"
@@ -37,6 +46,7 @@ import AppInstallPromptDialog from '@/components/AppInstallPromptDialog.vue';
 import AppUpdatePromptDialog from '@/components/AppUpdatePromptDialog.vue';
 import PushPermissionPromptDialog from '@/components/PushPermissionPromptDialog.vue';
 import ToastViewport from '@/components/ToastViewport.vue';
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import { useAppInstallPrompt } from '@/composables/useAppInstallPrompt';
 import { useAppStartupGate } from '@/composables/useAppStartupGate';
 import { useAppUpdate } from '@/composables/useAppUpdate';

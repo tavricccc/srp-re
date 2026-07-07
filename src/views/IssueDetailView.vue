@@ -1,5 +1,5 @@
 <template>
-  <div class="relative left-1/2 min-h-0 w-[100dvw] max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-0">
     <PageLoadFailure
       v-if="sessionLoadingHasProblem"
       :title="sessionProblemTitle"
