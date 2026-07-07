@@ -16,11 +16,11 @@
     </header>
 
     <div v-if="isDesktopViewport" class="hidden min-h-0 items-stretch gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] xl:grid-cols-[minmax(0,1fr)_32rem]">
-      <div class="flex min-h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-2rem)] min-w-0 flex-col pb-[3px]">
+      <div class="flex min-h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-1rem)] min-w-0 flex-col pb-[3px]">
         <slot name="details" :compact="false" :scroll-content="false" />
         <slot name="actions" :compact="false" />
       </div>
-      <div class="flex h-full min-h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-2rem)] min-w-0 flex-col border-l border-ink-100 pb-[3px] pl-6 pr-1 dark:border-ink-800">
+      <div class="flex h-full min-h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-1rem)] min-w-0 flex-col border-l border-ink-100 pb-[3px] pl-6 pr-1 dark:border-ink-800">
         <slot name="comments" :compact-header="false" />
       </div>
     </div>
@@ -35,8 +35,8 @@
       </div>
 
       <div class="min-h-0 px-1">
-        <div v-show="activeTab === 'details'" class="min-h-0">
-          <div class="min-h-0 px-1 pb-3 pr-2">
+        <div v-show="activeTab === 'details'" class="flex min-h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-4.5rem)] flex-col">
+          <div class="min-h-0 flex-1 px-1 pb-3 pr-2">
             <slot name="details" :compact="true" :scroll-content="false" />
           </div>
           <div class="pb-[calc(var(--app-bottom-nav-height)+0.75rem)]">

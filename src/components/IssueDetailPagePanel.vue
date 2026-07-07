@@ -33,11 +33,11 @@
       />
     </template>
 
-    <template #actions>
+    <template #actions="{ compact }">
       <IssueDetailSupportFooter
         :can-manage="isAdmin || isOwnIssue"
         :is-admin="isAdmin"
-        :compact="false"
+        :compact="compact"
         :created-label="createdLabel"
         :current-user-supported="currentUserSupported"
         :issue="issue"
