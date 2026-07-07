@@ -2,6 +2,17 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "最佳化行動版底部導覽列視覺體驗",
+    version: "v2.0.103",
+    date: "2026-07-08",
+    time: "06:20",
+    items: [
+      {
+        title: "將行動裝置底部導覽列調整為懸浮大膠囊設計，並最佳化選中狀態的膠囊背景塊提示，提升整體介面層次與點按回饋。"
+      }
+    ]
+  },
+  {
     title: "最佳化推播通知可靠性與點擊導向",
     version: "v2.0.102",
     date: "2026-07-08",

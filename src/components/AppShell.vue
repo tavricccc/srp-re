@@ -61,10 +61,10 @@
 
     <nav
       v-if="isAllowedUser"
-      class="app-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-ink-200/80 bg-white/95 px-3 pt-2 backdrop-blur-xl dark:border-ink-800/80 dark:bg-ink-950/95 md:hidden"
+      class="app-bottom-nav fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto max-w-md border border-ink-200/80 bg-white/95 px-3 py-1.5 backdrop-blur-xl dark:border-ink-800/80 dark:bg-ink-950/95 shadow-lg rounded-full md:hidden"
       aria-label="手機主要導覽"
     >
-      <div class="app-bottom-nav__inner mx-auto grid max-w-md grid-cols-5 gap-1">
+      <div class="app-bottom-nav__inner mx-auto grid grid-cols-5 gap-1">
         <RouterLink
           v-for="item in mobileRouteNavItems"
           :key="item.key"
