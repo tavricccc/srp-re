@@ -2,6 +2,17 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善提案列表狀態切換體驗",
+    version: "v2.0.100",
+    date: "2026-07-08",
+    time: "04:52",
+    items: [
+      {
+        title: "調整進行中與已結案的狀態切換介面，以動態分段切換器呈現，提升狀態識別度。"
+      }
+    ]
+  },
+  {
     title: "改善重新載入提示",
     version: "v2.0.99",
     date: "2026-07-08",

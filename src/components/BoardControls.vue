@@ -46,17 +46,38 @@
           </transition>
         </div>
 
-        <button
+        <!-- 狀態分段切換器 (Segmented Control) -->
+        <div
           v-if="activeFilter !== 'my-proposals'"
-          type="button"
-          class="button-secondary flex h-10 !min-h-0 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-ink-700 dark:text-ink-200 md:h-9"
-          :title="`切換到${nextStatusLabel}`"
-          :aria-label="`切換到${nextStatusLabel}`"
-          @click="toggleStatusTab"
+          class="inline-flex h-10 items-center rounded-full bg-ink-100/80 p-1 dark:bg-ink-800/80 md:h-9 shrink-0 gap-0.5"
         >
-          <AppIcon :name="statusTab === 'active' ? 'inbox' : 'list'" :size="3.5" />
-          <span>{{ nextStatusLabel }}</span>
-        </button>
+          <button
+            type="button"
+            class="flex h-full items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-all duration-200 select-none"
+            :class="statusTab === 'active'
+              ? 'bg-white text-ink-950 shadow-sm dark:bg-ink-900 dark:text-ink-50'
+              : 'text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200'"
+            title="查看進行中提案"
+            aria-label="查看進行中提案"
+            @click="statusTab !== 'active' && toggleStatusTab()"
+          >
+            <AppIcon name="list" :size="3.5" />
+            <span v-if="statusTab === 'active'">進行中</span>
+          </button>
+          <button
+            type="button"
+            class="flex h-full items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-all duration-200 select-none"
+            :class="statusTab === 'closed'
+              ? 'bg-white text-ink-950 shadow-sm dark:bg-ink-900 dark:text-ink-50'
+              : 'text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200'"
+            title="查看已結案提案"
+            aria-label="查看已結案提案"
+            @click="statusTab !== 'closed' && toggleStatusTab()"
+          >
+            <AppIcon name="inbox" :size="3.5" />
+            <span v-if="statusTab === 'closed'">已結案</span>
+          </button>
+        </div>
 
         <!-- 排序（圓形 sort 圖示按鈕） -->
         <div class="static md:relative" @click.stop @pointerdown.stop>
@@ -216,7 +237,7 @@ const visibleSortOptions = computed(() =>
     ? issueSortOptions.filter((option) => option.value !== 'ending-soon')
     : issueSortOptions
 );
-const nextStatusLabel = computed(() => props.statusTab === 'active' ? '已結案' : '進行中');
+
 const categoryOptions = ISSUE_FILTER_OPTIONS;
 const isSearchOpen = ref(false);
 const isSortOpen = ref(false);
