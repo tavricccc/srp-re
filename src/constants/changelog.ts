@@ -2,7 +2,18 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    title: "優化啟動階段版本檢查體驗",
+    title: "最佳化啟動畫面視覺",
+    version: "v2.0.101",
+    date: "2026-07-08",
+    time: "05:17",
+    items: [
+      {
+        title: "微調啟動畫面，移除應用程式標題文字以簡化啟動視覺，使載入介面更加乾淨俐落。"
+      }
+    ]
+  },
+  {
+    title: "最佳化啟動階段版本檢查體驗",
     version: "v2.0.101",
     date: "2026-07-08",
     time: "05:17",
@@ -12,9 +23,6 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
       },
       {
         title: "將版本檢查與 Session 檢查採完全平行處理，確保在無更新的正常啟動流程下，完全不增加載入等待時間。"
-      },
-      {
-        title: "微調啟動畫面，移除應用程式標題文字以簡化開屏視覺，使載入介面更加乾淨俐落。"
       }
     ]
   },

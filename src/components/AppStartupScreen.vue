@@ -5,7 +5,7 @@
         <BrandMark custom-class="startup-screen__mark" />
       </div>
 
-      <LoadingSpinner :size="6" class="startup-screen__loader" />
+      <LoadingSpinner :size="8" class="startup-screen__loader" />
     </div>
   </section>
 </template>
@@ -59,18 +59,18 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
   width: min(100%, 28rem);
   flex-direction: column;
   align-items: center;
-  gap: 1.35rem;
+  gap: 3.5rem;
   text-align: center;
   animation: startup-enter 620ms var(--motion-ease-enter) both;
 }
 
 .startup-screen__brand {
   display: grid;
-  height: 6.25rem;
-  width: 6.25rem;
+  height: 8rem;
+  width: 8rem;
   place-items: center;
   border: 1px solid rgb(var(--color-on-surface) / 0.08);
-  border-radius: 1.5rem;
+  border-radius: 2rem;
   background: rgb(var(--color-surface) / 0.76);
   box-shadow: 0 1.25rem 3rem rgb(var(--color-shadow) / 0.12);
   backdrop-filter: blur(18px);
@@ -78,11 +78,13 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 }
 
 .startup-screen__mark {
-  font-size: 4.6rem;
+  font-size: 5.8rem;
 }
 
 .startup-screen__loader {
   color: rgb(var(--color-on-surface));
+  height: 2.25rem !important;
+  width: 2.25rem !important;
 }
 
 @media (prefers-color-scheme: dark) {
