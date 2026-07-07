@@ -44,7 +44,7 @@ export const issueRoutes: RouteRecordRaw[] = [
   {
     path: '/issues/:filter/:issueId',
     name: 'issue-detail',
-    component: () => import('@/views/IssueBoardView.vue'),
+    component: () => import('@/views/IssueDetailView.vue'),
     meta: { requiresAuth: true },
     beforeEnter: validateIssueRoute,
   },

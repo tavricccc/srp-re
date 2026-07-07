@@ -94,55 +94,23 @@
     @close="emit('toggle-form')"
     @submitted="handleIssueSubmitted"
   />
-
-  <IssueDetailsDialog
-    v-if="routeIssue"
-    :open="true"
-    :issue="routeIssue"
-    :current-user-supported="Boolean(routeIssue.currentUserSupported)"
-    :support-count="routeIssue.support_count"
-    :support-closed="routeIssueSupportClosed"
-    :initial-tab="routeIssueInitialTab"
-    @close="closeIssueDetails"
-    @content-unavailable="handleRouteIssueUnavailable"
-    @delete="confirmRouteIssueDelete"
-    @issue-updated="handleIssueUpdatedFromList"
-    @share="copyRouteIssueUrl"
-    @supported="handleRouteIssueSupport"
-  />
-
-  <ConfirmDialog
-    :open="isRouteIssueDeleteDialogOpen"
-    title="確定要刪除這筆提案嗎？"
-    message="刪除後這筆提案將無法復原。"
-    confirm-label="確認刪除"
-    busy-label="刪除中..."
-    :busy="isRouteIssueDeleting"
-    @cancel="closeRouteIssueDeleteDialog"
-    @confirm="performRouteIssueDelete"
-  />
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BoardControls from '@/components/BoardControls.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IssueBoardTable from '@/components/IssueBoardTable.vue';
 import IssueComposer from '@/components/IssueComposer.vue';
-import IssueDetailsDialog from '@/components/IssueDetailsDialog.vue';
 import ListUpdatePrompt from '@/components/ListUpdatePrompt.vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';
 import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
 import SkeletonTable from '@/components/ui/SkeletonTable.vue';
 import { useIssueBoardData } from '@/composables/useIssueBoardData';
-import { useDeleteIssue } from '@/composables/useDeleteIssue';
-import { useIssueRouteDialog } from '@/composables/useIssueRouteDialog';
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll';
 import { useMinimumLoading } from '@/composables/useMinimumLoading';
 import { useLoadingTimeout } from '@/composables/useLoadingTimeout';
 import { useSession } from '@/composables/useSession';
-import { useShareUrl } from '@/composables/useShareUrl';
 import { useToast } from '@/composables/useToast';
 import { DEFAULT_ISSUE_CATEGORY, issueIsPrivateToOwner, issueStoresAuthorPrivately } from '@/constants/categories';
 import { resetAppConnection } from '@/lib/reconnect';
@@ -162,11 +130,9 @@ const emit = defineEmits<{
   'toggle-form': [];
 }>();
 
-const { isAdmin, mySupportedIssueIds } = useSession();
+const { isAdmin } = useSession();
 const { showToast } = useToast();
-const { copyShareUrl } = useShareUrl();
 const router = useRouter();
-const routeIssueInitialTab = ref<'details' | 'comments'>('details');
 
 const {
   activeFilter,
@@ -195,25 +161,7 @@ const {
   refreshCurrentData,
 } = useIssueBoardData();
 
-const {
-  routeIssue,
-  routeIssueSupportClosed,
-  closeRouteIssue,
-  prefillRouteIssue,
-  patchRouteIssue,
-  updateRouteIssueSupport,
-} = useIssueRouteDialog(mySupportedIssueIds, currentIssues);
-
 const showAuthorCol = computed(() => isAdmin.value || !issueStoresAuthorPrivately(activeFilter.value));
-const routeIssueId = computed(() => routeIssue.value?.id ?? '');
-const {
-  isDeleteDialogOpen: isRouteIssueDeleteDialogOpen,
-  isDeleting: isRouteIssueDeleting,
-  actionError: routeIssueDeleteError,
-  confirmDelete: openRouteIssueDeleteDialog,
-  closeDeleteDialog: closeRouteIssueDeleteDialog,
-  performDelete: deleteRouteIssue,
-} = useDeleteIssue(routeIssueId);
 const contentContextKey = computed(() => [
   activeFilter.value,
   statusTab.value,
@@ -255,90 +203,19 @@ const emptyStateDescription = computed(() => {
 });
 
 async function openIssueDetails(payload: IssueDetailsOpenPayload) {
-  routeIssueInitialTab.value = payload.initialTab;
-  prefillRouteIssue(payload.issue);
-
-  try {
-    await router.push({
-      name: 'issue-detail',
-      params: {
-        filter: activeFilter.value,
-        issueId: payload.issue.id,
-      },
-    });
-  } catch {
-    closeRouteIssue();
-  }
-}
-
-function getIssueShareUrl(issueId: string) {
-  const href = router.resolve({
+  await router.push({
     name: 'issue-detail',
     params: {
       filter: activeFilter.value,
-      issueId,
+      issueId: payload.issue.id,
     },
-  }).href;
-  return new URL(href, window.location.origin).toString();
-}
-
-function copyRouteIssueUrl() {
-  if (!routeIssue.value) return;
-  copyShareUrl(getIssueShareUrl(routeIssue.value.id));
-}
-
-function closeIssueDetails() {
-  routeIssueInitialTab.value = 'details';
-  closeRouteIssue();
-}
-
-function confirmRouteIssueDelete() {
-  if (!routeIssue.value) return;
-  openRouteIssueDeleteDialog();
-}
-
-async function performRouteIssueDelete() {
-  const deletedIssueId = await deleteRouteIssue();
-  if (routeIssueDeleteError.value) {
-    showToast(routeIssueDeleteError.value, 'error');
-    return;
-  }
-
-  showToast('提案已刪除。', 'success');
-  if (deletedIssueId) {
-    handleIssueDeleted(deletedIssueId);
-  }
-  closeRouteIssueDeleteDialog();
-  closeIssueDetails();
-}
-
-function handleRouteIssueSupport(payload: { supported: boolean; supportCount: number }) {
-  if (!routeIssue.value) return;
-  updateRouteIssueSupport(payload.supported, payload.supportCount);
-  handleSupportChanged({
-    issueId: routeIssue.value.id,
-    supported: payload.supported,
-    supportCount: routeIssue.value.support_count,
+    query: payload.initialTab === 'comments' ? { tab: 'comments' } : undefined,
   });
-}
-
-function handleRouteIssueUnavailable(issueId: string) {
-  handleIssueDeleted(issueId);
-  if (routeIssue.value?.id === issueId) {
-    closeIssueDetails();
-  }
 }
 
 function handleIssueUpdatedFromList(issue: IssueRecord) {
   handleIssueUpdated(issue);
-  patchRouteIssue(issue);
 }
-
-watch(routeIssue, (issue) => {
-  if (!issue) {
-    routeIssueInitialTab.value = 'details';
-  }
-});
 
 watch(composerMessage, (message) => {
   if (message) {

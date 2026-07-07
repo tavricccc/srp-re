@@ -10,7 +10,7 @@ export const announcementRoutes: RouteRecordRaw[] = [
   {
     path: '/announcements/:announcementId',
     name: 'announcement-detail',
-    component: () => import('@/views/AnnouncementsView.vue'),
+    component: () => import('@/views/AnnouncementDetailView.vue'),
     meta: { requiresAuth: true },
   },
 ];

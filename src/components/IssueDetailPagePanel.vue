@@ -1,9 +1,9 @@
 <template>
-  <DetailDialogShell
+  <DetailPageShell
     :initial-tab="initialTab"
-    :open="open"
+    back-label="返回提案列表"
     details-label="提案內容"
-    @close="emit('close')"
+    @back="emit('back')"
   >
     <template #header>
       <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">
@@ -87,7 +87,7 @@
         </div>
       </section>
     </template>
-  </DetailDialogShell>
+  </DetailPageShell>
 
   <DialogOverlay :open="isResultDialogOpen" padded z-index-class="z-[110]" @close="closeResultDialog">
     <section
@@ -139,7 +139,7 @@ import { useStatusStyling } from '@/composables/useStatusStyling';
 import { getSupportProgressPercent, getSupportRemainingLabel } from '@/lib/issue-status';
 import type { IssueRecord } from '@/types';
 
-import DetailDialogShell from '@/components/ui/DetailDialogShell.vue';
+import DetailPageShell from '@/components/ui/DetailPageShell.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import DialogOverlay from '@/components/ui/DialogOverlay.vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';
@@ -152,7 +152,6 @@ import { updateIssueResult } from '@/services/issues';
 
 const props = withDefaults(
   defineProps<{
-    open: boolean;
     issue: IssueRecord;
     currentUserSupported: boolean;
     supportCount: number;
@@ -166,7 +165,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   contentUnavailable: [issueId: string];
-  close: [];
+  back: [];
   delete: [];
   'issue-updated': [issue: IssueRecord];
   share: [];

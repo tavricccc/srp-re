@@ -100,6 +100,9 @@
     <template v-else-if="name === 'chevron-right'">
       <path d="m9 6 6 6-6 6" />
     </template>
+    <template v-else-if="name === 'chevron-left'">
+      <path d="m15 6-6 6 6 6" />
+    </template>
     <template v-else-if="name === 'switch-horizontal'">
       <path d="M16 5h3v3" />
       <path d="M8 19H5v-3" />
@@ -149,6 +152,7 @@ import { computed } from 'vue';
 export type AppIconName =
   | 'bell'
   | 'chart'
+  | 'chevron-left'
   | 'chevron-right'
   | 'close'
   | 'comment'

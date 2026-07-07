@@ -8,14 +8,16 @@ import { fetchIssueRecordById } from '@/services/issues';
 import type { IssueRecord } from '@/types';
 import { isAbortFailure } from '@/lib/request';
 
-export function useIssueRouteDialog(
+export function useIssueRouteDetail(
   supportedIssueIds: Ref<Set<string>>,
   issues?: Ref<IssueRecord[]>,
+  enabled?: Ref<boolean>,
 ) {
   const route = useRoute();
   const router = useRouter();
   const { showToast } = useToast();
   const routeIssue = ref<IssueRecord | null>(null);
+  const routeIssueLoading = ref(false);
   let requestId = 0;
 
   const routeIssueSupportClosed = computed(() => {
@@ -36,6 +38,7 @@ export function useIssueRouteDialog(
   function closeRouteIssue() {
     requestId += 1;
     routeIssue.value = null;
+    routeIssueLoading.value = false;
     router.replace(issueListRoute());
   }
 
@@ -45,6 +48,7 @@ export function useIssueRouteDialog(
       ...issue,
       currentUserSupported: supportedIssueIds.value.has(issue.id),
     };
+    routeIssueLoading.value = false;
   }
 
   function updateRouteIssueSupport(supported: boolean, supportCount?: number) {
@@ -70,17 +74,20 @@ export function useIssueRouteDialog(
   async function handleRouteIssueError(currentRequestId: number) {
     if (currentRequestId !== requestId) return;
     routeIssue.value = null;
+    routeIssueLoading.value = false;
     showToast('此頁面已不存在或你沒有權限查看此頁面。', 'error');
     await router.replace(issueListRoute());
   }
 
   watch(
-    () => [route.name, route.params.issueId, route.params.filter] as const,
-    async ([routeName, rawIssueId]) => {
+    () => [route.name, route.params.issueId, route.params.filter, enabled?.value ?? true] as const,
+    async ([routeName, rawIssueId, _rawFilter, isEnabled]) => {
+      if (!isEnabled) return;
       const issueId = normalizeRouteParam(rawIssueId);
       if (routeName !== 'issue-detail' || !issueId) {
         requestId += 1;
         routeIssue.value = null;
+        routeIssueLoading.value = false;
         return;
       }
 
@@ -99,6 +106,7 @@ export function useIssueRouteDialog(
       }
 
       const currentRequestId = ++requestId;
+      routeIssueLoading.value = true;
       try {
         const issue = await fetchIssueRecordById(issueId);
         if (currentRequestId !== requestId) return;
@@ -109,6 +117,10 @@ export function useIssueRouteDialog(
       } catch (error) {
         if (isAbortFailure(error)) return;
         await handleRouteIssueError(currentRequestId);
+      } finally {
+        if (currentRequestId === requestId) {
+          routeIssueLoading.value = false;
+        }
       }
     },
     { immediate: true },
@@ -124,6 +136,7 @@ export function useIssueRouteDialog(
 
   return {
     routeIssue,
+    routeIssueLoading,
     routeIssueSupportClosed,
     closeRouteIssue,
     prefillRouteIssue,
