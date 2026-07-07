@@ -2,6 +2,20 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "優化桌面版配置與公告列表對齊",
+    version: "v2.0.84",
+    date: "2026-07-07",
+    time: "17:02",
+    items: [
+      {
+        title: "移除桌面版詳情頁左側內容的最小高度限制，使短正文的底部操作列能緊跟著內容，排版更自然。"
+      },
+      {
+        title: "最佳化桌面版公告看板列表的最大寬度與邊距限制，實現公告看板與頂部導覽的完美對齊。"
+      }
+    ]
+  },
+  {
     title: "優化桌面版詳情頁面配置",
     version: "v2.0.83",
     date: "2026-07-07",
