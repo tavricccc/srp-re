@@ -105,8 +105,10 @@
 - src/router/adminRoutes.ts：管理員統計頁路由設定，Dashboard 頁面 lazy import。
 - src/views/LoginView.vue：登入頁視圖，沿用平台登入面板並交由 router redirect 在登入後回到原目標頁。
 - src/views/IssueBoardView.vue：提案看板路由視圖；session 恢復期間先顯示提案骨架，已登入則以滿高容器掛載看板，讓列表區獨立捲動。
+- src/views/IssueDetailView.vue：提案詳情子頁視圖，依路由讀取單筆提案，提供左上返回提案列表、分享、附議、刪除、提案結果編輯與留言區。
 - src/views/DashboardView.vue：管理員維運工作台，使用 `usePlatformDashboard` 與 `useDashboardMetrics` 呈現系統狀態、Notion 待同步、同步異常、維護排程、平台成果與分類使用概況；成功畫面不提供手動重新整理，空狀態與錯誤狀態使用共用 EmptyStatePanel。
-- src/views/AnnouncementsView.vue：公告頁視圖，使用 `useAnnouncementManagement` 與 AnnouncementControls 組合公告列表排序、手動重新整理、底部自動載入更多、空狀態、公告骨架載入、管理員編輯對話框、詳情對話框與刪除確認。
+- src/views/AnnouncementsView.vue：公告頁視圖，使用 `useAnnouncementManagement` 與 AnnouncementControls 組合公告列表排序、手動重新整理、底部自動載入更多、空狀態、公告骨架載入、管理員編輯對話框與刪除確認；列表列點擊導向公告詳情子頁。
+- src/views/AnnouncementDetailView.vue：公告詳情子頁視圖，依路由讀取單則公告，提供左上返回公告列表、分享、按讚、管理員編輯刪除與留言區。
 - src/views/ChangelogView.vue：更新紀錄時間軸視圖，讀取靜態 changelog entries，於頁首顯示累計更新次數，並呈現左側串接圓點與垂直線、右側標題、版本號、日期時間與純文字 bullet；未登入與無資料使用共用 EmptyStatePanel。
 - src/style.css：全域樣式與目前實際使用的共用 UI class 定義，包含避免低於 12px 的輔助文字、14–16px 正文排版層級、所有 button / link 與共用 pressable / content-trigger / nav-item 的手機按壓回饋、focus-ring、按鈕/欄位/選單/分段控制樣式、行動裝置 tap highlight 禁用，以及依 micro / panel 節奏統一的 popover、notification 與 dialog 轉場。
 
@@ -131,13 +133,13 @@
 - SkeletonCommentList.vue：提案與公告留言區共用載入骨架，比對頭像、作者、時間與留言文字排列。
 - SkeletonDashboard.vue：管理員 Dashboard 載入骨架，比對維運狀態卡、維運清單、分類表與成果摘要。
 - TrashIcon.vue：共用無填色垃圾桶圖示。
-- ShareIcon.vue：分享節點圖示，供詳情對話框 action row 與 footer 按鈕共用。
+- ShareIcon.vue：分享節點圖示，供詳情頁 action row 與 footer 按鈕共用。
 - DetailActionButton.vue：詳情頁底部共用文字動作按鈕，統一分享、讚、編輯與刪除等 action 的 icon + label 呈現。
 - UserAvatar.vue：大頭貼顯示（圖片 / 匿名首字 fallback，支援 sm / md / lg 三種尺寸）。
 - DecorativeGlow.vue：背景裝飾性雙色模糊光暈（emerald + indigo）。
 - GoogleLoginButton.vue：Google 登入按鈕（含 loading spinner 狀態）。
 - DialogOverlay.vue：Modal 共用背景遮罩（含 backdrop-blur、點擊關閉、Teleport），以動態 viewport 扣除 edge-to-edge safe-area 後提供正確可用高度，並支援一般響應式、四周留白、無留白與自訂 z-index 層級。
-- DetailDialogShell.vue：提案與公告詳情共用的全螢幕對話框骨架，集中焦點管理、捲動鎖定、獨立分層進出場、桌機雙欄、手機內容/留言分頁與欄位間隔，並只掛載目前 viewport 對應的內容區避免重複讀取。
+- DetailPageShell.vue：提案與公告詳情子頁共用骨架，提供左上返回鍵、桌機雙欄、手機內容/留言分頁與欄位間隔。
 - SearchHighlight.vue：搜尋結果文字高亮元件，依關鍵字標示標題命中片段。
 
 ### 應用元件 (src/components/)
@@ -151,7 +153,7 @@
 - src/components/SettingsPanel.vue：登入 / 設定面板 UI；session 恢復或登入進行中時在頭像位置顯示小型進度，完成後以頭像開啟「設定」面板，集中顯示目前帳號、切換帳號入口、單裝置推播通知狀態、通知類型開關與登出操作。
 - src/components/SettingsPanelContent.vue：設定面板共用內容區，供桌機頭像 popover 與手機全螢幕 Dialog 共用，統一帳號切換、推播通知、通知類型開關、更新紀錄與管理員統計入口呈現。
 - src/components/PushPermissionPromptDialog.vue：登入後首次詢問推播權限的提示對話框；以本機 localStorage 記錄每個帳號在目前裝置是否已詢問過，允許使用者稍後再到設定開啟。
-- src/components/ConfirmDialog.vue：通用確認對話框，沿用共用 DialogOverlay、提示型文字層級、焦點管理與捲動鎖定，固定顯示於一般詳情對話框之上。
+- src/components/ConfirmDialog.vue：通用確認對話框，沿用共用 DialogOverlay、提示型文字層級、焦點管理與捲動鎖定。
 - src/components/ToastViewport.vue：全域 toast 顯示容器，統一呈現成功、資訊與錯誤提示，層級高於 modal dialog。
 - src/components/SegmentedControl.vue：共用分段選項元件，用於分類、狀態與留言模式切換。
 - src/components/ListUpdatePrompt.vue：列表更新提示列，供提案與公告頁在偵測到新內容時提示使用者手動刷新並沿用既有分頁讀取流程。
@@ -164,7 +166,7 @@
 - src/components/AnnouncementControls.vue：公告列表頂部控制列，對齊提案看板的工具按鈕樣式，提供排序選單、手動重新整理與管理員新增公告操作。
 - src/components/AnnouncementTable.vue：公告表格列表容器，比照提案看板設計表格結構，負責渲染公告列表行並轉發開啟詳情、編輯與刪除事件。
 - src/components/AnnouncementTableRow.vue：單則公告表格列表項目，呈現公告標籤、發布者、標題、發布日期、按讚與留言互動按鈕以及管理員選單。
-- src/components/AnnouncementDetailsDialog.vue：公告全文全螢幕對話框，對齊提案詳情的桌機左右欄與手機分段切換結構，組合公告內容、icon 操作列與留言區。
+- src/components/AnnouncementDetailPagePanel.vue：公告詳情子頁內容面板，使用共用詳情頁骨架組合公告內容、icon 操作列與留言區。
 - src/components/AnnouncementDetailContent.vue：公告詳情內容區，對齊提案詳情的內容欄，呈現標題、meta 與 Markdown 圖文分離內容。
 - src/components/AnnouncementDetailActions.vue：公告詳情操作列，使用共用 DetailActionButton 以文字按鈕呈現讚、分享、編輯與刪除。
 - src/components/AnnouncementEditorDialog.vue：管理員公告新增/編輯對話框，沿用 Markdown 圖片延遲上傳流程，內容輸入與圖片預覽使用共用 MarkdownImageEditor。
@@ -176,12 +178,12 @@
 
 ### 看板與列表元件
 
-- src/components/IssueBoard.vue：提案看板主體。調用 `useIssueBoardData` 與 `useIssueRouteDialog`，以固定控制列與隱藏捲軸的獨立捲動列表組合看板狀態，支援排序、手動重新整理與底部自動載入更多，並在更新詳情路由前先用列表資料立即開啟對話框。
+- src/components/IssueBoard.vue：提案看板主體。調用 `useIssueBoardData`，以固定控制列與隱藏捲軸的獨立捲動列表組合看板狀態，支援排序、手動重新整理與底部自動載入更多，並在開啟提案時導向提案詳情子頁。
 - src/components/BoardControls.vue：提案看板頂部控制列，包含頁內提案分類 segmented control、搜尋工具面板、整合狀態與排序之篩選工具選單、低層級重新整理按鈕與新增提案按鈕。
 - src/components/IssueAdminMenu.vue：管理員狀態調整下拉選單展示層，供列表列與詳情操作使用；狀態更新流程委派給 `useIssueAdminStatus`。
 - src/components/IssueTableRow.vue：列表視圖單筆提案列展示層，桌面動態 grid、手機收折為單行精簡列；共用 `useIssueItemController` 處理提案互動狀態與開啟詳情事件。
 - src/components/IssueBoardTable.vue：列表視圖容器，含欄位標題列與提案列渲染；載入與分頁切換期間顯示 SkeletonTable。
-- src/components/IssueDetailsDialog.vue：提案全文詳細對話框。採用 `useIssueDisplay` 呈現附議進度與期限，公共議題對一般人隱藏作者，自己提案則顯示作者，管理員可編輯提案結果，作者或管理員可從詳情 footer 刪除提案。
+- src/components/IssueDetailPagePanel.vue：提案詳情子頁內容面板。採用 `useIssueDisplay` 呈現附議進度與期限，公共議題對一般人隱藏作者，自己提案則顯示作者，管理員可編輯提案結果，作者或管理員可從詳情 footer 刪除提案。
 - src/components/IssueComments.vue：提案留言區資料 wrapper，串接提案留言 composable 與共用 CommentThreadPanel。
 - src/components/IssueComposer.vue：新增提案表單對話框展示層，表單驗證、圖片上傳與送出流程委派給 `useIssueComposerForm`，內容輸入與圖片預覽使用共用 MarkdownImageEditor。
 
@@ -193,7 +195,7 @@
 - src/composables/useIssueBoardPagination.ts：看板全域模式分頁 helper，處理搜尋與我的提案在前端分頁時的目前頁、總頁數與顯示清單。
 - src/composables/useUserIssuesData.ts：我的提案讀取 helper，以一次性讀取封裝私有公共提案與一般提案合併、依螢幕高度分段顯示、載入狀態與支援狀態更新。
 - src/composables/useIssueRouteFilter.ts：提案路由分類同步 helper，將 `/issues/:filter` 與 `/issues/:filter/:issueId` 轉成全域 activeFilter。
-- src/composables/useIssueRouteDialog.ts：提案 id 路由詳情 helper，支援列表資料預填後讀取單筆提案，並處理無權限/不存在 toast 與返回列表。
+- src/composables/useIssueRouteDetail.ts：提案 id 路由詳情 helper，支援列表資料預填後讀取單筆提案，並處理無權限/不存在 toast、載入狀態與返回列表。
 - src/composables/useDocumentTitle.ts：文件標題同步 helper，依目前看板分類更新並在卸載時還原。
 - src/composables/useAppInstallPrompt.ts：PWA 安裝提示狀態管理，處理 standalone 判斷、beforeinstallprompt、iOS Safari 手動引導、in-app browser 優先權與 sessionStorage 關閉記錄。
 - src/composables/useAppUpdate.ts：手動註冊無快取 service worker，啟動時檢查一次 `version.json`，並管理強制更新提示狀態。

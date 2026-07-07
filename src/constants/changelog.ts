@@ -2,6 +2,23 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善詳情頁瀏覽體驗",
+    version: "v2.0.65",
+    date: "2026-07-07",
+    time: "15:50",
+    items: [
+      {
+        title: "將提案與公告詳情改為獨立頁面，瀏覽內容與留言時不再以彈出視窗呈現。",
+      },
+      {
+        title: "新增詳情頁左上返回操作，讓使用者可回到列表繼續瀏覽。",
+      },
+      {
+        title: "統一詳情頁背景呈現，降低頁面切換時的視覺落差。",
+      },
+    ],
+  },
+  {
     title: "最佳化管理與編輯操作體驗",
     version: "v2.0.64",
     date: "2026-07-07",

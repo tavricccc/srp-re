@@ -73,20 +73,6 @@
       </template>
     </div>
 
-    <AnnouncementDetailsDialog
-      :announcement="selectedAnnouncement"
-      :can-manage="isAdmin"
-      :initial-tab="selectedAnnouncementInitialTab"
-      :liking="liking"
-      @close="closeAnnouncementDetails"
-      @content-unavailable="handleAnnouncementUnavailable"
-      @delete="handleDelete"
-      @edit="openEditor(selectedAnnouncement)"
-      @share="copySelectedAnnouncementUrl"
-      @toggle-like="handleToggleLike"
-      @comment-count-changed="handleCommentCountChanged"
-    />
-
     <AnnouncementEditorDialog
       :announcement="editingAnnouncement"
       :error="editorError"
@@ -112,7 +98,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AnnouncementControls from '@/components/AnnouncementControls.vue';
-import AnnouncementDetailsDialog from '@/components/AnnouncementDetailsDialog.vue';
 import AnnouncementEditorDialog from '@/components/AnnouncementEditorDialog.vue';
 import AnnouncementTable from '@/components/AnnouncementTable.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -137,12 +122,9 @@ const {
   showAnnouncementUpdatePrompt,
   loadMoreAnnouncements,
   refreshAnnouncements,
-  selectedAnnouncement,
-  selectedAnnouncementInitialTab,
   editingAnnouncement,
   editorError,
   editorOpen,
-  liking,
   likingAnnouncementId,
   saving,
   deleting,
@@ -151,15 +133,10 @@ const {
   isAdmin,
   isAllowedUser,
   openAnnouncementDetails,
-  closeAnnouncementDetails,
-  copySelectedAnnouncementUrl,
   openEditor,
   closeEditor,
   handleSave,
-  handleDelete,
   handleListDelete,
-  handleCommentCountChanged,
-  handleAnnouncementUnavailable,
   closeDeleteDialog,
   confirmDelete,
   handleToggleLike,
