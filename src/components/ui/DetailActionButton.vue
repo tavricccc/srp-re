@@ -5,6 +5,7 @@
     :class="[
       active ? 'text-red-600 dark:text-red-300' : '',
       danger ? 'text-error dark:text-error' : '',
+      compact ? '!h-8 !min-h-0 !gap-1 !px-2.5 text-xs' : '',
     ]"
     :disabled="disabled"
     :title="title || label"
@@ -24,12 +25,14 @@ withDefaults(defineProps<{
   disabled?: boolean;
   label: string;
   title?: string;
+  compact?: boolean;
 }>(), {
   active: false,
   ariaLabel: '',
   danger: false,
   disabled: false,
   title: '',
+  compact: false,
 });
 
 const emit = defineEmits<{

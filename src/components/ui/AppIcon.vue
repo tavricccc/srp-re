@@ -53,7 +53,7 @@
     </template>
     <template v-else-if="name === 'refresh'">
       <path d="M4.5 12a7.5 7.5 0 1 1 3.75 6.5" />
-      <path d="M12 18.5H8.25V14.75" />
+      <path d="M11.5 20.5 L8.25 18.5 L11.5 15.5" />
     </template>
     <template v-else-if="name === 'reply'">
       <path d="M9 7 4 12l5 5" />

@@ -4,7 +4,7 @@
       :active="announcement.currentUserLiked"
       :disabled="liking"
       :label="announcement.currentUserLiked ? `已讚 ${announcement.like_count}` : `讚 ${announcement.like_count}`"
-      :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+      :compact="compact"
       :title="announcement.currentUserLiked ? '取消讚' : '讚'"
       :aria-label="announcement.currentUserLiked ? '取消讚' : '讚'"
       @click="emit('toggleLike')"
@@ -16,7 +16,7 @@
 
     <DetailActionButton
       label="分享"
-      :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+      :compact="compact"
       title="複製分享連結"
       aria-label="複製分享連結"
       @click="emit('share')"
@@ -27,7 +27,7 @@
     <DetailActionButton
       v-if="canManage"
       label="編輯"
-      :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+      :compact="compact"
       title="編輯公告"
       aria-label="編輯公告"
       @click="emit('edit')"
@@ -42,7 +42,7 @@
       v-if="canManage"
       danger
       label="刪除"
-      :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+      :compact="compact"
       title="刪除公告"
       aria-label="刪除公告"
       @click="emit('delete')"

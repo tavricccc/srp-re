@@ -32,7 +32,7 @@
         />
         <DetailActionButton
           label="分享"
-          :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+          :compact="compact"
           title="複製分享連結"
           aria-label="複製分享連結"
           @click="emit('share')"
@@ -42,7 +42,7 @@
         <DetailActionButton
           v-if="isAdmin"
           :label="issue.result_content ? '編輯提案結果' : '新增提案結果'"
-          :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+          :compact="compact"
           title="編輯提案結果"
           aria-label="編輯提案結果"
           @click="emit('edit-result')"
@@ -53,7 +53,7 @@
           v-if="canManage"
           danger
           label="刪除"
-          :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+          :compact="compact"
           title="刪除提案"
           aria-label="刪除提案"
           @click="emit('delete')"
@@ -65,7 +65,7 @@
     <div v-else class="flex flex-wrap justify-start gap-2">
       <DetailActionButton
         label="分享"
-        :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+        :compact="compact"
         title="複製分享連結"
         aria-label="複製分享連結"
         @click="emit('share')"
@@ -75,7 +75,7 @@
       <DetailActionButton
         v-if="isAdmin"
         :label="issue.result_content ? '編輯提案結果' : '新增提案結果'"
-        :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+        :compact="compact"
         title="編輯提案結果"
         aria-label="編輯提案結果"
         @click="emit('edit-result')"
@@ -86,7 +86,7 @@
         v-if="canManage"
         danger
         label="刪除"
-        :class="compact ? '!h-8 !gap-1 !px-2.5 text-xs' : ''"
+        :compact="compact"
         title="刪除提案"
         aria-label="刪除提案"
         @click="emit('delete')"

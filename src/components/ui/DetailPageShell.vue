@@ -13,6 +13,14 @@
       <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 pt-1.5">
         <slot name="header" />
       </div>
+      <button
+        type="button"
+        class="button-secondary flex h-8 !min-h-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-ink-700 dark:text-ink-200 ml-auto self-center"
+        @click="toggleActiveTab"
+      >
+        <AppIcon :name="activeTab === 'details' ? 'comment' : 'list'" :size="3.5" />
+        <span>{{ activeTab === 'details' ? commentsLabel : detailsLabel }}</span>
+      </button>
     </header>
 
     <div v-if="isDesktopViewport" class="hidden min-h-0 items-stretch gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] xl:grid-cols-[minmax(0,1fr)_32rem]">
@@ -42,23 +50,15 @@
     </div>
 
     <div v-else class="min-h-0 md:hidden">
-      <div class="mb-2 flex shrink-0 justify-center">
-        <SegmentedControl
-          :model-value="activeTab"
-          :options="tabOptions"
-          @update:model-value="setActiveTab"
-        />
-      </div>
-
       <div class="min-h-0 px-1">
-        <div v-show="activeTab === 'details'" class="flex h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-6.5rem)] flex-col pb-3">
+        <div v-show="activeTab === 'details'" class="flex h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-3.5rem)] flex-col pb-3">
           <div class="min-h-0 flex-1 overflow-y-auto px-1 pb-3 pr-2">
             <slot name="details" :compact="true" :scroll-content="false" />
           </div>
           <slot name="actions" :compact="true" />
         </div>
 
-        <div v-show="activeTab === 'comments'" class="h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-6.5rem)] min-h-[24rem] pb-3">
+        <div v-show="activeTab === 'comments'" class="h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-3.5rem)] min-h-[24rem] pb-3">
           <slot name="comments" :compact-header="true" />
         </div>
       </div>
@@ -121,6 +121,10 @@ function setActiveTab(value: string) {
   if (value === 'details' || value === 'comments') {
     activeTab.value = value;
   }
+}
+
+function toggleActiveTab() {
+  activeTab.value = activeTab.value === 'details' ? 'comments' : 'details';
 }
 
 onMounted(() => {
