@@ -75,11 +75,10 @@
           <button
             v-if="isUnderReview"
             type="button"
-            class="menu-item justify-between text-ink-600 dark:text-ink-300"
+            class="menu-item justify-between"
             @click.stop="openReviewDialog"
           >
-            <span class="flex items-center gap-2">
-              <span class="h-2 w-2 rounded-full bg-warning"></span>
+            <span class="font-semibold text-warning">
               審核提案
             </span>
           </button>
@@ -89,17 +88,16 @@
             <button
               type="button"
               class="menu-item justify-between"
-              :class="adminStatus === 'processing' ? 'text-ink-950 dark:text-ink-50 font-semibold bg-ink-50/50 dark:bg-ink-800/40' : 'text-ink-600 dark:text-ink-300'"
+              :class="adminStatus === 'processing' ? 'bg-ink-50/50 dark:bg-ink-800/40' : ''"
               @click.stop="directlySetProcessing"
             >
-              <span class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full" :class="getStatusDotClass('processing')"></span>
+              <span class="font-semibold text-secondary">
                 處理中
               </span>
               <svg
                 v-if="adminStatus === 'processing'"
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 text-ink-900 dark:text-ink-100"
+                class="h-4 w-4 text-secondary"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -114,11 +112,10 @@
 
             <button
               type="button"
-              class="menu-item justify-between text-ink-600 dark:text-ink-300"
+              class="menu-item justify-between"
               @click.stop="openStatusDialogWithClosed"
             >
-              <span class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-success"></span>
+              <span class="font-semibold text-success">
                 提案結果
               </span>
             </button>

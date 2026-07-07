@@ -7,7 +7,6 @@
       aria-labelledby="status-dialog-title"
       tabindex="-1"
     >
-      <p class="dialog-eyebrow">提案狀態變更與結果回覆</p>
       <h3 id="status-dialog-title" class="dialog-title">變更提案狀態/結果</h3>
       <p class="dialog-description">
         您可以將提案標記為「處理中」或進行「結案」，並填寫最終的處理結果。
