@@ -2,6 +2,20 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "最佳化提案詳情頁面排版與間距設定",
+    version: "v2.0.77",
+    date: "2026-07-07",
+    time: "16:37",
+    items: [
+      {
+        title: "最佳化提案詳情頁面底部操作區排版，使手機版與桌面版按鈕在短內容時正確置底，並隨長內容自然延伸。"
+      },
+      {
+        title: "調整頁面頂部間距與桌面版底部間距，使整體畫面配置更為緊湊平衡。"
+      }
+    ]
+  },
+  {
     title: "調整詳情頁底部區塊位置",
     version: "v2.0.76",
     date: "2026-07-07",

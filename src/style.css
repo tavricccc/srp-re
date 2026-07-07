@@ -264,7 +264,7 @@
   .app-main-content {
     min-height: 0;
     padding-bottom: 1rem;
-    padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 1rem);
+    padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 0.75rem);
   }
 
   .page-bottom-safe {
@@ -278,7 +278,7 @@
     }
 
     .app-main-content {
-      padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 0.35rem);
+      padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 0.25rem);
     }
 
     .page-bottom-safe {
@@ -304,13 +304,13 @@
 
   @media (min-width: 640px) {
     .app-main-content {
-      padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 2rem);
+      padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 1.25rem);
     }
   }
 
   @media (min-width: 768px) {
     .app-main-content {
-      padding-bottom: 0;
+      padding-bottom: 3px;
     }
 
     .page-bottom-safe {
