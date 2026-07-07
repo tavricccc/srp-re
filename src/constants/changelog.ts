@@ -2,6 +2,20 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "調整列表與留言間距",
+    version: "v2.0.74",
+    date: "2026-07-07",
+    time: "16:21",
+    items: [
+      {
+        title: "調整提案與公告列表在大螢幕上的左右留白，維持清楚的閱讀邊界。",
+      },
+      {
+        title: "減少手機詳情頁留言區底部空白，讓留言編輯區更貼近內容。",
+      },
+    ],
+  },
+  {
     title: "改善頁面載入回饋",
     version: "v2.0.73",
     date: "2026-07-07",

@@ -1,5 +1,5 @@
 <template>
-  <section class="space-y-5">
+  <section class="space-y-5 md:px-4 lg:px-6 xl:px-8">
     <AnnouncementControls
       v-model:sort-option="sortOption"
       :can-create="isAdmin"

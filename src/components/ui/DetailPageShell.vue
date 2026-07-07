@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <div v-show="activeTab === 'comments'" class="h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-5rem)] min-h-[24rem] pb-[calc(var(--app-bottom-nav-height)+0.75rem)]">
+        <div v-show="activeTab === 'comments'" class="h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-5rem)] min-h-[24rem] pb-3">
           <slot name="comments" :compact-header="true" />
         </div>
       </div>
