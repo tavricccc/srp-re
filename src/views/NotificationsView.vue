@@ -38,8 +38,7 @@
           v-for="notification in notifications"
           :key="notification.id"
           type="button"
-          class="content-trigger relative flex min-h-[92px] w-full items-start gap-3 px-1 py-4 text-left hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/70 dark:focus-visible:bg-ink-800/70"
-          :class="{ 'bg-secondary-container/20 dark:bg-secondary-container/5 rounded-2xl px-3': !notification.is_read }"
+          class="relative flex min-h-[92px] w-full items-start gap-3 px-1 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
           @click.stop="openNotification(notification)"
         >
           <AuthorAvatar

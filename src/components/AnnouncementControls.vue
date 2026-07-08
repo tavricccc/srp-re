@@ -45,29 +45,7 @@
           </transition>
         </div>
 
-        <button
-          v-if="canCreate"
-          type="button"
-          class="button-icon-filled hidden md:flex !h-9 !w-9 items-center justify-center shrink-0"
-          title="新增公告"
-          aria-label="新增公告"
-          @click="emit('create')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M12 5l0 14" />
-            <path d="M5 12l14 0" />
-          </svg>
-        </button>
+        <slot name="actions" />
       </div>
     </div>
   </div>
@@ -79,13 +57,11 @@ import AppIcon from '@/components/ui/AppIcon.vue';
 import type { AnnouncementSortOption } from '@/types';
 
 const props = defineProps<{
-  canCreate?: boolean;
   sortOption: AnnouncementSortOption;
 }>();
 
 const emit = defineEmits<{
   'update:sortOption': [value: AnnouncementSortOption];
-  create: [];
 }>();
 
 const announcementSortOptions = [

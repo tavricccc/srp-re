@@ -81,26 +81,15 @@
             </span>
           </button>
 
-          <!-- Approved state (pending / processing): Show "處理中" and "提案結果" -->
+          <!-- Approved state (pending / processing): Update status/result in one dialog -->
           <template v-if="isProcessingOrPending">
             <button
-              v-if="props.issue.status === 'pending'"
               type="button"
               class="menu-item justify-between"
-              @click.stop="directlySetProcessing"
+              @click.stop="openStatusDialog"
             >
               <span class="font-semibold text-secondary">
-                處理中
-              </span>
-            </button>
-
-            <button
-              type="button"
-              class="menu-item justify-between"
-              @click.stop="openStatusDialogWithClosed"
-            >
-              <span class="font-semibold text-success">
-                提案結果
+                變更提案狀態/結果
               </span>
             </button>
           </template>
@@ -149,7 +138,6 @@ import { useStatusStyling } from '@/composables/useStatusStyling';
 import { useDropdownPosition } from '@/composables/useDropdownPosition';
 import TrashIcon from '@/components/ui/TrashIcon.vue';
 import type { IssueRecord, IssueStatus } from '@/types';
-import { moderateIssueStatus, updateIssueResult } from '@/services/issues';
 
 // Shared Dialog Components
 import IssueReviewDialog from '@/components/IssueReviewDialog.vue';
@@ -234,25 +222,10 @@ function openReviewDialog() {
   isReviewDialogOpen.value = true;
 }
 
-function openStatusDialogWithClosed() {
+function openStatusDialog() {
   isDropdownOpen.value = false;
-  statusDialogInitialAction.value = 'closed';
+  statusDialogInitialAction.value = 'processing';
   isStatusDialogOpen.value = true;
-}
-
-async function directlySetProcessing() {
-  isDropdownOpen.value = false;
-  try {
-    const updated = await moderateIssueStatus(props.issue.id, 'processing');
-    let finalIssue = updated;
-    if (props.issue.result_content) {
-      finalIssue = await updateIssueResult(props.issue.id, '');
-    }
-    emit('status-changed', finalIssue);
-    emit('message', '狀態已更新為「處理中」。');
-  } catch {
-    emit('error', '狀態更新失敗，請稍後再試。');
-  }
 }
 
 function handleStatusChanged(updatedIssue: IssueRecord) {

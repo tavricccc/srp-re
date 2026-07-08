@@ -66,7 +66,7 @@
       :style="{ bottom: `${bottomGap}px` }"
       aria-label="手機主要導覽"
     >
-      <div ref="mobileNavRef" class="app-bottom-nav__inner mx-auto grid grid-cols-4 gap-1 relative">
+      <div ref="mobileNavRef" class="app-bottom-nav__inner mx-auto grid grid-cols-5 gap-1 relative">
         <!-- 行動版滑動背景膠囊 -->
         <div
           class="absolute rounded-full bg-ink-100 dark:bg-ink-800/70 pointer-events-none"
@@ -86,6 +86,27 @@
           </span>
           <span class="app-bottom-nav__label">{{ item.label }}</span>
         </RouterLink>
+        <CreateActionMenu
+          :can-create-announcement="isAdmin"
+          :default-category="defaultCreateCategory"
+          @create-announcement="handleCreateAnnouncement"
+          @create-issue="handleCreateIssue"
+        >
+          <template #trigger="{ open }">
+            <button
+              :ref="el => setMobileNavElement('create', el)"
+              type="button"
+              class="app-bottom-nav__item"
+              title="新增"
+              aria-label="新增"
+              @click="open"
+            >
+              <span class="app-bottom-nav__icon" aria-hidden="true">
+                <AppIcon name="plus" :size="6" :stroke-width="2.4" />
+              </span>
+            </button>
+          </template>
+        </CreateActionMenu>
         <RouterLink
           :ref="el => setMobileNavElement('notifications', el)"
           to="/notifications"
@@ -108,8 +129,8 @@
           class="app-bottom-nav__item overflow-visible"
           :class="{ 'app-bottom-nav__item--active': isMyProposalsRouteActive || ['settings', 'changelog', 'dashboard'].includes(route.name as string) }"
         >
-          <span class="app-bottom-nav__icon" aria-hidden="true">
-            <UserAvatar :photo-url="displayPhotoUrl" :name="user?.displayName || 'U'" size="sm" alt-text="使用者頭像" class="h-5 w-5" />
+          <span class="app-bottom-nav__icon h-5 w-5 overflow-hidden rounded-full" aria-hidden="true">
+            <UserAvatar :photo-url="displayPhotoUrl" :name="user?.displayName || 'U'" size="sm" alt-text="使用者頭像" class="!h-5 !w-5 rounded-full" />
           </span>
           <span class="app-bottom-nav__label">我的</span>
         </RouterLink>
@@ -120,21 +141,25 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
+import CreateActionMenu from '@/components/CreateActionMenu.vue';
 import SettingsPanel from '@/components/SettingsPanel.vue';
 import NotificationBell from '@/components/NotificationBell.vue';
 import BrandMark from '@/components/ui/BrandMark.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
-import { DEFAULT_ISSUE_ROUTE_FILTER } from '@/constants/categories';
+import { DEFAULT_ISSUE_CATEGORY, DEFAULT_ISSUE_ROUTE_FILTER, isIssueCategory } from '@/constants/categories';
+import { requestCreateAnnouncement, requestCreateIssue } from '@/composables/useCreateEntryActions';
 import { useIssueRouteFilter } from '@/composables/useIssueRouteFilter';
 import { useSession } from '@/composables/useSession';
 import { useNotifications } from '@/composables/useNotifications';
+import type { IssueCategory } from '@/types';
 
-const { customPhotoUrl, isAllowedUser, user } = useSession();
+const { customPhotoUrl, isAdmin, isAllowedUser, user } = useSession();
 const { activeFilter } = useIssueRouteFilter();
 const { hasUnread } = useNotifications();
 const route = useRoute();
+const router = useRouter();
 
 const isIssueRouteActive = computed(() => route.name === 'issues' || route.name === 'issue-detail');
 const isAnnouncementRouteActive = computed(() =>
@@ -165,6 +190,9 @@ const navItems = computed(() => {
   return items;
 });
 const displayPhotoUrl = computed(() => customPhotoUrl.value || user.value?.photoURL || null);
+const defaultCreateCategory = computed<IssueCategory>(() =>
+  isIssueCategory(activeFilter.value) ? activeFilter.value : DEFAULT_ISSUE_CATEGORY
+);
 const mobileRouteNavItems = computed(() => [
   {
     icon: 'comment' as const,
@@ -252,6 +280,14 @@ function activeMobileNavKey() {
   if (['settings', 'changelog', 'dashboard'].includes(route.name as string)) return 'settings';
   if (isIssueRouteActive.value) return 'issues';
   return '';
+}
+
+async function handleCreateIssue(category: IssueCategory) {
+  await requestCreateIssue(router, category);
+}
+
+async function handleCreateAnnouncement() {
+  await requestCreateAnnouncement(router);
 }
 
 function updateUnderline() {

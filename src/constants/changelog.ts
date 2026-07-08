@@ -2,6 +2,29 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善新增內容入口",
+    version: "v2.0.113",
+    date: "2026-07-09",
+    time: "00:20",
+    items: [
+      {
+        title: "新增手機底部中央新增入口，提案與公告可從同一流程選擇發布分類。"
+      },
+      {
+        title: "改善桌機新增提案與新增公告入口的一致性，維持原本控制列操作位置。"
+      },
+      {
+        title: "修正手機底部我的頭像顯示形狀。"
+      },
+      {
+        title: "調整管理員提案狀態與結果的操作入口，統一由同一視窗完成。"
+      },
+      {
+        title: "統一通知與設定選項呈現，改以清楚分隔線區分項目。"
+      }
+    ]
+  },
+  {
     title: "改善列表排序一致性",
     version: "v2.0.112",
     date: "2026-07-08",
