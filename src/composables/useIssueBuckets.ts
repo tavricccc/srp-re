@@ -1,6 +1,6 @@
 import { computed, onBeforeUnmount, reactive, watch, type Ref } from 'vue';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
-import { getIssueStatusBucket, sortIssuesByOption } from '@/lib/issue-timeline';
+import { getIssueStatusBucket } from '@/lib/issue-timeline';
 import { fetchIssuesPageByStatus } from '@/services/issues';
 import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption, IssueStatusBucket } from '@/types';
 
@@ -162,7 +162,7 @@ export function useIssueBuckets(deps: BucketDeps) {
     const statusBucket = getIssueStatusBucket(issue);
     if (issue.category !== activeFilter.value) return;
     const bucket = getBucketState(statusBucket);
-    bucket.issues = sortIssuesByOption(mergeIssues(bucket.issues, [issue]), sortOption.value, statusBucket);
+    bucket.issues = mergeIssues(bucket.issues, [issue]);
     bucket.initialized = true;
   }
 
