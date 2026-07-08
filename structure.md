@@ -64,6 +64,7 @@
 - supabase/migrations/202607080010_issue_closed_at_and_reply_notifications.sql：新增提案結案時間、已結案排序所需索引與 RPC 回傳欄位，並補齊巢狀留言回覆通知收件人 payload。
 - supabase/migrations/202607080011_issue_result_updated_outbox.sql：讓提案結果更新建立獨立 outbox 事件，供 Notion 同步結果內容與時間欄位。
 - supabase/migrations/202607080012_user_issues_operation_time_sort.sql：讓我的提案讀取依各提案目前操作時間排序，並維持穩定 cursor 分頁。
+- supabase/migrations/202607090001_align_issue_list_sorting.sql：修正提案列表 RPC 的已結案排序，讓已結案分類依結案操作時間分頁與回傳。
 - supabase/functions/backendAction/index.ts：前端受控 action HTTP 入口，集中 CORS、Firebase 驗證、使用者角色查詢、healthcheck、入口限流、action 分派與冪等保護，不直接承載各領域資料流程。
 - supabase/functions/backendAction/rate-limit.ts：受控 action 入口限流分級，依讀取、一般寫入、高風險寫入、管理寫入、圖片 URL 解析與 healthcheck 套用 Upstash 秒級與長視窗固定限制。
 - supabase/functions/backendAction/types.ts：受控 action 共用 Supabase client、身份與 JSON record 型別。

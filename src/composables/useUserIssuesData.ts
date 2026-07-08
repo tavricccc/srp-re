@@ -1,5 +1,4 @@
 import { computed, reactive, watch, type Ref } from 'vue';
-import { sortMixedStatusIssuesByOption } from '@/lib/issue-timeline';
 import { fetchUserIssues } from '@/services/issues';
 import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption } from '@/types';
 
@@ -34,7 +33,7 @@ export function useUserIssuesData(
       ...issue,
       currentUserSupported: issue.currentUserSupported || supportedIssueIds.value.has(issue.id),
     });
-    userIssuesState.allIssues = sortMixedStatusIssuesByOption(Array.from(issueMap.values()), sortOption.value);
+    userIssuesState.allIssues = Array.from(issueMap.values());
   }
 
   function removeUserIssue(issueId: string) {
@@ -82,7 +81,7 @@ export function useUserIssuesData(
         supportedIssueIds: supportedIssueIds.value,
       });
       if (currentToken !== requestToken) return;
-      userIssuesState.allIssues = sortMixedStatusIssuesByOption(page.issues, sortOption.value);
+      userIssuesState.allIssues = page.issues;
       userIssuesState.cursor = page.cursor;
       userIssuesState.hasMore = page.hasMore;
       userIssuesState.error = '';
@@ -108,10 +107,10 @@ export function useUserIssuesData(
         supportedIssueIds: supportedIssueIds.value,
       });
       const ids = new Set(userIssuesState.allIssues.map((issue) => issue.id));
-      userIssuesState.allIssues = sortMixedStatusIssuesByOption([
+      userIssuesState.allIssues = [
         ...userIssuesState.allIssues,
         ...page.issues.filter((issue) => !ids.has(issue.id)),
-      ], sortOption.value);
+      ];
       userIssuesState.cursor = page.cursor;
       userIssuesState.hasMore = page.hasMore;
       userIssuesState.error = '';
@@ -127,10 +126,10 @@ export function useUserIssuesData(
   }, { immediate: true });
 
   watch(supportedIssueIds, (newIds) => {
-    userIssuesState.allIssues = sortMixedStatusIssuesByOption(userIssuesState.allIssues.map((issue) => ({
+    userIssuesState.allIssues = userIssuesState.allIssues.map((issue) => ({
       ...issue,
       currentUserSupported: issue.currentUserSupported || newIds.has(issue.id),
-    })), sortOption.value);
+    }));
   });
 
   watch(sortOption, () => void loadCurrentUserIssues());

@@ -37,20 +37,6 @@ function mergeAnnouncements(existing: AnnouncementRecord[], incoming: Announceme
   return Array.from(announcementMap.values());
 }
 
-function sortAnnouncements(announcements: AnnouncementRecord[], sortOption: AnnouncementSortOption) {
-  return [...announcements].sort((left, right) => {
-    const leftPublishedAt = left.published_at?.getTime() ?? 0;
-    const rightPublishedAt = right.published_at?.getTime() ?? 0;
-    if (sortOption === 'most-liked') {
-      return right.like_count - left.like_count || rightPublishedAt - leftPublishedAt;
-    }
-    if (sortOption === 'most-commented') {
-      return right.comment_count - left.comment_count || rightPublishedAt - leftPublishedAt;
-    }
-    return rightPublishedAt - leftPublishedAt;
-  });
-}
-
 export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   const { isOnline } = useNetworkStatus();
   const sortOption = options.sortOption ?? ref<AnnouncementSortOption>('latest');
@@ -136,10 +122,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     try {
       const page = await fetchAnnouncementsPage(state.cursor, sortOption.value, pageSize.value);
       if (currentVersion !== getVersion(state)) return;
-      state.announcements = sortAnnouncements(
-        mergeAnnouncements(state.announcements, page.announcements),
-        sortOption.value,
-      );
+      state.announcements = mergeAnnouncements(state.announcements, page.announcements);
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
     } catch {
@@ -172,12 +155,12 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   }
 
   function upsertAnnouncement(announcement: AnnouncementRecord) {
-    stateCache.forEach((state, option) => {
-      state.announcements = sortAnnouncements(mergeAnnouncements(state.announcements, [announcement]), option);
+    stateCache.forEach((state) => {
+      state.announcements = mergeAnnouncements(state.announcements, [announcement]);
     });
     if (!stateCache.has(sortOption.value)) {
       const state = getState();
-      state.announcements = sortAnnouncements([announcement], sortOption.value);
+      state.announcements = [announcement];
     }
   }
 
@@ -185,12 +168,9 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     announcementId: string,
     updater: (announcement: AnnouncementRecord) => AnnouncementRecord,
   ) {
-    stateCache.forEach((state, option) => {
-      state.announcements = sortAnnouncements(
-        state.announcements.map((announcement) =>
-          announcement.id === announcementId ? updater(announcement) : announcement
-        ),
-        option,
+    stateCache.forEach((state) => {
+      state.announcements = state.announcements.map((announcement) =>
+        announcement.id === announcementId ? updater(announcement) : announcement
       );
     });
   }
