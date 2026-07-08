@@ -76,6 +76,10 @@
       <path d="M15.75 9.5h2.5a1.25 1.25 0 0 1 1.25 1.25v2.5a1.25 1.25 0 0 1-1.25 1.25h-2.5" />
       <path d="m7.25 14.1 1.35 3.4a.75.75 0 0 0 .7.5h1.95" />
     </template>
+    <template v-else-if="name === 'plus'">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </template>
     <template v-else-if="name === 'user'">
       <path d="M12 12a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" />
       <path d="M4.5 19.5a7.5 7.5 0 0 1 15 0" />
@@ -174,6 +178,7 @@ export type AppIconName =
   | 'h2'
   | 'list'
   | 'numlist'
+  | 'plus'
   | 'quote'
   | 'code'
   | 'divider'

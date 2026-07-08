@@ -20,8 +20,8 @@
       </button>
     </div>
 
-    <div class="min-h-0 overflow-y-auto px-4 py-4" :class="{ '!px-1 !py-2': flat }">
-      <section aria-label="目前帳號" :class="{ 'pb-4 border-b border-ink-100 dark:border-ink-800/60': flat }">
+    <div class="min-h-0 overflow-y-auto px-4" :class="flat ? '!px-1' : ''">
+      <section aria-label="目前帳號" class="border-b border-ink-100 py-4 dark:border-ink-800/60">
         <div class="flex items-center gap-3">
           <UserAvatar :photo-url="displayPhotoUrl" :name="displayName || 'U'" size="md" alt-text="使用者頭像" class="h-10 w-10 shrink-0" />
           <div class="min-w-0 flex-1">
@@ -43,17 +43,11 @@
         </div>
       </section>
 
-      <section
-        :class="flat ? 'border-b border-ink-100 pt-4 dark:border-ink-800/60' : 'mt-5 border-t border-ink-100 pt-4 dark:border-ink-800'"
-        aria-label="推播通知"
-      >
+      <section class="border-b border-ink-100 dark:border-ink-800/60" aria-label="推播通知">
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-4 text-left"
-          :class="[
-            flat ? 'content-trigger px-1 py-3.5' : 'content-trigger px-3 py-3.5',
-            (pushLoading || !pushActionLabel) ? 'opacity-60 cursor-not-allowed' : ''
-          ]"
+          class="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
+          :class="(pushLoading || !pushActionLabel) ? 'opacity-60 cursor-not-allowed' : ''"
           :disabled="pushLoading || !pushActionLabel"
           @click="emit('togglePush')"
         >
@@ -75,20 +69,16 @@
         </button>
       </section>
 
-      <section
-        :class="flat ? 'border-b border-ink-100 dark:border-ink-800/60 py-4' : 'mt-5 border-t border-ink-100 pt-4 dark:border-ink-800'"
-        aria-label="通知類型"
-      >
-        <div class="mb-3" :class="{ 'px-1': flat }">
+      <section class="border-b border-ink-100 py-4 dark:border-ink-800/60" aria-label="通知類型">
+        <div class="mb-1">
           <p class="text-sm font-semibold text-ink-950 dark:text-ink-50">通知類型</p>
         </div>
-        <div :class="flat ? 'space-y-1' : 'space-y-2'">
+        <div class="divide-y divide-ink-100 dark:divide-ink-800/60">
           <button
             v-for="option in personalNotificationOptions"
             :key="option.key"
             type="button"
-            class="flex w-full items-center justify-between gap-4 text-left"
-            :class="flat ? 'content-trigger px-1 py-3.5 border-b border-ink-100/60 dark:border-ink-800/40 last:border-b-0' : 'content-trigger border border-ink-100 px-3 py-3.5 dark:border-ink-800'"
+            class="flex w-full items-center justify-between gap-4 py-3.5 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
             :disabled="pushLoading"
             @click="emit('setPreference', option.key, !personalPreferences[option.key])"
           >
@@ -109,20 +99,16 @@
         </div>
       </section>
 
-      <section
-        :class="flat ? 'border-b border-ink-100 dark:border-ink-800/60' : 'mt-5 border-t border-ink-100 pt-4 dark:border-ink-800'"
-        aria-label="其他頁面"
-      >
-        <p v-if="!flat" class="mb-2 text-xs font-semibold text-ink-600 dark:text-ink-300">其他</p>
-        <div :class="flat ? 'divide-y divide-ink-100 dark:divide-ink-800/60' : 'space-y-1'">
+      <section class="border-b border-ink-100 dark:border-ink-800/60" aria-label="其他頁面">
+        <p v-if="!flat" class="pt-4 text-xs font-semibold text-ink-600 dark:text-ink-300">其他</p>
+        <div class="divide-y divide-ink-100 dark:divide-ink-800/60">
           <RouterLink
             to="/issues/my-proposals"
-            class="flex w-full items-center justify-between gap-3 text-left"
-            :class="flat ? 'content-trigger px-1 py-4' : 'content-trigger px-3 py-3'"
+            class="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
             @click="emit('close')"
           >
             <span class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-300">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center text-ink-500 dark:text-ink-300">
                 <AppIcon name="user" :size="4" :stroke-width="2" />
               </span>
               <span>
@@ -134,12 +120,11 @@
           </RouterLink>
           <RouterLink
             to="/changelog"
-            class="flex w-full items-center justify-between gap-3 text-left"
-            :class="flat ? 'content-trigger px-1 py-4' : 'content-trigger px-3 py-3'"
+            class="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
             @click="emit('close')"
           >
             <span class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-300">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center text-ink-500 dark:text-ink-300">
                 <AppIcon name="refresh" :size="4" :stroke-width="2" />
               </span>
               <span>
@@ -152,12 +137,11 @@
           <RouterLink
             v-if="isAdmin"
             to="/dashboard"
-            class="flex w-full items-center justify-between gap-3 text-left"
-            :class="flat ? 'content-trigger px-1 py-4' : 'content-trigger px-3 py-3'"
+            class="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
             @click="emit('close')"
           >
             <span class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-300">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center text-ink-500 dark:text-ink-300">
                 <AppIcon name="chart" :size="4" :stroke-width="2" />
               </span>
               <span>
@@ -169,12 +153,11 @@
           </RouterLink>
           <button
             type="button"
-            class="flex w-full items-center justify-between gap-3 text-left"
-            :class="flat ? 'content-trigger px-1 py-4' : 'content-trigger px-3 py-3'"
+            class="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
             @click="emit('restartApp')"
           >
             <span class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-300">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center text-ink-500 dark:text-ink-300">
                 <AppIcon name="refresh" :size="4" :stroke-width="2" />
               </span>
               <span>
@@ -187,7 +170,7 @@
         </div>
       </section>
 
-      <div :class="flat ? 'pt-6 pb-2' : 'mt-5 border-t border-ink-100 pt-4 dark:border-ink-800'">
+      <div class="py-4">
         <button
           type="button"
           class="button-secondary w-full border-error/20 text-error hover:bg-error-container/50"

@@ -7,7 +7,29 @@
       :active-filter="activeFilter"
       :active-category-label="activeCategoryLabel"
       :search-hint="searchHint"
-    />
+    >
+      <template #actions>
+        <CreateActionMenu
+          v-if="showToggle && activeFilter !== 'my-proposals'"
+          :can-create-announcement="isAdmin"
+          :default-category="defaultComposerCategory"
+          @create-announcement="handleCreateAnnouncement"
+          @create-issue="openComposerForCategory"
+        >
+          <template #trigger="{ open }">
+            <button
+              type="button"
+              class="button-icon-filled hidden md:flex !h-9 !w-9 items-center justify-center shrink-0"
+              title="新增"
+              aria-label="新增"
+              @click="open"
+            >
+              <AppIcon name="plus" :size="4" :stroke-width="2.5" />
+            </button>
+          </template>
+        </CreateActionMenu>
+      </template>
+    </BoardControls>
 
     <div class="scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-4">
       <PageLoadFailure
@@ -72,12 +94,6 @@
         <div ref="loadMoreSentinel" class="h-1" aria-hidden="true"></div>
       </template>
     </div>
-
-    <IssueCreateFab
-      :visible="showToggle && activeFilter !== 'my-proposals'"
-      :default-category="defaultComposerCategory"
-      @create="openComposerForCategory"
-    />
   </section>
 
   <IssueComposer
@@ -91,21 +107,29 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import BoardControls from '@/components/BoardControls.vue';
-import IssueCreateFab from '@/components/IssueCreateFab.vue';
+import CreateActionMenu from '@/components/CreateActionMenu.vue';
 import IssueBoardTable from '@/components/IssueBoardTable.vue';
 import IssueComposer from '@/components/IssueComposer.vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';
 import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
 import SkeletonTable from '@/components/ui/SkeletonTable.vue';
+import AppIcon from '@/components/ui/AppIcon.vue';
 import { useIssueBoardData } from '@/composables/useIssueBoardData';
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll';
 import { useMinimumLoading } from '@/composables/useMinimumLoading';
 import { useLoadingTimeout } from '@/composables/useLoadingTimeout';
+import {
+  CREATE_ENTRY_CATEGORY_QUERY_KEY,
+  CREATE_ENTRY_QUERY_KEY,
+  CREATE_ISSUE_QUERY_VALUE,
+  registerCreateIssueHandler,
+  requestCreateAnnouncement,
+} from '@/composables/useCreateEntryActions';
 import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
-import { DEFAULT_ISSUE_CATEGORY, ISSUE_CATEGORY_LABELS, issueIsPrivateToOwner, issueStoresAuthorPrivately } from '@/constants/categories';
+import { DEFAULT_ISSUE_CATEGORY, ISSUE_CATEGORY_LABELS, isIssueCategory, issueIsPrivateToOwner, issueStoresAuthorPrivately } from '@/constants/categories';
 import { resetAppConnection } from '@/lib/reconnect';
 import type { IssueCategory, IssueRecord } from '@/types';
 
@@ -114,7 +138,7 @@ type IssueDetailsOpenPayload = {
   initialTab: 'details' | 'comments';
 };
 
-defineProps<{
+const props = defineProps<{
   isFormOpen?: boolean;
   showToggle?: boolean;
 }>();
@@ -126,6 +150,7 @@ const emit = defineEmits<{
 const { isAdmin } = useSession();
 const { showToast } = useToast();
 const router = useRouter();
+const route = useRoute();
 const composerCategory = ref<IssueCategory>(DEFAULT_ISSUE_CATEGORY);
 const composerCategoryLabel = computed(() => ISSUE_CATEGORY_LABELS[composerCategory.value]);
 
@@ -215,8 +240,34 @@ function handleIssueUpdatedFromList(issue: IssueRecord) {
 
 function openComposerForCategory(category: IssueCategory) {
   composerCategory.value = category;
-  emit('toggle-form');
+  if (!props.isFormOpen) {
+    emit('toggle-form');
+  }
 }
+
+async function handleCreateAnnouncement() {
+  await requestCreateAnnouncement(router);
+}
+
+async function clearCreateQuery() {
+  const query = { ...route.query };
+  delete query[CREATE_ENTRY_QUERY_KEY];
+  delete query[CREATE_ENTRY_CATEGORY_QUERY_KEY];
+  await router.replace({ query });
+}
+
+registerCreateIssueHandler(openComposerForCategory);
+
+watch(
+  () => [route.query[CREATE_ENTRY_QUERY_KEY], route.query[CREATE_ENTRY_CATEGORY_QUERY_KEY]],
+  ([createType, categoryParam]) => {
+    if (createType !== CREATE_ISSUE_QUERY_VALUE) return;
+    const categoryValue = Array.isArray(categoryParam) ? categoryParam[0] : categoryParam;
+    openComposerForCategory(isIssueCategory(categoryValue) ? categoryValue : DEFAULT_ISSUE_CATEGORY);
+    void clearCreateQuery();
+  },
+  { immediate: true },
+);
 
 watch(composerMessage, (message) => {
   if (message) {

@@ -2,9 +2,29 @@
   <section class="mx-auto w-full max-w-7xl space-y-5">
     <AnnouncementControls
       v-model:sort-option="sortOption"
-      :can-create="isAdmin"
-      @create="openEditor(null)"
-    />
+    >
+      <template #actions>
+        <CreateActionMenu
+          v-if="isAdmin"
+          :can-create-announcement="isAdmin"
+          :default-category="DEFAULT_ISSUE_CATEGORY"
+          @create-announcement="openEditor(null)"
+          @create-issue="handleCreateIssue"
+        >
+          <template #trigger="{ open }">
+            <button
+              type="button"
+              class="button-icon-filled hidden md:flex !h-9 !w-9 items-center justify-center shrink-0"
+              title="新增"
+              aria-label="新增"
+              @click="open"
+            >
+              <AppIcon name="plus" :size="4" :stroke-width="2.5" />
+            </button>
+          </template>
+        </CreateActionMenu>
+      </template>
+    </AnnouncementControls>
 
     <div>
       <PageLoadFailure
@@ -81,48 +101,34 @@
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     />
-
-    <!-- 手機版浮動新增公告按鈕 (FAB) -->
-    <button
-      v-if="isAdmin"
-      type="button"
-      class="fixed bottom-[calc(var(--app-bottom-nav-height)+1.5rem)] right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-ink-950 text-ink-50 shadow-elevated transition-transform hover:scale-105 active:scale-95 md:hidden dark:bg-ink-50 dark:text-ink-950 dark:hover:bg-ink-100"
-      title="新增公告"
-      aria-label="新增公告"
-      @click="openEditor(null)"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-        <path d="M12 5l0 14" />
-        <path d="M5 12l14 0" />
-      </svg>
-    </button>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import AnnouncementControls from '@/components/AnnouncementControls.vue';
 import AnnouncementEditorDialog from '@/components/AnnouncementEditorDialog.vue';
 import AnnouncementTable from '@/components/AnnouncementTable.vue';
+import CreateActionMenu from '@/components/CreateActionMenu.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import AppIcon from '@/components/ui/AppIcon.vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';
 import SkeletonAnnouncementList from '@/components/ui/SkeletonAnnouncementList.vue';
 import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
+import {
+  CREATE_ANNOUNCEMENT_QUERY_VALUE,
+  CREATE_ENTRY_QUERY_KEY,
+  registerCreateAnnouncementHandler,
+  requestCreateIssue,
+} from '@/composables/useCreateEntryActions';
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll';
 import { useAnnouncementManagement } from '@/composables/useAnnouncementManagement';
 import { useMinimumLoading } from '@/composables/useMinimumLoading';
 import { useLoadingTimeout } from '@/composables/useLoadingTimeout';
+import { DEFAULT_ISSUE_CATEGORY } from '@/constants/categories';
 import { resetAppConnection } from '@/lib/reconnect';
+import type { IssueCategory } from '@/types';
 
 const {
   announcements,
@@ -153,6 +159,8 @@ const {
   handleToggleLike,
 } = useAnnouncementManagement();
 
+const route = useRoute();
+const router = useRouter();
 const rawAnnouncementLoading = computed(() => sessionLoading.value || loading.value);
 const { visibleLoading: visibleAnnouncementLoading } = useMinimumLoading(rawAnnouncementLoading);
 const {
@@ -168,6 +176,28 @@ async function retryAnnouncements() {
   await resetAppConnection();
   await refreshAnnouncements();
 }
+async function handleCreateIssue(category: IssueCategory) {
+  await requestCreateIssue(router, category);
+}
+
+async function clearCreateQuery() {
+  const query = { ...route.query };
+  delete query[CREATE_ENTRY_QUERY_KEY];
+  await router.replace({ query });
+}
+
+registerCreateAnnouncementHandler(() => openEditor(null));
+
+watch(
+  () => route.query[CREATE_ENTRY_QUERY_KEY],
+  (createType) => {
+    if (createType !== CREATE_ANNOUNCEMENT_QUERY_VALUE) return;
+    openEditor(null);
+    void clearCreateQuery();
+  },
+  { immediate: true },
+);
+
 const { sentinel: loadMoreSentinel } = useInfiniteScroll({
   disabled: infiniteScrollDisabled,
   onLoadMore: loadMoreAnnouncements,

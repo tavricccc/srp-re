@@ -21,14 +21,14 @@
       <div class="space-y-3 pb-4 border-b border-ink-100 dark:border-ink-800/60">
         <span class="block h-4 w-20 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
         <div class="space-y-2">
-          <div class="flex items-center justify-between p-3 border border-ink-100 dark:border-ink-800 rounded-xl">
+          <div class="flex items-center justify-between border-b border-ink-100 py-3 dark:border-ink-800/60">
             <div class="space-y-2 flex-1">
               <span class="block h-4 w-24 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
               <span class="block h-3 w-2/3 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
             </div>
             <span class="h-6 w-11 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
           </div>
-          <div class="flex items-center justify-between p-3 border border-ink-100 dark:border-ink-800 rounded-xl">
+          <div class="flex items-center justify-between border-b border-ink-100 py-3 dark:border-ink-800/60">
             <div class="space-y-2 flex-1">
               <span class="block h-4 w-24 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
               <span class="block h-3 w-2/3 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>

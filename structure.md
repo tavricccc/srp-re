@@ -158,25 +158,26 @@
 
 ### 應用元件 (src/components/)
 
-- src/components/AppShell.vue：全站外框與 edge-to-edge 頁首，使用 top safe-area inset 延伸到 PWA 狀態列；桌機放置品牌圖示、固定主導航（提案／公告／我的提案）與通知/設定，手機頁首改顯示目前主區塊標題，底部導覽固定為提案、公告、我的提案、通知與設定。
+- src/components/AppShell.vue：全站外框與 edge-to-edge 頁首，使用 top safe-area inset 延伸到 PWA 狀態列；桌機放置品牌圖示、固定主導航（提案／公告／我的提案）與通知/設定，手機頁首改顯示目前主區塊標題，底部導覽固定為提案、公告、中央新增、通知與我的。
 - src/components/AppStartupScreen.vue：App 啟動時的全螢幕 Loading Gate，使用品牌標誌、App 名稱、安全區 padding 與柔和載入動畫，覆蓋 auth 恢復與必要 session 初始化。
 - src/components/AuthorAvatar.vue：作者頭像 wrapper，依 author uid 查詢最新快取頭像，並以內容上的舊頭像 URL 作為 fallback。
 - src/components/LoginPanel.vue：校內 Google 帳號登入面板，供登入頁使用並維持原本未登入視覺。
 - src/components/AppInstallPromptDialog.vue：App 安裝與瀏覽器引導對話框，沿用共用 DialogOverlay 與提示型對話框排版，依 mode 呈現 in-app browser 提醒、Android 原生安裝按鈕或 iOS Safari 手動步驟。
 - src/components/AppUpdatePromptDialog.vue：偵測到遠端 build 版本較新時顯示不可略過的更新提示；視覺、焦點與捲動行為對齊其他提示型對話框，並阻止舊前端繼續呼叫可能已變更的後端介面。
 - src/components/SettingsPanel.vue：登入 / 設定面板 UI；session 恢復或登入進行中時在頭像位置顯示小型進度，完成後以頭像開啟「設定」面板，集中顯示目前帳號、切換帳號入口、單裝置推播通知狀態、通知類型開關、重啟 App 與登出操作。
-- src/components/SettingsPanelContent.vue：設定面板共用內容區，供桌機頭像 popover 與手機全螢幕 Dialog 共用，統一帳號切換、推播通知、通知類型開關、更新紀錄、重啟 App 與管理員統計入口呈現。
+- src/components/SettingsPanelContent.vue：設定面板共用內容區，供桌機頭像 popover 與手機設定頁共用，以分隔線清單統一帳號切換、推播通知、通知類型開關、更新紀錄、重啟 App 與管理員統計入口呈現。
 - src/components/PushPermissionPromptDialog.vue：登入後首次詢問推播權限的提示對話框；以本機 localStorage 記錄每個帳號在目前裝置是否已詢問過，允許使用者稍後再到設定開啟。
 - src/components/ConfirmDialog.vue：通用確認對話框，沿用共用 DialogOverlay、提示型文字層級、焦點管理與捲動鎖定。
 - src/components/ToastViewport.vue：全域 toast 顯示容器，統一呈現成功、資訊與錯誤提示，層級高於 modal dialog。
+- src/components/CreateActionMenu.vue：提案與公告共用新增選單，提供提案分類與管理員公告選項，讓桌機控制列與手機底部新增入口共用同一套選擇流程。
 - src/components/SegmentedControl.vue：共用分段選項元件，用於分類、狀態與留言模式切換。
 - src/components/VoteButtons.vue：附議 / 取消附議按鈕展示層，實際 optimistic UI 與附議流程委派給 `useVoteSupport`。
 - src/components/MarkdownRenderer.vue：將 Markdown 渲染為經 DOMPurify 過濾的安全 HTML，圖片支援尺寸屬性、lazy loading 與預留顯示空間以降低 layout shift。
-- src/components/NotificationBell.vue：頁首右上角 App 內通知中心，使用手機全螢幕面板／桌機右側 popover 呈現未讀數、通知類型圖示、載入與空狀態、分段載入及打開即已讀行為，並依通知目標路由至提案或公告詳情；推播設定統一由頭像設定面板管理。
+- src/components/NotificationBell.vue：頁首右上角 App 內通知中心，使用桌機右側 popover 呈現未讀數、分隔線通知清單、通知類型圖示、載入與空狀態、分段載入及打開即已讀行為，並依通知目標路由至提案或公告詳情；推播設定統一由頭像設定面板管理。
 - src/components/MarkdownMediaContent.vue：Markdown 圖文分離共用內容元件，圖片置頂以兩欄寬度水平捲動、文字置於下方，支援點圖全螢幕預覽。
 - src/components/CommentThreadPanel.vue：提案與公告共用留言面板，統一緊湊主留言與一層回覆列表、載入 / 錯誤 / 空狀態、底部自動載入更多、浮動輸入面板與刪除確認。
 - src/components/CompactActionMenu.vue：可設定文字與項目的精簡三點操作選單，供公告列表與留言刪除等管理入口共用。
-- src/components/AnnouncementControls.vue：公告列表頂部控制列，對齊提案看板的工具按鈕樣式，提供排序選單與管理員新增公告操作。
+- src/components/AnnouncementControls.vue：公告列表頂部控制列，對齊提案看板的工具按鈕樣式，提供排序選單與右側動作 slot。
 - src/components/AnnouncementTable.vue：公告表格列表容器，比照提案看板設計表格結構，負責渲染公告列表行並轉發開啟詳情、編輯與刪除事件。
 - src/components/AnnouncementTableRow.vue：單則公告表格列表項目，呈現公告標籤、發布者、標題、發布日期、按讚與留言互動按鈕以及管理員選單。
 - src/components/AnnouncementDetailPagePanel.vue：公告詳情子頁內容面板，使用共用詳情頁骨架組合公告內容、icon 操作列與留言區。
@@ -193,8 +194,8 @@
 
 ### 看板與列表元件
 
-- src/components/IssueBoard.vue：提案看板主體。調用 `useIssueBoardData`，以固定控制列與隱藏捲軸的獨立捲動列表組合看板狀態，支援排序、Realtime 更新與底部自動載入更多，並在開啟提案時導向提案詳情子頁。
-- src/components/BoardControls.vue：提案看板頂部控制列，包含頁內提案分類選單、進行中 / 已結案分段切換器、搜尋工具面板與排序選單。
+- src/components/IssueBoard.vue：提案看板主體。調用 `useIssueBoardData`，以固定控制列與隱藏捲軸的獨立捲動列表組合看板狀態，支援排序、共用新增選單、Realtime 更新與底部自動載入更多，並在開啟提案時導向提案詳情子頁。
+- src/components/BoardControls.vue：提案看板頂部控制列，包含頁內提案分類選單、進行中 / 已結案分段切換器、搜尋工具面板、排序選單與右側動作 slot。
 - src/components/IssueAdminMenu.vue：管理員狀態調整下拉選單展示層，用於列表視圖與動作選單。
 - src/components/IssueTableRow.vue：列表視圖單筆提案列展示層，桌面動態 grid、手機收折為單行精簡列；共用 `useIssueItemController` 處理提案互動狀態與開啟詳情事件。
 - src/components/IssueBoardTable.vue：列表視圖容器，含欄位標題列與提案列渲染；載入與分頁切換期間顯示 SkeletonTable。

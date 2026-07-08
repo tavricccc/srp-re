@@ -82,13 +82,12 @@
             <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">新的提案進度與互動會顯示在這裡</p>
           </div>
 
-          <div v-else class="min-h-0 overflow-y-auto overscroll-contain px-2 pb-2 pt-2">
+          <div v-else class="min-h-0 overflow-y-auto overscroll-contain">
             <button
               v-for="notification in notifications"
               :key="notification.id"
               type="button"
-              class="content-trigger relative flex min-h-[92px] w-full items-start gap-3 rounded-2xl px-3 py-3 text-left hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/70 dark:focus-visible:bg-ink-800/70"
-              :class="{ 'bg-secondary-container/25 dark:bg-secondary-container/10': !notification.is_read }"
+              class="relative flex min-h-[92px] w-full items-start gap-3 border-b border-ink-100 px-5 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:border-ink-800/60 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
               @click.stop="openNotification(notification)"
             >
               <AuthorAvatar
@@ -127,7 +126,7 @@
               <span class="material-symbols-outlined mt-7 shrink-0 text-[17px] text-ink-300 dark:text-ink-600" aria-hidden="true">chevron_right</span>
             </button>
 
-            <div v-if="hasMore" class="px-2 pb-2 pt-3">
+            <div v-if="hasMore" class="px-5 pb-4 pt-3">
               <button
                 type="button"
                 class="button-secondary h-10 w-full text-xs font-semibold"
