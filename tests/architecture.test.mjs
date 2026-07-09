@@ -139,6 +139,7 @@ test('backendAction covers frontend actions and Cloudinary direct upload', async
   const firebaseAuth = await read('supabase/functions/_shared/firebase-auth.ts');
   const http = await read('supabase/functions/_shared/http.ts');
   const uploads = await read('src/services/uploads.ts');
+  const announcementsService = await read('src/services/announcements.ts');
   const backendActionService = await read('src/services/backend-action.ts');
   const supabaseAuthService = await read('src/services/supabase-auth.ts');
   const functionErrorService = await read('src/services/supabase-function-error.ts');
@@ -172,6 +173,7 @@ test('backendAction covers frontend actions and Cloudinary direct upload', async
   assert.match(backendAction, /requestId/u);
   assert.match(backendAction, /backendActionDefinitions/u);
   assert.match(backendAction, /idempotentWrite/u);
+  assert.match(backendAction, /idempotentWrite\("setAnnouncementLike"/u);
   assert.match(backendAction, /async function runWithIdempotency/u);
   assert.match(backendAction, /claim_idempotency_key/u);
   assert.match(backendAction, /complete_idempotency_key/u);
@@ -187,6 +189,7 @@ test('backendAction covers frontend actions and Cloudinary direct upload', async
   assert.match(backendActionService, /Authorization: `Bearer \$\{token\}`/u);
   assert.match(backendActionService, /readSupabaseFunctionError/u);
   assert.match(backendActionService, /BackendActionEnvelope/u);
+  assert.match(announcementsService, /setAnnouncementLike[\s\S]*requestId: createRequestId\(\)/u);
   assert.match(supabaseAuthService, /Authorization: `Bearer \$\{token\.token\}`/u);
   assert.match(functionErrorService, /response\.clone\(\)\.json/u);
   assert.match(firebaseAuth, /accounts:lookup/u);

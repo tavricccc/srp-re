@@ -178,10 +178,25 @@ async function confirmDelete() {
 
 async function handleToggleLike() {
   if (!announcement.value) return;
+  if (!isAllowedUser.value) {
+    showToast('請先使用校內帳號登入後再按讚。', 'error');
+    return;
+  }
+  if (liking.value) return;
+
   const currentAnnouncement = announcement.value;
+  const previousLiked = currentAnnouncement.currentUserLiked;
+  const previousLikeCount = currentAnnouncement.like_count;
+  const nextLiked = !previousLiked;
+  const nextLikeCount = Math.max(0, previousLikeCount + (nextLiked ? 1 : -1));
   liking.value = true;
+  announcement.value = {
+    ...currentAnnouncement,
+    currentUserLiked: nextLiked,
+    like_count: nextLikeCount,
+  };
   try {
-    const result = await setAnnouncementLike(currentAnnouncement.id, !currentAnnouncement.currentUserLiked);
+    const result = await setAnnouncementLike(currentAnnouncement.id, nextLiked);
     if (announcement.value?.id === currentAnnouncement.id) {
       announcement.value = {
         ...announcement.value,
@@ -190,6 +205,13 @@ async function handleToggleLike() {
       };
     }
   } catch (caught) {
+    if (announcement.value?.id === currentAnnouncement.id) {
+      announcement.value = {
+        ...announcement.value,
+        currentUserLiked: previousLiked,
+        like_count: previousLikeCount,
+      };
+    }
     showToast(caught instanceof Error ? caught.message : '操作失敗，請稍後再試。', 'error');
   } finally {
     liking.value = false;

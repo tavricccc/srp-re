@@ -14,7 +14,7 @@
           <template #trigger="{ open }">
             <button
               type="button"
-              class="button-icon-filled hidden md:flex !h-9 !w-9 items-center justify-center shrink-0"
+              class="button-icon-filled flex !h-10 !w-10 items-center justify-center shrink-0 md:!h-9 md:!w-9"
               title="新增"
               aria-label="新增"
               @click="open"

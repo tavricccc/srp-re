@@ -135,8 +135,11 @@ export async function deleteAnnouncement(announcementId: string) {
 }
 
 export async function setAnnouncementLike(announcementId: string, liked: boolean) {
-  const fn = invokeBackendAction<{ announcementId: string; liked: boolean }, { liked: boolean; like_count: number }>('setAnnouncementLike');
-  const result = await fn({ announcementId, liked });
+  const fn = invokeBackendAction<
+    { announcementId: string; liked: boolean; requestId: string },
+    { liked: boolean; like_count: number }
+  >('setAnnouncementLike');
+  const result = await fn({ announcementId, liked, requestId: createRequestId() });
   return result;
 }
 

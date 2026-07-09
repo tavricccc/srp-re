@@ -24,29 +24,27 @@
           <!-- Likes button -->
           <button
             type="button"
-            class="button-toolbar h-10 w-10 rounded-full p-0 flex items-center justify-center"
+            class="button-toolbar flex h-10 min-w-10 items-center justify-center gap-1 rounded-full px-2.5"
             :class="announcement.currentUserLiked ? 'text-red-600 dark:text-red-300' : ''"
             :disabled="liking"
+            :title="announcement.currentUserLiked ? '取消讚' : '按讚'"
+            :aria-label="announcement.currentUserLiked ? '取消讚' : '按讚'"
             @click.stop="emit('toggleLike', announcement)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" :fill="announcement.currentUserLiked ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733C11.285 4.876 9.623 3.75 7.688 3.75 5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-            </svg>
-            <span class="text-xs ml-1 font-medium">{{ announcement.like_count }}</span>
+            <AppIcon name="heart" :filled="announcement.currentUserLiked" />
+            <span class="text-xs font-semibold tabular-nums">{{ announcement.like_count }}</span>
           </button>
 
           <!-- comments button -->
           <button
             type="button"
-            class="button-toolbar h-10 w-10 rounded-full p-0 flex items-center justify-center"
+            class="button-toolbar flex h-10 min-w-10 items-center justify-center gap-1 rounded-full px-2.5"
             title="查看留言"
             aria-label="查看留言"
             @click.stop="emit('openComments', announcement)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z" />
-            </svg>
-            <span class="text-xs ml-1 font-medium">{{ announcement.comment_count }}</span>
+            <AppIcon name="comment" />
+            <span class="text-xs font-semibold tabular-nums">{{ announcement.comment_count }}</span>
           </button>
 
           <CompactActionMenu
@@ -103,29 +101,27 @@
         <!-- Likes button -->
         <button
           type="button"
-          class="button-toolbar h-7 px-2 rounded-full flex items-center justify-center"
+          class="button-toolbar flex h-7 items-center justify-center gap-1 rounded-full px-2"
           :class="announcement.currentUserLiked ? 'text-red-600 dark:text-red-300' : ''"
           :disabled="liking"
+          :title="announcement.currentUserLiked ? '取消讚' : '按讚'"
+          :aria-label="announcement.currentUserLiked ? '取消讚' : '按讚'"
           @click.stop="emit('toggleLike', announcement)"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" :fill="announcement.currentUserLiked ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733C11.285 4.876 9.623 3.75 7.688 3.75 5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-          </svg>
-          <span class="text-xs ml-1 font-semibold">{{ announcement.like_count }}</span>
+          <AppIcon name="heart" :filled="announcement.currentUserLiked" />
+          <span class="text-xs font-semibold tabular-nums">{{ announcement.like_count }}</span>
         </button>
 
         <!-- Comments button -->
         <button
           type="button"
-          class="button-toolbar h-7 px-2 rounded-full flex items-center justify-center"
+          class="button-toolbar flex h-7 items-center justify-center gap-1 rounded-full px-2"
           title="查看留言"
           aria-label="查看留言"
           @click="emit('openComments', announcement)"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z" />
-          </svg>
-          <span class="text-xs ml-1 font-semibold">{{ announcement.comment_count }}</span>
+          <AppIcon name="comment" />
+          <span class="text-xs font-semibold tabular-nums">{{ announcement.comment_count }}</span>
         </button>
       </div>
 
@@ -146,6 +142,7 @@ import { computed, ref } from 'vue';
 import type { AnnouncementRecord } from '@/types';
 import AuthorAvatar from '@/components/AuthorAvatar.vue';
 import CompactActionMenu from '@/components/CompactActionMenu.vue';
+import AppIcon from '@/components/ui/AppIcon.vue';
 import { formatDateOnly } from '@/lib/format';
 
 const props = defineProps<{

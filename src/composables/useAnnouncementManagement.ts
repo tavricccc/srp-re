@@ -118,16 +118,36 @@ export function useAnnouncementManagement() {
 
   async function handleToggleLike(announcement: AnnouncementRecord | null) {
     if (!announcement) return;
+    if (!isAllowedUser.value) {
+      showToast('請先使用校內帳號登入後再按讚。', 'error');
+      return;
+    }
+    if (liking.value) return;
+
+    const previousLiked = announcement.currentUserLiked;
+    const previousLikeCount = announcement.like_count;
+    const nextLiked = !previousLiked;
+    const nextLikeCount = Math.max(0, previousLikeCount + (nextLiked ? 1 : -1));
     liking.value = true;
     likingAnnouncementId.value = announcement.id;
+    patchAnnouncement(announcement.id, (item) => ({
+      ...item,
+      currentUserLiked: nextLiked,
+      like_count: nextLikeCount,
+    }));
     try {
-      const result = await setAnnouncementLike(announcement.id, !announcement.currentUserLiked);
+      const result = await setAnnouncementLike(announcement.id, nextLiked);
       patchAnnouncement(announcement.id, (item) => ({
         ...item,
         currentUserLiked: result.liked,
         like_count: result.like_count,
       }));
     } catch (caught) {
+      patchAnnouncement(announcement.id, (item) => ({
+        ...item,
+        currentUserLiked: previousLiked,
+        like_count: previousLikeCount,
+      }));
       if (isContentUnavailableError(caught)) {
         handleAnnouncementUnavailable(announcement.id);
       }

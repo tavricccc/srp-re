@@ -30,7 +30,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     title: "提升資料讀取與寫入穩定性",
     version: "v2.0.123",
     date: "2026-07-09",
-    time: "13:09",
+    time: "14:41",
     items: [
       {
         title: "修正提案依附議數排序時載入更多可能遺漏同附議數內容的情況。"
@@ -43,6 +43,12 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
       },
       {
         title: "修正分段切換器的選取填充顯示，讓狀態切換外觀更一致。"
+      },
+      {
+        title: "修正公告按讚操作，提升快速點擊與網路重試時的穩定性。"
+      },
+      {
+        title: "改善公告列表在手機上的操作按鈕顯示，並補齊管理員新增入口。"
       }
     ]
   },
