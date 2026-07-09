@@ -9,6 +9,9 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     items: [
       {
         title: "強化系統維護規範，降低更新部署時遺漏修正的風險。"
+      },
+      {
+        title: "修正推播通知開啟時可能無法完成設定的問題。"
       }
     ]
   },
