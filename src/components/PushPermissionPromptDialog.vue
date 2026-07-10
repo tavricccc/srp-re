@@ -18,9 +18,13 @@
           <span class="material-symbols-outlined text-2xl">notifications</span>
         </div>
         <div class="min-w-0 flex-1">
-          <h2 id="push-permission-title" class="dialog-title !mt-0">開啟推播通知</h2>
+          <h2 id="push-permission-title" class="dialog-title !mt-0">
+            {{ mode === 'repair' ? '重新啟用推播通知' : '開啟推播通知' }}
+          </h2>
           <p id="push-permission-description" class="dialog-description">
-            可以在提案有留言或狀態更新時提醒你。你也可以之後在「設定」中調整通知類型。
+            {{ mode === 'repair'
+              ? '這台裝置的通知連結需要更新，重新啟用後才能繼續收到推播通知。'
+              : '可以在提案有留言或狀態更新時提醒你。你也可以之後在「設定」中調整通知類型。' }}
           </p>
         </div>
       </div>
@@ -41,7 +45,7 @@
           data-autofocus
           @click="emit('enable')"
         >
-          {{ busy ? '處理中...' : '開啟通知' }}
+          {{ busy ? '處理中...' : mode === 'repair' ? '重新啟用' : '開啟通知' }}
         </button>
       </div>
     </section>
@@ -56,6 +60,7 @@ import { useDialogFocus } from '@/composables/useDialogFocus';
 
 const props = defineProps<{
   busy: boolean;
+  mode?: 'permission' | 'repair';
   open: boolean;
 }>();
 

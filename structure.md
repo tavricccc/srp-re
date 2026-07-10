@@ -180,7 +180,7 @@
 - src/components/AppUpdatePromptDialog.vue：偵測到遠端 build 版本較新時顯示不可略過的更新提示；視覺、焦點與捲動行為對齊其他提示型對話框，並阻止舊前端繼續呼叫可能已變更的後端介面。
 - src/components/SettingsPanel.vue：登入 / 設定面板 UI；session 恢復或登入進行中時在頭像位置顯示小型進度，完成後以頭像開啟「設定」面板，集中顯示目前帳號、切換帳號入口、單裝置推播通知狀態、通知類型開關、重啟 App 與登出操作。
 - src/components/SettingsPanelContent.vue：設定面板共用內容區，供桌機頭像 popover 與手機設定頁共用，以分隔線清單統一帳號切換、推播通知、通知類型開關、更新紀錄、重啟 App 與管理員統計入口呈現。
-- src/components/PushPermissionPromptDialog.vue：登入後首次詢問推播權限的提示對話框；以本機 localStorage 記錄每個帳號在目前裝置是否已詢問過，允許使用者稍後再到設定開啟。
+- src/components/PushPermissionPromptDialog.vue：登入後詢問推播權限或修復裝置通知連結的提示對話框；依提示情境顯示開啟或重新啟用說明，允許使用者稍後再到設定處理。
 - src/components/ConfirmDialog.vue：通用確認對話框，沿用共用 DialogOverlay、提示型文字層級、焦點管理與捲動鎖定。
 - src/components/ToastViewport.vue：全域 toast 顯示容器，統一呈現成功、資訊與錯誤提示，層級高於 modal dialog。
 - src/components/CreateActionMenu.vue：提案與公告共用新增選單，提供提案分類與管理員公告選項，讓桌機控制列與手機底部新增入口共用同一套選擇流程。
@@ -263,7 +263,8 @@
 - src/composables/useResolvedMarkdown.ts：解析 Markdown 中的 `srp-upload://` 圖片，透過 Cloud Function 換取 preview/full signed URL 後供渲染元件使用。
 - src/composables/useNotifications.ts：以共享通知資料源合併 broadcast/admin/user 三來源通知、分來源 cursor 載入更多、閱讀游標與紅點狀態；集中管理 realtime 訂閱並將新通知增量合併到本地分頁，避免覆蓋已載入內容。
 - src/composables/useNotificationNavigation.ts：通知目標導航流程，先經受控讀取確認公告或提案仍存在且目前使用者可讀，再使用後端回傳的真實分類開啟詳情。
-- src/composables/usePushNotifications.ts：Web Push 推播偏好管理，負責瀏覽器支援與權限狀態、目前裝置 service worker token 註冊 / 關閉、通知分類偏好、跨裝置狀態校正與前景訊息 toast。
+- src/composables/usePushNotifications.ts：Web Push 推播偏好管理，負責瀏覽器支援與權限狀態、目前裝置 service worker token 註冊 / 關閉、token 更新同步、遺失註冊修復判斷、使用者主動關閉意圖、通知分類偏好、跨裝置狀態校正與前景訊息 toast。
+- src/composables/usePushPermissionPrompt.ts：推播權限、PWA 安裝與裝置通知連結修復的 App 層提示流程，依帳號與提示情境套用七天冷卻，並在 App 回到前景時重新檢查。
 - src/composables/useAnnouncements.ts：公告列表依排序快取分段讀取、依螢幕高度決定讀取批量、Realtime 刷新、底部自動載入更多與載入 / 錯誤狀態管理。
 - src/composables/useAnnouncementManagement.ts：公告頁管理流程，整合公告列表讀取、Realtime 事件訂閱、id 路由選取、單筆讀取、分享、編輯、新增、背景刪除與明確讚狀態。
 - src/composables/useAnnouncementComments.ts：公告留言分頁讀取、載入更多、Realtime 事件刷新、新增主留言 / 回覆、局部刪除與權限判斷狀態管理，使用留言區自己的請求 scope 避免路由切換誤判空狀態。

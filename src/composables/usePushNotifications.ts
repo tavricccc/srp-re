@@ -18,9 +18,11 @@ import {
 const PUSH_SERVICE_TIMEOUT_MS = 10_000;
 const PUSH_TOKEN_TIMEOUT_MS = 15_000;
 const PUSH_DEVICE_ID_STORAGE_KEY = 'srp:push-device-id';
+const PUSH_EXPLICITLY_DISABLED_STORAGE_PREFIX = 'srp:push-explicitly-disabled:';
 const supported = ref(false);
 const permission = ref<PushNotificationPermission>('default');
 const deviceEnabled = ref(false);
+const explicitlyDisabled = ref(false);
 const loading = ref(false);
 const error = ref('');
 const initialized = ref(false);
@@ -30,6 +32,7 @@ const personalPreferences = ref<PersonalPushPreferences>({
 });
 let currentToken = '';
 let foregroundUnsubscribe: (() => void) | null = null;
+let synchronizedRegistrationKey = '';
 
 function readOrCreatePushDeviceId() {
   if (typeof window === 'undefined') return '';
@@ -119,6 +122,41 @@ export function usePushNotifications() {
   const requiresPwaInstall = computed(() =>
     shouldInstallPwaBeforePush(navigator.userAgent, navigator.platform, navigator.maxTouchPoints),
   );
+  const needsRegistrationRepair = computed(() =>
+    supported.value
+    && permission.value === 'granted'
+    && !deviceEnabled.value
+    && !explicitlyDisabled.value,
+  );
+
+  function explicitlyDisabledStorageKey(uid: string) {
+    return `${PUSH_EXPLICITLY_DISABLED_STORAGE_PREFIX}${uid}:${deviceId}`;
+  }
+
+  function readExplicitlyDisabled(uid: string) {
+    return Boolean(uid && localStorage.getItem(explicitlyDisabledStorageKey(uid)) === '1');
+  }
+
+  function setExplicitlyDisabled(disabled: boolean) {
+    const uid = user.value?.uid ?? '';
+    explicitlyDisabled.value = disabled;
+    if (!uid) return;
+    const storageKey = explicitlyDisabledStorageKey(uid);
+    if (disabled) localStorage.setItem(storageKey, '1');
+    else localStorage.removeItem(storageKey);
+  }
+
+  async function registerCurrentPushToken(token: string) {
+    return registerPushToken({
+      deviceId,
+      token,
+      permission: 'granted',
+      platform: navigator.platform,
+      userAgent: navigator.userAgent,
+    });
+  }
+
+  explicitlyDisabled.value = readExplicitlyDisabled(user.value?.uid ?? '');
 
   async function refreshPushPreference() {
     if (!user.value) {
@@ -130,9 +168,9 @@ export function usePushNotifications() {
     loading.value = true;
     error.value = '';
     try {
-      await resolveMessaging();
-      if (permission.value === 'granted') {
-        currentToken = await resolveCurrentToken();
+      const messaging = await resolveMessaging();
+      if (messaging && permission.value === 'granted') {
+        currentToken = await getPushToken(messaging);
       }
       const preference = await getPushNotificationPreference({
         deviceId,
@@ -140,6 +178,16 @@ export function usePushNotifications() {
         token: currentToken || undefined,
       });
       applyPreference(preference);
+
+      if (permission.value === 'granted' && preference.deviceEnabled && currentToken) {
+        const registrationKey = `${user.value.uid}:${currentToken}`;
+        if (synchronizedRegistrationKey !== registrationKey) {
+          const synchronizedPreference = await registerCurrentPushToken(currentToken);
+          synchronizedRegistrationKey = registrationKey;
+          setExplicitlyDisabled(false);
+          applyPreference(synchronizedPreference);
+        }
+      }
 
       if (permission.value !== 'granted' && preference.deviceEnabled) {
         const cleaned = await unregisterPushToken({
@@ -195,13 +243,9 @@ export function usePushNotifications() {
         throw new Error('無法取得此裝置的推播識別，請稍後再試。');
       }
 
-      const preference = await registerPushToken({
-        deviceId,
-        token: currentToken,
-        permission: nextPermission,
-        platform: navigator.platform,
-        userAgent: navigator.userAgent,
-      });
+      const preference = await registerCurrentPushToken(currentToken);
+      synchronizedRegistrationKey = `${user.value.uid}:${currentToken}`;
+      setExplicitlyDisabled(false);
       applyPreference(preference);
 
       if (!foregroundUnsubscribe) {
@@ -240,6 +284,8 @@ export function usePushNotifications() {
         token: tokenToDisable || undefined,
       });
       currentToken = '';
+      synchronizedRegistrationKey = '';
+      setExplicitlyDisabled(true);
       applyPreference(preference);
     } catch (caught) {
       error.value = readableError(caught);
@@ -252,7 +298,9 @@ export function usePushNotifications() {
   watch(user, (nextUser, previousUser) => {
     if (nextUser?.uid === previousUser?.uid) return;
     currentToken = '';
+    synchronizedRegistrationKey = '';
     deviceEnabled.value = false;
+    explicitlyDisabled.value = readExplicitlyDisabled(nextUser?.uid ?? '');
     error.value = '';
     initialized.value = false;
     personalPreferences.value = { comments: true, issueUpdates: true };
@@ -292,6 +340,7 @@ export function usePushNotifications() {
     error: readonly(error),
     initialized: readonly(initialized),
     loading: readonly(loading),
+    needsRegistrationRepair: readonly(needsRegistrationRepair),
     personalPreferences: readonly(personalPreferences),
     permission: readonly(permission),
     requiresPwaInstall: readonly(requiresPwaInstall),

@@ -530,6 +530,23 @@ test('notification realtime subscriptions are shared and collision-resistant', a
   assert.match(appResume, /export function registerAppResumeHandler/u);
 });
 
+test('push notification registration recovers without overriding an explicit opt-out', async () => {
+  const pushNotifications = await read('src/composables/usePushNotifications.ts');
+  const pushPrompt = await read('src/composables/usePushPermissionPrompt.ts');
+  const promptDialog = await read('src/components/PushPermissionPromptDialog.vue');
+
+  assert.match(pushPrompt, /PUSH_PROMPT_COOLDOWN_MS/u);
+  assert.match(pushPrompt, /needsRegistrationRepair/u);
+  assert.match(pushPrompt, /useAppResume\(\(\) =>/u);
+  assert.match(pushPrompt, /mode\.value = 'repair'/u);
+  assert.match(pushNotifications, /needsRegistrationRepair/u);
+  assert.match(pushNotifications, /preference\.deviceEnabled && currentToken/u);
+  assert.match(pushNotifications, /registerCurrentPushToken\(currentToken\)/u);
+  assert.match(pushNotifications, /setExplicitlyDisabled\(true\)/u);
+  assert.match(pushNotifications, /setExplicitlyDisabled\(false\)/u);
+  assert.match(promptDialog, /重新啟用推播通知/u);
+});
+
 test('notification navigation verifies target access before routing', async () => {
   const navigation = await read('src/composables/useNotificationNavigation.ts');
   const notificationBell = await read('src/components/NotificationBell.vue');

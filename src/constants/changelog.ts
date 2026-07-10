@@ -2,6 +2,23 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "提升推播通知可靠性",
+    version: "v2.0.145",
+    date: "2026-07-10",
+    time: "17:09",
+    items: [
+      {
+        title: "新增裝置通知連結異常提醒，協助使用者重新啟用推播通知。"
+      },
+      {
+        title: "支援 App 回到前景時校正通知狀態與裝置識別。"
+      },
+      {
+        title: "調整通知提醒為七天後可再次顯示，並保留使用者主動關閉設定。"
+      }
+    ]
+  },
+  {
     title: "提升 App 更新與啟動穩定性",
     version: "v2.0.144",
     date: "2026-07-10",

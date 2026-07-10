@@ -20,7 +20,8 @@
     <ToastViewport />
     <PushPermissionPromptDialog
       :open="isPushPromptOpen"
-      :busy="pushLoading"
+      :busy="pushPromptBusy"
+      :mode="pushPromptMode"
       @dismiss="dismissPushPrompt"
       @enable="enablePushFromPrompt"
     />
@@ -73,11 +74,10 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import { useAppInstallPrompt } from '@/composables/useAppInstallPrompt';
 import { useAppStartupGate } from '@/composables/useAppStartupGate';
 import { useAppUpdate } from '@/composables/useAppUpdate';
-import { usePushNotifications } from '@/composables/usePushNotifications';
+import { usePushPermissionPrompt } from '@/composables/usePushPermissionPrompt';
 import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
-import { requestAppInstallPrompt } from '@/lib/pwa-install';
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { DEFAULT_ISSUE_ROUTE_FILTER } from '@/constants/categories';
 
 const APP_RELEASE_MARKER = '2026-06-27-1516';
@@ -124,15 +124,12 @@ const shouldShowUpdateDialog = computed(() => {
 });
 
 const {
-  enablePushNotifications,
-  loading: pushLoading,
-  permission: pushPermission,
-  requiresPwaInstall: pushRequiresPwaInstall,
-  refreshPushPreference,
-  supported: pushSupported,
-} = usePushNotifications();
-const isPushPromptOpen = ref(false);
-const PUSH_PROMPT_STORAGE_PREFIX = 'srp:push-permission-prompted:';
+  busy: pushPromptBusy,
+  dismiss: dismissPushPrompt,
+  enable: enablePushFromPrompt,
+  mode: pushPromptMode,
+  open: isPushPromptOpen,
+} = usePushPermissionPrompt();
 
 const {
   browserName: installPromptBrowserName,
@@ -146,18 +143,6 @@ const {
   promptInstall,
   reason: installPromptReason,
 } = useAppInstallPrompt();
-
-function pushPromptStorageKey(uid: string) {
-  return `${PUSH_PROMPT_STORAGE_PREFIX}${uid}`;
-}
-
-function hasSeenPushPrompt(uid: string) {
-  return localStorage.getItem(pushPromptStorageKey(uid)) === '1';
-}
-
-function markPushPromptSeen(uid: string) {
-  localStorage.setItem(pushPromptStorageKey(uid), '1');
-}
 
 function defaultAuthenticatedRoute() {
   return {
@@ -177,42 +162,11 @@ function normalizeRedirectPath(value: unknown) {
   return path;
 }
 
-function dismissPushPrompt() {
-  const uid = user.value?.uid;
-  if (uid) markPushPromptSeen(uid);
-  isPushPromptOpen.value = false;
-}
-
-async function enablePushFromPrompt() {
-  const uid = user.value?.uid;
-  if (uid) markPushPromptSeen(uid);
-  await enablePushNotifications();
-  isPushPromptOpen.value = false;
-}
-
 watch(
   updateAvailable,
   (hasUpdate) => {
     if (hasUpdate && canAutoReloadCurrentVersion()) {
       void reloadApp({ automatic: true, reason: 'update' });
-    }
-  },
-  { immediate: true },
-);
-
-watch(
-  () => user.value?.uid ?? '',
-  async (uid) => {
-    isPushPromptOpen.value = false;
-    if (!uid || hasSeenPushPrompt(uid)) return;
-    await refreshPushPreference();
-    if (pushRequiresPwaInstall.value && !hasSeenPushPrompt(uid)) {
-      markPushPromptSeen(uid);
-      requestAppInstallPrompt('notifications');
-      return;
-    }
-    if (pushSupported.value && pushPermission.value === 'default' && !hasSeenPushPrompt(uid)) {
-      isPushPromptOpen.value = true;
     }
   },
   { immediate: true },
