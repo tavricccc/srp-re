@@ -7,6 +7,7 @@ import type {
 import { invokeBackendAction } from '@/services/backend-action';
 import { createRequestId } from '@/lib/request-id';
 import { READ_REQUEST_TIMEOUT_MS, RequestFailure } from '@/lib/request';
+import { createContentCacheKey, getCachedContent, setCachedContent } from '@/services/content-read-cache';
 import { normalizeDate, toReadableBackendError } from '@/services/issues-core';
 import type { CommentCursor } from './comment-cursor';
 import { normalizeCommentCursor } from './comment-cursor';
@@ -76,18 +77,35 @@ export async function fetchAnnouncementsPage(
   cursor: AnnouncementCursor = null,
   sort: AnnouncementSortOption = 'latest',
   pageSize = ANNOUNCEMENT_LIMIT,
+  options: { cacheScope?: string; forceRefresh?: boolean } = {},
 ) {
+  const cacheKey = createContentCacheKey([
+    'announcement-list-page',
+    options.cacheScope ?? 'default',
+    sort,
+    pageSize,
+    cursor?.id ?? 'first',
+    cursor?.sortNumber ?? '',
+    cursor?.publishedAtMs ?? '',
+  ]);
+  if (!options.forceRefresh) {
+    const cached = getCachedContent<{ announcements: AnnouncementRecord[]; cursor: AnnouncementCursor; hasMore: boolean }>(cacheKey);
+    if (cached) return cached;
+  }
+
   try {
     const fn = invokeBackendAction<
       { cursor: AnnouncementCursor; pageSize: number; sort: AnnouncementSortOption },
       { announcements: Record<string, unknown>[]; cursor: AnnouncementCursor; hasMore: boolean }
     >('listAnnouncements', { timeoutMs: READ_REQUEST_TIMEOUT_MS });
     const result = await fn({ cursor, pageSize, sort });
-    return {
+    const page = {
       announcements: result.announcements.map(normalizeAnnouncementRecord),
       cursor: normalizeAnnouncementCursor(result.cursor),
       hasMore: result.hasMore,
     };
+    setCachedContent(cacheKey, page);
+    return page;
   } catch (error) {
     throw toReadableBackendError(error);
   }
@@ -95,14 +113,23 @@ export async function fetchAnnouncementsPage(
 
 export async function fetchAnnouncementRecordById(
   announcementId: string,
+  options: { cacheScope?: string; forceRefresh?: boolean } = {},
 ): Promise<AnnouncementRecord> {
+  const cacheKey = createContentCacheKey(['announcement-detail', options.cacheScope ?? 'default', announcementId]);
+  if (!options.forceRefresh) {
+    const cached = getCachedContent<AnnouncementRecord>(cacheKey);
+    if (cached) return cached;
+  }
+
   try {
     const fn = invokeBackendAction<
       { announcementId: string },
       { announcement: Record<string, unknown> }
     >('getAnnouncement', { timeoutMs: READ_REQUEST_TIMEOUT_MS });
     const result = await fn({ announcementId });
-    return normalizeAnnouncementRecord(result.announcement);
+    const announcement = normalizeAnnouncementRecord(result.announcement);
+    setCachedContent(cacheKey, announcement);
+    return announcement;
   } catch (error) {
     if (error instanceof RequestFailure) throw error;
     throw new Error('找不到這則公告。', { cause: error });
@@ -142,8 +169,20 @@ export async function setAnnouncementLike(announcementId: string, liked: boolean
 export async function fetchAnnouncementComments(
   announcementId: string,
   cursor?: CommentCursor,
-  options: { signal?: AbortSignal | null } = {},
+  options: { cacheScope?: string; forceRefresh?: boolean; signal?: AbortSignal | null } = {},
 ) {
+  const cacheKey = createContentCacheKey([
+    'announcement-comments-page',
+    options.cacheScope ?? 'default',
+    announcementId,
+    cursor?.id ?? 'first',
+    cursor?.createdAtMs ?? '',
+  ]);
+  if (!options.forceRefresh) {
+    const cached = getCachedContent<{ comments: AnnouncementCommentRecord[]; cursor: CommentCursor; hasMore: boolean }>(cacheKey);
+    if (cached) return cached;
+  }
+
   const fn = invokeBackendAction<
     { announcementId: string; cursor?: CommentCursor },
     { comments: Array<Record<string, unknown>>; cursor: CommentCursor; hasMore: boolean }
@@ -152,7 +191,7 @@ export async function fetchAnnouncementComments(
     timeoutMs: READ_REQUEST_TIMEOUT_MS,
   });
   const result = await fn({ announcementId, cursor });
-  return {
+  const page = {
     comments: result.comments.map(normalizeAnnouncementComment),
     cursor: normalizeCommentCursor(result.cursor),
     hasMore: result.hasMore,
@@ -161,6 +200,8 @@ export async function fetchAnnouncementComments(
     cursor: CommentCursor;
     hasMore: boolean;
   };
+  setCachedContent(cacheKey, page);
+  return page;
 }
 
 export async function createAnnouncementComment(announcementId: string, content: string, parentCommentId: string | null = null) {

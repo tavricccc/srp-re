@@ -1,4 +1,5 @@
 import { onScopeDispose, ref, watch, type Ref } from 'vue';
+import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
 import { createComment, deleteComment, fetchComments } from '@/services/issues';
@@ -7,6 +8,24 @@ import { formatRequestError, isAbortFailure, RequestFailure } from '@/lib/reques
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { isContentUnavailableError } from '@/services/issues-core';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
+import {
+  createContentCacheKey,
+  isContentCacheFresh,
+  markContentRealtimeReliable,
+  markContentRealtimeUnreliable,
+  markContentWentOffline,
+  shouldRefreshContentAfterResume,
+} from '@/services/content-read-cache';
+
+interface IssueCommentsSnapshot {
+  comments: CommentRecord[];
+  cursor: { id: string; createdAtMs: number } | null;
+  hasMore: boolean;
+  loaded: boolean;
+  updatedAt: number;
+}
+
+const issueCommentsCache = new Map<string, IssueCommentsSnapshot>();
 
 export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (issueId: string) => void) {
   const { isAdmin, user, roleLoading } = useSession();
@@ -27,6 +46,52 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
   let requestController: AbortController | null = null;
   let realtimeUnsubscribe: (() => void) | null = null;
   let realtimeRefreshTimer = 0;
+  const ignoredRealtimeCommentIds = new Set<string>();
+
+  function cacheKey(id = issueId.value) {
+    return createContentCacheKey([
+      'issue-comments-state',
+      user.value?.uid ?? '',
+      isAdmin.value ? 'admin' : 'user',
+      id,
+    ]);
+  }
+
+  function serviceCacheScope() {
+    return createContentCacheKey([
+      user.value?.uid ?? '',
+      isAdmin.value ? 'admin' : 'user',
+    ]);
+  }
+
+  function saveSnapshot(id = issueId.value) {
+    if (!id) return;
+    issueCommentsCache.set(cacheKey(id), {
+      comments: comments.value,
+      cursor: cursor.value,
+      hasMore: hasMore.value,
+      loaded: loaded.value,
+      updatedAt: Date.now(),
+    });
+  }
+
+  function hydrateSnapshot(id = issueId.value) {
+    const cached = issueCommentsCache.get(cacheKey(id));
+    if (!cached || !isContentCacheFresh(cached.updatedAt)) return false;
+    comments.value = cached.comments;
+    cursor.value = cached.cursor;
+    hasMore.value = cached.hasMore;
+    loaded.value = cached.loaded;
+    loading.value = false;
+    error.value = '';
+    return true;
+  }
+
+  const unregisterResumeHandler = registerAppResumeHandler(() => {
+    const cached = issueCommentsCache.get(cacheKey());
+    if (!issueId.value || !shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) return;
+    void loadComments(issueId.value, { force: true });
+  });
 
   function clearCommentState() {
     comments.value = [];
@@ -41,7 +106,7 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
     return requestController.signal;
   }
 
-  async function loadComments(issueIdValue?: string | unknown) {
+  async function loadComments(issueIdValue?: string | unknown, options: { force?: boolean } = {}) {
     const finalId = typeof issueIdValue === 'string' && issueIdValue ? issueIdValue : issueId.value;
     if (!finalId) {
       requestVersion += 1;
@@ -52,12 +117,16 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
       return;
     }
 
+    if (!options.force && hydrateSnapshot(finalId)) return;
+
     const currentVersion = ++requestVersion;
     loading.value = true;
     error.value = '';
 
     try {
       const page = await fetchComments(finalId, null, {
+        cacheScope: serviceCacheScope(),
+        forceRefresh: options.force === true,
         signal: createRequestSignal(),
       });
       if (currentVersion !== requestVersion) return;
@@ -65,6 +134,8 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
       cursor.value = page.cursor;
       hasMore.value = page.hasMore;
       loaded.value = true;
+      saveSnapshot(finalId);
+      markContentRealtimeReliable();
     } catch (caught) {
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
         error.value = isOnline.value
@@ -85,6 +156,50 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
     );
   }
 
+  function insertLocalComment(comment: CommentRecord, parentCommentId: string | null) {
+    if (!parentCommentId) {
+      if (containsComment(comments.value, comment.id)) return true;
+      comments.value = [...comments.value, { ...comment, replies: comment.replies ?? [] }];
+      loaded.value = true;
+      return true;
+    }
+
+    let inserted = false;
+    comments.value = comments.value.map((item) => {
+      if (item.id !== parentCommentId) return item;
+      if (item.replies.some((reply) => reply.id === comment.id)) {
+        inserted = true;
+        return item;
+      }
+      inserted = true;
+      return {
+        ...item,
+        replies: [...item.replies, { ...comment, parent_comment_id: parentCommentId, replies: [] }],
+      };
+    });
+    return inserted;
+  }
+
+  function removeLocalComment(commentId: string) {
+    let removed = false;
+    const nextComments = comments.value
+      .filter((comment) => {
+        if (comment.id !== commentId) return true;
+        removed = true;
+        return false;
+      })
+      .map((comment) => {
+        const replies = comment.replies.filter((reply) => {
+          if (reply.id !== commentId) return true;
+          removed = true;
+          return false;
+        });
+        return replies.length === comment.replies.length ? comment : { ...comment, replies };
+      });
+    comments.value = nextComments;
+    return removed;
+  }
+
   async function reloadLoadedComments(options: { targetCommentId?: string } = {}) {
     const finalId = issueId.value;
     if (!finalId) return;
@@ -101,6 +216,8 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
     try {
       do {
         const page = await fetchComments(finalId, nextCursor, {
+          cacheScope: serviceCacheScope(),
+          forceRefresh: true,
           signal: nextCursor === null ? createRequestSignal() : null,
         });
         if (currentVersion !== requestVersion) return;
@@ -120,6 +237,7 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
       cursor.value = nextCursor;
       hasMore.value = nextHasMore;
       loaded.value = true;
+      saveSnapshot(finalId);
     } catch (caught) {
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
         error.value = isOnline.value
@@ -139,7 +257,7 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
   function scheduleRealtimeRefresh() {
     window.clearTimeout(realtimeRefreshTimer);
     realtimeRefreshTimer = window.setTimeout(() => {
-      void loadComments();
+      void loadComments(issueId.value, { force: true });
     }, 300);
   }
 
@@ -152,12 +270,27 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
     realtimeUnsubscribe = subscribeContentRealtimeEvents(`issue-comments:${issueIdValue}`, (event) => {
       if (event.eventType !== 'issue_comment_changed') return;
       if (event.parentId !== issueIdValue) return;
+      if (ignoredRealtimeCommentIds.delete(event.targetId)) return;
       scheduleRealtimeRefresh();
+    }, () => {
+      markContentRealtimeUnreliable();
     });
   }, { immediate: true });
 
+  watch(isOnline, (online) => {
+    if (!online) {
+      markContentWentOffline();
+      return;
+    }
+    const cached = issueCommentsCache.get(cacheKey());
+    if (issueId.value && shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) {
+      void loadComments(issueId.value, { force: true });
+    }
+  });
+
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
+    unregisterResumeHandler();
     window.clearTimeout(realtimeRefreshTimer);
     requestVersion += 1;
     requestController?.abort(new RequestFailure('留言載入已取消。', 'aborted'));
@@ -167,10 +300,14 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
     if (!hasMore.value || !cursor.value || loadingMore.value) return;
     loadingMore.value = true;
     try {
-      const page = await fetchComments(issueId.value, cursor.value, { signal: null });
+      const page = await fetchComments(issueId.value, cursor.value, {
+        cacheScope: serviceCacheScope(),
+        signal: null,
+      });
       comments.value = [...comments.value, ...page.comments];
       cursor.value = page.cursor;
       hasMore.value = page.hasMore;
+      saveSnapshot();
     } catch (caught) {
       if (!isAbortFailure(caught)) {
         if (isContentUnavailableError(caught)) {
@@ -214,7 +351,12 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
         { content },
         parentCommentId,
       );
-      await reloadLoadedComments({ targetCommentId: parentCommentId ?? comment.id });
+      ignoredRealtimeCommentIds.add(comment.id);
+      if (!insertLocalComment(comment, parentCommentId)) {
+        await reloadLoadedComments({ targetCommentId: parentCommentId ?? comment.id });
+      } else {
+        saveSnapshot();
+      }
 
       return true;
     } catch (caught) {
@@ -235,7 +377,12 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
 
     try {
       await deleteComment(commentId);
-      await reloadLoadedComments();
+      ignoredRealtimeCommentIds.add(commentId);
+      if (!removeLocalComment(commentId)) {
+        await reloadLoadedComments();
+      } else {
+        saveSnapshot();
+      }
       showToast('留言已刪除。', 'success');
     } catch {
       submitError.value = '刪除失敗，請稍後再試。';

@@ -314,6 +314,7 @@
 - src/services/issues.ts：API Gateway 入口，統一 re-export 提案讀寫子服務。
 - src/services/backend-action.ts：Supabase Edge Function `backendAction` 呼叫工具，統一 envelope、實際 AbortSignal、跨 reload 的待確認 request id 與錯誤追蹤碼解析。
 - src/services/backend-action-contract.ts：前端允許呼叫的 backendAction 名稱 contract，供 TypeScript 與架構測試確認前端 service 呼叫與後端 registry 對齊。
+- src/services/content-read-cache.ts：前端本次 App 開啟期間的內容讀取記憶體快取與 Realtime / 離線恢復補償狀態 helper，供提案、公告與留言降低重複讀取。
 - src/services/supabase-function-error.ts：Supabase Edge Function 非 2xx 回應解析 helper，優先讀取後端 JSON / text 錯誤內容。
 - src/services/session-role.ts：登入後向後端查詢目前使用者角色，避免前端保存管理員 email 清單。
 - src/services/issues-core.ts：提案 read service 共用匯出入口與單筆提案讀取 helper，集中正式使用的常數、錯誤與正規化工具。

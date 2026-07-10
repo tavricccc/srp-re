@@ -5,12 +5,31 @@ import {
   deleteAnnouncementComment,
   fetchAnnouncementComments,
 } from '@/services/announcements';
+import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
 import { formatRequestError, isAbortFailure, RequestFailure } from '@/lib/request';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { isContentUnavailableError } from '@/services/issues-core';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
+import {
+  createContentCacheKey,
+  isContentCacheFresh,
+  markContentRealtimeReliable,
+  markContentRealtimeUnreliable,
+  markContentWentOffline,
+  shouldRefreshContentAfterResume,
+} from '@/services/content-read-cache';
+
+interface AnnouncementCommentsSnapshot {
+  comments: AnnouncementCommentRecord[];
+  cursor: { id: string; createdAtMs: number } | null;
+  hasMore: boolean;
+  loaded: boolean;
+  updatedAt: number;
+}
+
+const announcementCommentsCache = new Map<string, AnnouncementCommentsSnapshot>();
 
 export function useAnnouncementComments(
   announcementId: () => string | null,
@@ -33,6 +52,55 @@ export function useAnnouncementComments(
   let requestController: AbortController | null = null;
   let realtimeUnsubscribe: (() => void) | null = null;
   let realtimeRefreshTimer = 0;
+  const ignoredRealtimeCommentIds = new Set<string>();
+
+  function cacheKey(id = announcementId() ?? '') {
+    return createContentCacheKey([
+      'announcement-comments-state',
+      user.value?.uid ?? '',
+      isAdmin.value ? 'admin' : 'user',
+      id,
+    ]);
+  }
+
+  function serviceCacheScope() {
+    return createContentCacheKey([
+      user.value?.uid ?? '',
+      isAdmin.value ? 'admin' : 'user',
+    ]);
+  }
+
+  function saveSnapshot(id = announcementId() ?? '') {
+    if (!id) return;
+    announcementCommentsCache.set(cacheKey(id), {
+      comments: comments.value,
+      cursor: cursor.value,
+      hasMore: hasMore.value,
+      loaded: loaded.value,
+      updatedAt: Date.now(),
+    });
+  }
+
+  function hydrateSnapshot(id = announcementId() ?? '') {
+    const cached = announcementCommentsCache.get(cacheKey(id));
+    if (!cached || !isContentCacheFresh(cached.updatedAt)) return false;
+    comments.value = cached.comments;
+    cursor.value = cached.cursor;
+    hasMore.value = cached.hasMore;
+    loaded.value = cached.loaded;
+    loading.value = false;
+    error.value = '';
+    return true;
+  }
+
+  const unregisterResumeHandler = registerAppResumeHandler(() => {
+    const id = announcementId();
+    if (!id) return;
+    const cached = announcementCommentsCache.get(cacheKey(id));
+    if (shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) {
+      void loadComments({ force: true });
+    }
+  });
 
   function clearCommentState() {
     comments.value = [];
@@ -51,7 +119,7 @@ export function useAnnouncementComments(
     return isAdmin.value || comment.author_uid === user.value?.uid;
   }
 
-  async function loadComments() {
+  async function loadComments(options: { force?: boolean } = {}) {
     const id = announcementId();
     if (!id) {
       requestVersion += 1;
@@ -62,11 +130,15 @@ export function useAnnouncementComments(
       return;
     }
 
+    if (!options.force && hydrateSnapshot(id)) return;
+
     const currentVersion = ++requestVersion;
     loading.value = true;
     error.value = '';
     try {
       const page = await fetchAnnouncementComments(id, null, {
+        cacheScope: serviceCacheScope(),
+        forceRefresh: options.force === true,
         signal: createRequestSignal(),
       });
       if (currentVersion !== requestVersion) return;
@@ -74,6 +146,8 @@ export function useAnnouncementComments(
       cursor.value = page.cursor;
       hasMore.value = page.hasMore;
       loaded.value = true;
+      saveSnapshot(id);
+      markContentRealtimeReliable();
     } catch (caught) {
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
         error.value = isOnline.value
@@ -94,6 +168,50 @@ export function useAnnouncementComments(
     );
   }
 
+  function insertLocalComment(comment: AnnouncementCommentRecord, parentCommentId: string | null) {
+    if (!parentCommentId) {
+      if (containsComment(comments.value, comment.id)) return true;
+      comments.value = [...comments.value, { ...comment, replies: comment.replies ?? [] }];
+      loaded.value = true;
+      return true;
+    }
+
+    let inserted = false;
+    comments.value = comments.value.map((item) => {
+      if (item.id !== parentCommentId) return item;
+      if (item.replies.some((reply) => reply.id === comment.id)) {
+        inserted = true;
+        return item;
+      }
+      inserted = true;
+      return {
+        ...item,
+        replies: [...item.replies, { ...comment, parent_comment_id: parentCommentId, replies: [] }],
+      };
+    });
+    return inserted;
+  }
+
+  function removeLocalComment(commentId: string) {
+    let removed = false;
+    const nextComments = comments.value
+      .filter((comment) => {
+        if (comment.id !== commentId) return true;
+        removed = true;
+        return false;
+      })
+      .map((comment) => {
+        const replies = comment.replies.filter((reply) => {
+          if (reply.id !== commentId) return true;
+          removed = true;
+          return false;
+        });
+        return replies.length === comment.replies.length ? comment : { ...comment, replies };
+      });
+    comments.value = nextComments;
+    return removed;
+  }
+
   async function reloadLoadedComments(options: { targetCommentId?: string } = {}) {
     const id = announcementId();
     if (!id || roleLoading.value) return;
@@ -110,6 +228,8 @@ export function useAnnouncementComments(
     try {
       do {
         const page = await fetchAnnouncementComments(id, nextCursor, {
+          cacheScope: serviceCacheScope(),
+          forceRefresh: true,
           signal: nextCursor === null ? createRequestSignal() : null,
         });
         if (currentVersion !== requestVersion) return;
@@ -129,6 +249,7 @@ export function useAnnouncementComments(
       cursor.value = nextCursor;
       hasMore.value = nextHasMore;
       loaded.value = true;
+      saveSnapshot(id);
     } catch (caught) {
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
         error.value = isOnline.value
@@ -151,15 +272,19 @@ export function useAnnouncementComments(
     realtimeUnsubscribe = subscribeContentRealtimeEvents(`announcement-comments:${id}`, (event) => {
       if (event.eventType !== 'announcement_comment_changed') return;
       if (event.parentId !== id) return;
+      if (ignoredRealtimeCommentIds.delete(event.targetId)) return;
       window.clearTimeout(realtimeRefreshTimer);
       realtimeRefreshTimer = window.setTimeout(() => {
-        void loadComments();
+        void loadComments({ force: true });
       }, 300);
+    }, () => {
+      markContentRealtimeUnreliable();
     });
   }
 
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
+    unregisterResumeHandler();
     window.clearTimeout(realtimeRefreshTimer);
     requestVersion += 1;
     requestController?.abort(new RequestFailure('公告留言載入已取消。', 'aborted'));
@@ -175,15 +300,32 @@ export function useAnnouncementComments(
     subscribeCurrentAnnouncementComments();
   });
 
+  watch(isOnline, (online) => {
+    if (!online) {
+      markContentWentOffline();
+      return;
+    }
+    const id = announcementId();
+    if (!id) return;
+    const cached = announcementCommentsCache.get(cacheKey(id));
+    if (shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) {
+      void loadComments({ force: true });
+    }
+  });
+
   async function loadMoreComments() {
     const id = announcementId();
     if (!id || !hasMore.value || !cursor.value || loadingMore.value) return;
     loadingMore.value = true;
     try {
-      const page = await fetchAnnouncementComments(id, cursor.value, { signal: null });
+      const page = await fetchAnnouncementComments(id, cursor.value, {
+        cacheScope: serviceCacheScope(),
+        signal: null,
+      });
       comments.value = [...comments.value, ...page.comments];
       cursor.value = page.cursor;
       hasMore.value = page.hasMore;
+      saveSnapshot(id);
     } catch (caught) {
       if (!isAbortFailure(caught)) {
         if (isContentUnavailableError(caught)) {
@@ -208,7 +350,12 @@ export function useAnnouncementComments(
     error.value = '';
     try {
       const result = await createAnnouncementComment(id, content, parentCommentId);
-      await reloadLoadedComments({ targetCommentId: parentCommentId ?? result.comment.id });
+      ignoredRealtimeCommentIds.add(result.comment.id);
+      if (!insertLocalComment(result.comment, parentCommentId)) {
+        await reloadLoadedComments({ targetCommentId: parentCommentId ?? result.comment.id });
+      } else {
+        saveSnapshot(id);
+      }
       onCommentCountChanged?.({ announcementId: id, commentCount: result.comment_count });
       return true;
     } catch (caught) {
@@ -228,7 +375,12 @@ export function useAnnouncementComments(
     error.value = '';
     try {
       const result = await deleteAnnouncementComment(commentId);
-      await reloadLoadedComments();
+      ignoredRealtimeCommentIds.add(commentId);
+      if (!removeLocalComment(commentId)) {
+        await reloadLoadedComments();
+      } else {
+        saveSnapshot(result.announcement_id);
+      }
       onCommentCountChanged?.({
         announcementId: result.announcement_id,
         commentCount: result.comment_count,
