@@ -2,6 +2,28 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "提升留言送出穩定性",
+    version: "v2.0.142",
+    date: "2026-07-10",
+    time: "14:19",
+    items: [
+      {
+        title: "修正提案留言送出時可能失敗的問題。"
+      }
+    ]
+  },
+  {
+    title: "改善啟動與更新顯示",
+    version: "v2.0.141",
+    date: "2026-07-10",
+    time: "14:16",
+    items: [
+      {
+        title: "改善手機版啟動期間遇到更新時的畫面切換穩定性。"
+      }
+    ]
+  },
+  {
     title: "改善留言與手機導覽顯示",
     version: "v2.0.140",
     date: "2026-07-10",

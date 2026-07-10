@@ -1,5 +1,9 @@
 <template>
-  <AppStartupScreen v-if="startupGateOpen && !reloading" />
+  <AppStartupScreen
+    v-if="startupGateOpen"
+    :aria-label="startupAriaLabel"
+    :message="startupMessage"
+  />
   <AppShell v-else>
     <RouterView v-slot="{ Component }">
       <Suspense>
@@ -97,8 +101,21 @@ const reloadingAriaLabel = computed(() => {
   return reloading.value === 'restart' ? '正在重啟' : '正在更新';
 });
 
+const startupAriaLabel = computed(() => {
+  if (reloading.value === 'restart') return '正在重啟 App';
+  if (reloading.value === 'update') return '正在更新 App';
+  return '正在啟動 App';
+});
+
+const startupMessage = computed(() => {
+  if (reloading.value === 'restart') return '正在重啟';
+  if (reloading.value === 'update') return '正在更新';
+  return '';
+});
+
 const shouldShowUpdateDialog = computed(() => {
   if (!updateAvailable.value) return false;
+  if (startupGateOpen.value) return false;
   if (reloading.value) return false;
   if (canAutoReloadCurrentVersion()) return false;
   return true;
