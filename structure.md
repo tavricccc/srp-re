@@ -228,13 +228,13 @@
 - src/composables/useIssueRouteDetail.ts：提案 id 路由詳情 helper，支援列表資料預填後讀取單筆提案、Realtime 事件重讀，並處理無權限/不存在 toast、載入狀態與返回列表。
 - src/composables/useDocumentTitle.ts：文件標題同步 helper，依目前看板分類更新並在卸載時還原。
 - src/composables/useAppInstallPrompt.ts：PWA 安裝提示狀態管理，處理 standalone 判斷、beforeinstallprompt、iOS Safari 手動引導、in-app browser 優先權與 sessionStorage 關閉記錄。
-- src/composables/useAppUpdate.ts：手動註冊無快取 service worker，啟動時檢查一次 `version.json`，並管理強制更新提示狀態。
+- src/composables/useAppUpdate.ts：手動註冊無快取 service worker，啟動時檢查一次 `version.json`，管理自動與強制更新提示，並在重新載入未完成時重試及恢復提示狀態。
 - src/composables/useTimedMessage.ts：短效訊息 helper，負責 toast 觸發訊息的逾時清空。
 - src/composables/useMinimumLoading.ts：讓提案分頁、公告與留言 skeleton 直接跟隨真實載入狀態，避免快取命中時保留額外等待。
 - src/composables/useLoadingTimeout.ts：監看頁面 loading，超過指定時間後切換到可重試的網路異常 fallback。
 - src/composables/useNetworkStatus.ts：共用瀏覽器線上 / 離線狀態監聽，供載入逾時與讀取錯誤提示判斷目前連線狀態。
 - src/composables/useAppResume.ts：集中監聽 pageshow 與 visibilitychange；iOS PWA 從背景或 bfcache 恢復時 abort 舊 request scope，供通知等即時狀態重新連線使用。
-- src/composables/useAppStartupGate.ts：合併 router readiness、authChecking、userLoading、appInitializing 與 appReady，控制 AppStartupScreen 顯示時機。
+- src/composables/useAppStartupGate.ts：合併 router readiness、authChecking、userLoading、appInitializing 與 appReady，控制 AppStartupScreen 顯示時機，並在路由失敗或啟動逾時時切換為可重試狀態。
 - src/composables/useIssueBuckets.ts：依使用者、權限、分類、狀態、排序與頁面大小快取提案分段列表；使用一次性讀取、Realtime 刷新與底部自動載入更多，並以版本 token 忽略快速切換後晚到的結果。
 - src/composables/useInfiniteScroll.ts：共用 IntersectionObserver 底部哨兵 helper，供提案、公告與留言列表接近底部時自動載入更多。
 - src/composables/useIssueSearch.ts：提案搜尋狀態管理，包含 700ms debounce、最短 3 字門檻、最多 50 筆 n-gram 候選與 5 分鐘結果快取。
@@ -250,7 +250,7 @@
 - src/composables/useDialogFocus.ts：對話框焦點管理與 Esc 關閉處理。
 - src/composables/useDropdownPosition.ts：彈窗與下拉選單的 fixed 定位與視窗滾動/縮放事件處理邏輯元件。
 - src/composables/useFilter.ts：跨元件共享目前提案篩選狀態，實際值由提案路由同步。
-- src/composables/useSession.ts：Firebase Auth session 公開 API 與初始化入口，明確使用 local persistence 保存登入，組合登入、驗證、必要使用者資料初始化、appReady 狀態與 router guard 等待入口。
+- src/composables/useSession.ts：Firebase Auth session 公開 API 與初始化入口，明確使用 local persistence 保存登入，組合登入、驗證、必要使用者資料初始化、具逾時保護的 appReady 啟動狀態與 router guard 等待入口。
 - src/composables/sessionTypes.ts：Session state、啟動 readiness 與驗證結果型別。
 - src/composables/sessionDebug.ts：開發模式 auth debug logging helper。
 - src/composables/sessionValidation.ts：校內網域、email verified、Google provider 與 token claims 驗證 helper；優先使用 Firebase 有效快取 token，避免每次開啟都強制刷新。

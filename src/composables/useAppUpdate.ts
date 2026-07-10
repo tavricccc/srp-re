@@ -11,6 +11,9 @@ let lastCheckedAt = 0;
 let listenersRegistered = false;
 
 const APP_RELOAD_TIMEOUT_MS = 5_000;
+const RELOAD_NAVIGATION_RETRY_MS = 4_000;
+const RELOAD_RECOVERY_TIMEOUT_MS = 10_000;
+const MAX_AUTO_RELOAD_ATTEMPTS = 3;
 const AUTO_RELOAD_STORAGE_KEY = 'srp:auto-update-reloaded-version';
 const AUTO_RELOAD_COUNT_KEY = 'srp:auto-update-reloaded-count';
 const PENDING_UPDATE_VERSION_STORAGE_KEY = 'srp:pending-update-version';
@@ -91,24 +94,50 @@ export async function initializeAppUpdate() {
     });
   }
 
+  void updateServiceWorker();
   try {
     await checkAppVersion();
   } finally {
     initialCheckDone.value = true;
   }
-  void updateServiceWorker();
 }
 
 export function useAppUpdate() {
+  function getAutoReloadCount() {
+    const savedCount = Number.parseInt(sessionStorage.getItem(AUTO_RELOAD_COUNT_KEY) || '0', 10);
+    return Number.isFinite(savedCount) && savedCount > 0 ? savedCount : 0;
+  }
+
   function canAutoReloadCurrentVersion() {
     if (!remoteVersion.value) return false;
     const savedVersion = sessionStorage.getItem(AUTO_RELOAD_STORAGE_KEY);
     if (savedVersion !== remoteVersion.value) {
       return true;
     }
-    const savedCountStr = sessionStorage.getItem(AUTO_RELOAD_COUNT_KEY) || '0';
-    const savedCount = parseInt(savedCountStr, 10);
-    return savedCount < 3;
+    return getAutoReloadCount() < MAX_AUTO_RELOAD_ATTEMPTS;
+  }
+
+  function markAutomaticReloadExhausted() {
+    if (!remoteVersion.value) return;
+    sessionStorage.setItem(AUTO_RELOAD_STORAGE_KEY, remoteVersion.value);
+    sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, String(MAX_AUTO_RELOAD_ATTEMPTS));
+  }
+
+  function startReloadRecoveryWatchdog() {
+    window.setTimeout(() => {
+      try {
+        window.location.reload();
+      } catch {
+        // The final timeout below restores the forced-update prompt when navigation is unavailable.
+      }
+    }, RELOAD_NAVIGATION_RETRY_MS);
+
+    window.setTimeout(() => {
+      if (updateAvailable.value) {
+        markAutomaticReloadExhausted();
+      }
+      reloading.value = false;
+    }, RELOAD_RECOVERY_TIMEOUT_MS);
   }
 
   async function reloadApp(options: { automatic?: boolean; reason?: 'update' | 'restart' } = {}) {
@@ -125,9 +154,7 @@ export function useAppUpdate() {
     if (options.automatic && remoteVersion.value) {
       const savedVersion = sessionStorage.getItem(AUTO_RELOAD_STORAGE_KEY);
       if (savedVersion === remoteVersion.value) {
-        const savedCountStr = sessionStorage.getItem(AUTO_RELOAD_COUNT_KEY) || '0';
-        const savedCount = parseInt(savedCountStr, 10);
-        sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, (savedCount + 1).toString());
+        sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, String(getAutoReloadCount() + 1));
       } else {
         sessionStorage.setItem(AUTO_RELOAD_STORAGE_KEY, remoteVersion.value);
         sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, '1');
@@ -151,6 +178,7 @@ export function useAppUpdate() {
     ]);
     window.clearTimeout(reloadTimeout);
 
+    startReloadRecoveryWatchdog();
     // 使用相容性極佳的 replace() 重載網頁，防止 location.reload() 被 Android WebView / LINE 等環境掛起或吞掉
     try {
       window.location.replace(window.location.href);

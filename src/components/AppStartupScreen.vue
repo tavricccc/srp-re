@@ -1,5 +1,5 @@
 <template>
-  <section class="startup-screen" role="status" aria-live="polite" :aria-label="ariaLabel">
+  <section class="startup-screen" :role="stalled ? 'alert' : 'status'" :aria-live="stalled ? 'assertive' : 'polite'" :aria-label="ariaLabel">
     <div class="startup-screen__surface">
       <div class="startup-screen__brand" aria-hidden="true">
         <BrandMark custom-class="startup-screen__mark" />
@@ -10,7 +10,11 @@
         <p v-if="message" class="startup-screen__message">{{ message }}</p>
       </div>
 
-      <LoadingSpinner :size="6" class="startup-screen__loader" />
+      <div v-if="stalled" class="startup-screen__recovery">
+        <p>啟動等待時間過長，請確認網路後重新載入。</p>
+        <button type="button" class="button-primary" @click="emit('retry')">重新載入</button>
+      </div>
+      <LoadingSpinner v-else :size="6" class="startup-screen__loader" />
     </div>
   </section>
 </template>
@@ -19,13 +23,19 @@
 import BrandMark from '@/components/ui/BrandMark.vue';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 
+const emit = defineEmits<{
+  retry: [];
+}>();
+
 const props = withDefaults(defineProps<{
   ariaLabel?: string;
   message?: string;
+  stalled?: boolean;
   title?: string;
 }>(), {
   ariaLabel: '正在啟動 App',
   message: '',
+  stalled: false,
   title: '',
 });
 
@@ -124,6 +134,21 @@ const title = props.title || appTitle;
 
 .startup-screen__loader {
   color: rgb(var(--color-on-surface));
+}
+
+.startup-screen__recovery {
+  display: grid;
+  max-width: 20rem;
+  justify-items: center;
+  gap: 1rem;
+  color: rgb(var(--color-on-surface-variant));
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.startup-screen__recovery p {
+  margin: 0;
 }
 
 @media (prefers-color-scheme: dark) {
