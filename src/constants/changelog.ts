@@ -2,6 +2,56 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善提案詳情顯示",
+    version: "v2.0.137",
+    date: "2026-07-10",
+    time: "13:44",
+    items: [
+      {
+        title: "調整手機版提案詳情的分類顯示，減少上方標籤換行。"
+      }
+    ]
+  },
+  {
+    title: "改善通知與列表返回體驗",
+    version: "v2.0.136",
+    date: "2026-07-10",
+    time: "13:35",
+    items: [
+      {
+        title: "強化通知未讀狀態更新，減少需要手動重新整理的情況。"
+      },
+      {
+        title: "改善從提案與公告詳情返回列表時的位置保留。"
+      }
+    ]
+  },
+  {
+    title: "改善公告列表更新體驗",
+    version: "v2.0.135",
+    date: "2026-07-10",
+    time: "13:30",
+    items: [
+      {
+        title: "改善公告新增與編輯後的列表更新，確保排序與最新內容一致。"
+      }
+    ]
+  },
+  {
+    title: "改善通知與提案列表體驗",
+    version: "v2.0.134",
+    date: "2026-07-10",
+    time: "13:27",
+    items: [
+      {
+        title: "改善通知面板開啟時的資料更新，確保未讀狀態與最新通知一致。"
+      },
+      {
+        title: "修正管理員調整提案狀態後列表排序可能不一致的問題。"
+      }
+    ]
+  },
+  {
     title: "改善通知導向體驗",
     version: "v2.0.133",
     date: "2026-07-10",

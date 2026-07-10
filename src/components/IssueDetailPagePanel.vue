@@ -6,7 +6,7 @@
     @back="emit('back')"
   >
     <template #header>
-      <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">
+      <span class="tag hidden border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50 md:inline-flex">
         {{ categoryLabel }}
       </span>
       <span class="tag font-semibold shadow-sm" :class="statusClass">
@@ -24,6 +24,7 @@
     <template #details="{ compact, scrollContent }">
       <IssueDetailContent
         :compact="compact"
+        :category-label="categoryLabel"
         :display-author-name="displayAuthorName"
         :display-photo-url="displayPhotoUrl"
         :issue="issue"

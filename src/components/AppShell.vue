@@ -231,6 +231,7 @@ const hasSafeIndicator = ref(false);
 
 const bottomGap = computed(() => (hasSafeIndicator.value ? 22 : 12));
 const navBarHeight = 60; // 48px + 12px padding
+const mainScrollPositions = new Map<string, number>();
 
 const rootStyle = computed(() => {
   if (!isAllowedUser.value) return {};
@@ -347,9 +348,20 @@ watch(
 
 watch(
   () => route.fullPath,
-  () => {
+  (newPath, oldPath) => {
+    if (oldPath && mainContentRef.value) {
+      mainScrollPositions.set(oldPath, mainContentRef.value.scrollTop);
+      if (mainScrollPositions.size > 30) {
+        const oldestPath = mainScrollPositions.keys().next().value;
+        if (oldestPath) mainScrollPositions.delete(oldestPath);
+      }
+    }
     nextTick(() => {
-      mainContentRef.value?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      mainContentRef.value?.scrollTo({
+        top: mainScrollPositions.get(newPath) ?? 0,
+        left: 0,
+        behavior: 'auto',
+      });
     });
   }
 );

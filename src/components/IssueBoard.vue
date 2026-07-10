@@ -31,7 +31,7 @@
       </template>
     </BoardControls>
 
-    <div class="scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-4">
+    <div ref="boardScrollRef" class="scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-4">
       <PageLoadFailure
         v-if="contentLoadingHasProblem"
         :title="contentProblemTitle"
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BoardControls from '@/components/BoardControls.vue';
 import CreateActionMenu from '@/components/CreateActionMenu.vue';
@@ -138,6 +138,9 @@ type IssueDetailsOpenPayload = {
   initialTab: 'details' | 'comments';
 };
 
+let savedIssueBoardScrollKey = '';
+let savedIssueBoardScrollTop = 0;
+
 const props = defineProps<{
   isFormOpen?: boolean;
   showToggle?: boolean;
@@ -152,6 +155,8 @@ const { showToast } = useToast();
 const router = useRouter();
 const route = useRoute();
 const composerCategory = ref<IssueCategory>(DEFAULT_ISSUE_CATEGORY);
+const boardScrollRef = ref<HTMLElement | null>(null);
+const restoreBoardScrollPending = ref(false);
 const composerCategoryLabel = computed(() => ISSUE_CATEGORY_LABELS[composerCategory.value]);
 
 const {
@@ -223,11 +228,22 @@ const defaultComposerCategory = computed(() =>
   activeFilter.value === 'my-proposals' ? DEFAULT_ISSUE_CATEGORY : activeFilter.value
 );
 
+function issueBoardScrollKey() {
+  return [
+    activeFilter.value,
+    statusTab.value,
+    sortOption.value,
+    searchQuery.value,
+  ].join(':');
+}
+
 function issueStatusQuery() {
   return statusTab.value === 'closed' ? { status: 'closed' } : {};
 }
 
 async function openIssueDetails(payload: IssueDetailsOpenPayload) {
+  savedIssueBoardScrollKey = issueBoardScrollKey();
+  savedIssueBoardScrollTop = boardScrollRef.value?.scrollTop ?? 0;
   await router.push({
     name: 'issue-detail',
     params: {
@@ -241,8 +257,19 @@ async function openIssueDetails(payload: IssueDetailsOpenPayload) {
   });
 }
 
+function restoreIssueBoardScroll() {
+  if (!restoreBoardScrollPending.value || currentLoading.value) return;
+  const scrollElement = boardScrollRef.value;
+  if (!scrollElement) return;
+
+  restoreBoardScrollPending.value = false;
+  void nextTick(() => {
+    scrollElement.scrollTo({ top: savedIssueBoardScrollTop, left: 0, behavior: 'auto' });
+  });
+}
+
 function handleIssueUpdatedFromList(issue: IssueRecord) {
-  handleIssueUpdated(issue);
+  void handleIssueUpdated(issue);
 }
 
 function openComposerForCategory(category: IssueCategory) {
@@ -285,6 +312,16 @@ watch(
     }
   },
   { immediate: true },
+);
+
+onMounted(() => {
+  restoreBoardScrollPending.value = savedIssueBoardScrollKey === issueBoardScrollKey();
+  restoreIssueBoardScroll();
+});
+
+watch(
+  () => [currentLoading.value, currentIssues.value.length] as const,
+  restoreIssueBoardScroll,
 );
 
 watch(statusTab, (tab) => {
