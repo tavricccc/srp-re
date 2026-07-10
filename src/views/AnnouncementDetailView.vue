@@ -62,6 +62,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
 import type { UploadedImage } from '@/composables/useImageUpload';
 import { useLoadingTimeout } from '@/composables/useLoadingTimeout';
+import { registerAppResumeHandler } from '@/composables/useAppResume';
+import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { useSession } from '@/composables/useSession';
 import { useShareUrl } from '@/composables/useShareUrl';
 import { useToast } from '@/composables/useToast';
@@ -76,12 +78,22 @@ import {
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import { deleteUploadedImage } from '@/services/uploads';
 import type { AnnouncementRecord } from '@/types';
+import {
+  createContentCacheKey,
+  getCachedContentEntry,
+  markContentRealtimeReliable,
+  markContentRealtimeUnreliable,
+  markContentWentOffline,
+  patchCachedContent,
+  shouldRefreshContentAfterResume,
+} from '@/services/content-read-cache';
 
 const route = useRoute();
 const router = useRouter();
-const { initialized, isAdmin, isAllowedUser, loading, roleLoading } = useSession();
+const { initialized, isAdmin, isAllowedUser, loading, roleLoading, user } = useSession();
 const { copyShareUrl } = useShareUrl();
 const { showToast } = useToast();
+const { isOnline } = useNetworkStatus();
 
 const announcement = ref<AnnouncementRecord | null>(null);
 const loadingAnnouncement = ref(false);
@@ -94,6 +106,20 @@ const deleteDialogOpen = ref(false);
 let requestId = 0;
 let realtimeUnsubscribe: (() => void) | null = null;
 let realtimeRefreshTimer = 0;
+const detailCacheScope = computed(() => createContentCacheKey([
+  user.value?.uid ?? '',
+  isAdmin.value ? 'admin' : 'user',
+]));
+function detailCacheKey(announcementId: string) {
+  return createContentCacheKey(['announcement-detail', detailCacheScope.value, announcementId]);
+}
+const unregisterResumeHandler = registerAppResumeHandler(() => {
+  const announcementId = normalizeRouteParam(route.params.announcementId);
+  if (!canLoadAnnouncement.value || !announcementId) return;
+  const cached = getCachedContentEntry<AnnouncementRecord>(detailCacheKey(announcementId));
+  if (!shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) return;
+  void refreshAnnouncementSilently({ force: true });
+});
 
 const sessionLoading = computed(() => loading.value || !initialized.value);
 const canLoadAnnouncement = computed(() => initialized.value && isAllowedUser.value);
@@ -209,6 +235,14 @@ async function handleToggleLike() {
         currentUserLiked: result.liked,
         like_count: result.like_count,
       };
+      patchCachedContent<AnnouncementRecord>(
+        detailCacheKey(currentAnnouncement.id),
+        (cachedAnnouncement) => ({
+          ...cachedAnnouncement,
+          currentUserLiked: result.liked,
+          like_count: result.like_count,
+        }),
+      );
     }
   } catch (caught) {
     if (announcement.value?.id === currentAnnouncement.id) {
@@ -224,18 +258,22 @@ async function handleToggleLike() {
   }
 }
 
-async function refreshAnnouncementSilently() {
+async function refreshAnnouncementSilently(options: { force?: boolean } = {}) {
   const currentAnnouncement = announcement.value;
   if (!currentAnnouncement) return;
 
   const currentRequestId = ++requestId;
   try {
-    const fetchedAnnouncement = await fetchAnnouncementRecordById(currentAnnouncement.id);
+    const fetchedAnnouncement = await fetchAnnouncementRecordById(currentAnnouncement.id, {
+      cacheScope: detailCacheScope.value,
+      forceRefresh: options.force === true,
+    });
     if (currentRequestId !== requestId) return;
     announcement.value = {
       ...fetchedAnnouncement,
       currentUserLiked: announcement.value?.currentUserLiked ?? fetchedAnnouncement.currentUserLiked,
     };
+    markContentRealtimeReliable();
   } catch (caught) {
     if (currentRequestId !== requestId) return;
     showToast(caught instanceof Error ? caught.message : '找不到這則公告。', 'error');
@@ -246,17 +284,21 @@ async function refreshAnnouncementSilently() {
 function scheduleRealtimeRefresh() {
   window.clearTimeout(realtimeRefreshTimer);
   realtimeRefreshTimer = window.setTimeout(() => {
-    void refreshAnnouncementSilently();
+    void refreshAnnouncementSilently({ force: true });
   }, 300);
 }
 
 function handleCommentCountChanged(payload: { announcementId: string; commentCount: number }) {
   if (announcement.value?.id !== payload.announcementId) return;
-  announcement.value = {
-    ...announcement.value,
-    comment_count: payload.commentCount,
-  };
-}
+    announcement.value = {
+      ...announcement.value,
+      comment_count: payload.commentCount,
+    };
+    patchCachedContent<AnnouncementRecord>(
+      detailCacheKey(payload.announcementId),
+      (cachedAnnouncement) => ({ ...cachedAnnouncement, comment_count: payload.commentCount }),
+    );
+  }
 
 function handleAnnouncementUnavailable() {
   goBackToAnnouncements();
@@ -280,7 +322,9 @@ watch(
     const currentRequestId = ++requestId;
     loadingAnnouncement.value = true;
     try {
-      const fetchedAnnouncement = await fetchAnnouncementRecordById(announcementId);
+      const fetchedAnnouncement = await fetchAnnouncementRecordById(announcementId, {
+        cacheScope: detailCacheScope.value,
+      });
       if (currentRequestId !== requestId) return;
       announcement.value = fetchedAnnouncement;
     } catch (caught) {
@@ -316,11 +360,21 @@ watch(
             like_count: event.likeCount ?? announcement.value.like_count,
           };
         }
+        patchCachedContent<AnnouncementRecord>(
+          detailCacheKey(announcementId),
+          (cachedAnnouncement) => ({
+            ...cachedAnnouncement,
+            comment_count: event.commentCount ?? cachedAnnouncement.comment_count,
+            like_count: event.likeCount ?? cachedAnnouncement.like_count,
+          }),
+        );
         return;
       }
       if (event.eventType !== 'announcement_changed') return;
       if (event.targetId !== announcementId) return;
       scheduleRealtimeRefresh();
+    }, () => {
+      markContentRealtimeUnreliable();
     });
   },
   { immediate: true },
@@ -328,6 +382,20 @@ watch(
 
 onScopeDispose(() => {
   realtimeUnsubscribe?.();
+  unregisterResumeHandler();
   window.clearTimeout(realtimeRefreshTimer);
+});
+
+watch(isOnline, (online) => {
+  if (!online) {
+    markContentWentOffline();
+    return;
+  }
+  const announcementId = normalizeRouteParam(route.params.announcementId);
+  if (!canLoadAnnouncement.value || !announcementId) return;
+  const cached = getCachedContentEntry<AnnouncementRecord>(detailCacheKey(announcementId));
+  if (shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) {
+    void refreshAnnouncementSilently({ force: true });
+  }
 });
 </script>

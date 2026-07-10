@@ -1,19 +1,28 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { ISSUE_FILTER_OPTIONS } from '@/constants/categories';
 import { useDocumentTitle } from '@/composables/useDocumentTitle';
 import { useFilter } from '@/composables/useFilter';
 import { useIssueBoardPagination } from '@/composables/useIssueBoardPagination';
 import { useIssueBuckets } from '@/composables/useIssueBuckets';
 import { useIssueSearch } from '@/composables/useIssueSearch';
+import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { useSession } from '@/composables/useSession';
 import { useTimedMessage } from '@/composables/useTimedMessage';
 import { useUserIssuesData } from '@/composables/useUserIssuesData';
 import { resolveViewportPageSize } from '@/lib/page-size';
+import {
+  markContentRealtimeReliable,
+  markContentRealtimeUnreliable,
+  markContentWentOffline,
+  shouldRefreshContentAfterResume,
+} from '@/services/content-read-cache';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import type { IssueRecord, IssueSortOption } from '@/types';
 
 export function useIssueBoardData() {
   const { user, isAdmin, isAllowedUser, mySupportedIssueIds, roleLoading } = useSession();
+  const { isOnline } = useNetworkStatus();
   const { activeFilter } = useFilter();
 
   const statusTab = ref<'active' | 'closed'>('active');
@@ -106,6 +115,14 @@ export function useIssueBoardData() {
   });
   let realtimeUnsubscribe: (() => void) | null = null;
   let realtimeRefreshTimer = 0;
+  const unregisterResumeHandler = registerAppResumeHandler(() => {
+    if (!isAllowedUser.value) return;
+    const updatedAt = activeFilter.value === 'my-proposals'
+      ? userIssuesState.updatedAt
+      : currentState.value.updatedAt;
+    if (!shouldRefreshContentAfterResume(updatedAt)) return;
+    void refreshCurrentData();
+  });
 
   const filteredActiveIssues = computed(() => {
     if (isGlobalMode.value && statusTab.value === 'active') {
@@ -268,6 +285,9 @@ export function useIssueBoardData() {
           if (activeFilter.value !== 'my-proposals' && event.category !== activeFilter.value) return;
           scheduleRealtimeRefresh();
         },
+        () => {
+          markContentRealtimeUnreliable();
+        },
       );
     },
     { immediate: true },
@@ -284,6 +304,7 @@ export function useIssueBoardData() {
     } else {
       await refreshBucket(statusTab.value);
     }
+    markContentRealtimeReliable();
 
     setTimeout(() => {
       document.documentElement.classList.remove('no-transitions');
@@ -307,11 +328,23 @@ export function useIssueBoardData() {
 
   onBeforeUnmount(() => {
     realtimeUnsubscribe?.();
+    unregisterResumeHandler();
     window.clearTimeout(realtimeRefreshTimer);
     restoreDocumentTitle();
     bumpUserIssuesRequestToken();
     resetSearchResults();
     stopUserIssuesRequest();
+  });
+
+  watch(isOnline, (online) => {
+    if (!online) {
+      markContentWentOffline();
+      return;
+    }
+    const updatedAt = activeFilter.value === 'my-proposals'
+      ? userIssuesState.updatedAt
+      : currentState.value.updatedAt;
+    if (shouldRefreshContentAfterResume(updatedAt)) void refreshCurrentData();
   });
 
   return {

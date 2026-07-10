@@ -2,6 +2,7 @@ import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption, IssueStatu
 import { buildTitleSearchTokens, normalizeSearchText } from '@/lib/search';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { invokeBackendAction } from '@/services/backend-action';
+import { createContentCacheKey, getCachedContent, setCachedContent } from '@/services/content-read-cache';
 import { TABLE_PAGE_SIZE, normalizeIssueCursor, normalizeIssueRecord, toReadableBackendError, withSupportState } from './issues-core';
 
 function normalizeIssueList(records: Record<string, unknown>[]) {
@@ -14,6 +15,7 @@ export async function fetchIssuesPageByStatus(
   statusBucket: IssueStatusBucket,
   cursor: IssueCursor | null,
   options?: {
+    forceRefresh?: boolean;
     isAdmin?: boolean;
     pageSize?: number;
     sort?: IssueSortOption;
@@ -21,6 +23,29 @@ export async function fetchIssuesPageByStatus(
   },
 ) {
   const pageSize = options?.pageSize ?? TABLE_PAGE_SIZE;
+  const cacheKey = createContentCacheKey([
+    'issue-list-page',
+    uid,
+    options?.isAdmin ? 'admin' : 'user',
+    activeFilter,
+    statusBucket,
+    options?.sort ?? 'latest',
+    pageSize,
+    cursor?.id ?? 'first',
+    cursor?.sort_number ?? '',
+    cursor?.sort_date?.getTime() ?? '',
+    cursor?.created_at?.getTime() ?? '',
+  ]);
+  if (!options?.forceRefresh) {
+    const cached = getCachedContent<{ cursor: IssueCursor | null; hasMore: boolean; issues: IssueRecord[] }>(cacheKey);
+    if (cached) {
+      return {
+        ...cached,
+        issues: withSupportState(cached.issues, options?.supportedIssueIds),
+      };
+    }
+  }
+
   try {
     const fn = invokeBackendAction<
       {
@@ -43,11 +68,13 @@ export async function fetchIssuesPageByStatus(
       statusBucket,
       uid,
     });
-    return {
+    const page = {
       cursor: normalizeIssueCursor(result.cursor),
       hasMore: result.hasMore,
       issues: withSupportState(normalizeIssueList(result.issues), options?.supportedIssueIds),
     };
+    setCachedContent(cacheKey, page);
+    return page;
   } catch (error) {
     throw toReadableBackendError(error);
   }
@@ -59,6 +86,7 @@ export async function fetchIssuesForTitleSearch(
   statusBucket: IssueStatusBucket,
   titleQuery: string,
   options?: {
+    forceRefresh?: boolean;
     isAdmin?: boolean;
     sort?: IssueSortOption;
     supportedIssueIds?: Set<string>;
@@ -68,6 +96,24 @@ export async function fetchIssuesForTitleSearch(
   const searchTokens = buildTitleSearchTokens(normalizedQuery);
   if (searchTokens.length === 0) {
     return { issues: [], limited: false };
+  }
+  const cacheKey = createContentCacheKey([
+    'issue-search',
+    uid,
+    options?.isAdmin ? 'admin' : 'user',
+    activeFilter,
+    statusBucket,
+    options?.sort ?? 'latest',
+    normalizedQuery,
+  ]);
+  if (!options?.forceRefresh) {
+    const cached = getCachedContent<{ issues: IssueRecord[]; limited: boolean }>(cacheKey);
+    if (cached) {
+      return {
+        issues: withSupportState(cached.issues, options?.supportedIssueIds),
+        limited: cached.limited,
+      };
+    }
   }
 
   try {
@@ -90,10 +136,12 @@ export async function fetchIssuesForTitleSearch(
       titleQuery,
       uid,
     });
-    return {
+    const page = {
       issues: withSupportState(normalizeIssueList(result.issues), options?.supportedIssueIds),
       limited: result.limited,
     };
+    setCachedContent(cacheKey, page);
+    return page;
   } catch (error) {
     throw toReadableBackendError(error);
   }

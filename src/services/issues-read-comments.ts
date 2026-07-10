@@ -6,8 +6,11 @@ import { toReadableBackendError } from './issues-core';
 import type { CommentResponseRecord } from './issues-read-shared';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { getRouteRequestSignal } from '@/lib/route-request';
+import { createContentCacheKey, getCachedContent, setCachedContent } from '@/services/content-read-cache';
 
 interface FetchCommentsOptions {
+  cacheScope?: string;
+  forceRefresh?: boolean;
   signal?: AbortSignal | null;
 }
 
@@ -21,6 +24,18 @@ export async function fetchComments(
   cursor?: CommentCursor | null,
   options?: FetchCommentsOptions,
 ) {
+  const cacheKey = createContentCacheKey([
+    'issue-comments-page',
+    options?.cacheScope ?? 'default',
+    issueId,
+    cursor?.id ?? 'first',
+    cursor?.createdAtMs ?? '',
+  ]);
+  if (!options?.forceRefresh) {
+    const cached = getCachedContent<{ comments: CommentRecord[]; cursor: CommentCursor | null; hasMore: boolean }>(cacheKey);
+    if (cached) return cached;
+  }
+
   try {
     const fn = invokeBackendAction<
       { issueId: string; cursor?: CommentCursor | null },
@@ -31,7 +46,7 @@ export async function fetchComments(
     });
     const result = await fn({ issueId, cursor });
 
-    return {
+    const page = {
       comments: result.comments.map((comment) => ({
         id: comment.id,
         issue_id: comment.issue_id,
@@ -56,6 +71,8 @@ export async function fetchComments(
       cursor: normalizeCommentCursor(result.cursor),
       hasMore: result.hasMore,
     } satisfies { comments: CommentRecord[]; cursor: CommentCursor | null; hasMore: boolean };
+    setCachedContent(cacheKey, page);
+    return page;
   } catch (error) {
     throw toReadableBackendError(error);
   }

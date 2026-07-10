@@ -1,8 +1,17 @@
 import { computed, reactive, watch, type Ref } from 'vue';
 import { fetchUserIssues } from '@/services/issues';
+import { createContentCacheKey, isContentCacheFresh } from '@/services/content-read-cache';
 import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption } from '@/types';
 
 type IssueBoardFilter = IssueFilter | 'my-proposals';
+interface UserIssuesSnapshot {
+  allIssues: IssueRecord[];
+  cursor: IssueCursor | null;
+  hasMore: boolean;
+  updatedAt: number;
+}
+
+const userIssuesCache = new Map<string, UserIssuesSnapshot>();
 
 export function useUserIssuesData(
   activeFilter: Ref<IssueBoardFilter>,
@@ -20,12 +29,46 @@ export function useUserIssuesData(
     loading: false,
     loadingMore: false,
     refreshing: false,
+    updatedAt: 0,
   });
 
   let requestToken = 0;
 
   const visibleIssues = computed(() => userIssuesState.allIssues);
   const hasMore = computed(() => userIssuesState.hasMore);
+
+  function getCacheKey() {
+    return createContentCacheKey([
+      'user-issues-state',
+      userUid.value,
+      sortOption.value,
+      pageSize.value,
+    ]);
+  }
+
+  function saveSnapshot() {
+    if (!userUid.value) return;
+    userIssuesCache.set(getCacheKey(), {
+      allIssues: userIssuesState.allIssues,
+      cursor: userIssuesState.cursor,
+      hasMore: userIssuesState.hasMore,
+      updatedAt: Date.now(),
+    });
+  }
+
+  function hydrateSnapshot() {
+    const cached = userIssuesCache.get(getCacheKey());
+    if (!cached || !isContentCacheFresh(cached.updatedAt)) return false;
+    userIssuesState.allIssues = cached.allIssues;
+    userIssuesState.cursor = cached.cursor;
+    userIssuesState.hasMore = cached.hasMore;
+    userIssuesState.updatedAt = cached.updatedAt;
+    userIssuesState.error = '';
+    userIssuesState.loading = false;
+    userIssuesState.loadingMore = false;
+    userIssuesState.refreshing = false;
+    return true;
+  }
 
   function addUserIssue(issue: IssueRecord) {
     const issueMap = new Map(userIssuesState.allIssues.map((entry) => [entry.id, entry]));
@@ -34,10 +77,12 @@ export function useUserIssuesData(
       currentUserSupported: issue.currentUserSupported || supportedIssueIds.value.has(issue.id),
     });
     userIssuesState.allIssues = Array.from(issueMap.values());
+    saveSnapshot();
   }
 
   function removeUserIssue(issueId: string) {
     userIssuesState.allIssues = userIssuesState.allIssues.filter((issue) => issue.id !== issueId);
+    saveSnapshot();
   }
 
   function stopUserIssuesRequest() {
@@ -66,6 +111,8 @@ export function useUserIssuesData(
       return;
     }
 
+    if (!options.silent && hydrateSnapshot()) return;
+
     const currentToken = ++requestToken;
     userIssuesState.error = '';
     if (options.silent && userIssuesState.allIssues.length > 0) {
@@ -77,6 +124,7 @@ export function useUserIssuesData(
     try {
       const page = await fetchUserIssues(uid, null, {
         pageSize: pageSize.value,
+        forceRefresh: options.silent === true,
         sort: sortOption.value,
         supportedIssueIds: supportedIssueIds.value,
       });
@@ -84,7 +132,9 @@ export function useUserIssuesData(
       userIssuesState.allIssues = page.issues;
       userIssuesState.cursor = page.cursor;
       userIssuesState.hasMore = page.hasMore;
+      userIssuesState.updatedAt = Date.now();
       userIssuesState.error = '';
+      saveSnapshot();
     } catch {
       if (currentToken === requestToken && userIssuesState.allIssues.length === 0) {
         userIssuesState.error = '提案載入失敗，請稍後再試。';
@@ -113,7 +163,9 @@ export function useUserIssuesData(
       ];
       userIssuesState.cursor = page.cursor;
       userIssuesState.hasMore = page.hasMore;
+      userIssuesState.updatedAt = Date.now();
       userIssuesState.error = '';
+      saveSnapshot();
     } catch {
       userIssuesState.error = '載入更多提案失敗，請稍後再試。';
     } finally {
@@ -130,6 +182,7 @@ export function useUserIssuesData(
       ...issue,
       currentUserSupported: issue.currentUserSupported || newIds.has(issue.id),
     }));
+    saveSnapshot();
   });
 
   watch(sortOption, () => void loadCurrentUserIssues());

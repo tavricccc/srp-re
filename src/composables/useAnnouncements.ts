@@ -3,8 +3,10 @@ import type { AnnouncementRecord, AnnouncementSortOption } from '@/types';
 import { fetchAnnouncementsPage, type AnnouncementCursor } from '@/services/announcements';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { resolveViewportPageSize } from '@/lib/page-size';
+import { isContentCacheFresh } from '@/services/content-read-cache';
 
 interface UseAnnouncementsOptions {
+  cacheScope?: Ref<string>;
   immediate?: boolean;
   sortOption?: Ref<AnnouncementSortOption>;
 }
@@ -17,7 +19,11 @@ interface AnnouncementListState {
   loading: boolean;
   loadingMore: boolean;
   refreshing: boolean;
+  updatedAt: number;
 }
+
+const announcementStateCache = new Map<string, AnnouncementListState>();
+const announcementRequestVersions = new WeakMap<AnnouncementListState, number>();
 
 function createListState(): AnnouncementListState {
   return reactive({
@@ -28,6 +34,7 @@ function createListState(): AnnouncementListState {
     loading: false,
     loadingMore: false,
     refreshing: false,
+    updatedAt: 0,
   });
 }
 
@@ -40,8 +47,6 @@ function mergeAnnouncements(existing: AnnouncementRecord[], incoming: Announceme
 export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   const { isOnline } = useNetworkStatus();
   const sortOption = options.sortOption ?? ref<AnnouncementSortOption>('latest');
-  const stateCache = new Map<AnnouncementSortOption, AnnouncementListState>();
-  const requestVersions = new WeakMap<AnnouncementListState, number>();
   const pageSize = computed(() => resolveViewportPageSize({
     min: 10,
     max: 24,
@@ -50,20 +55,21 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   }));
 
   function getState() {
-    const cached = stateCache.get(sortOption.value);
+    const key = `${options.cacheScope?.value ?? 'default'}:${sortOption.value}:${pageSize.value}`;
+    const cached = announcementStateCache.get(key);
     if (cached) return cached;
 
     const state = createListState();
-    stateCache.set(sortOption.value, state);
+    announcementStateCache.set(key, state);
     return state;
   }
 
   function getVersion(state: AnnouncementListState) {
-    return requestVersions.get(state) ?? 0;
+    return announcementRequestVersions.get(state) ?? 0;
   }
 
   function bumpVersion(state: AnnouncementListState) {
-    requestVersions.set(state, getVersion(state) + 1);
+    announcementRequestVersions.set(state, getVersion(state) + 1);
   }
 
   const currentState = computed(getState);
@@ -78,6 +84,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   const loading = computed(() => currentState.value.loading);
   const loadingMore = computed(() => currentState.value.loadingMore);
   const error = computed(() => currentState.value.error);
+  const updatedAt = computed(() => currentState.value.updatedAt);
 
   async function loadFirstPage(loadOptions: { silent?: boolean } = {}) {
     const state = currentState.value;
@@ -92,12 +99,16 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     }
 
     try {
-      const page = await fetchAnnouncementsPage(null, sortOption.value, pageSize.value);
+      const page = await fetchAnnouncementsPage(null, sortOption.value, pageSize.value, {
+        cacheScope: options.cacheScope?.value,
+        forceRefresh: loadOptions.silent === true,
+      });
       if (currentVersion !== getVersion(state)) return;
       state.announcements = page.announcements;
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
       state.error = '';
+      state.updatedAt = Date.now();
     } catch {
       if (currentVersion === getVersion(state) && state.announcements.length === 0) {
         state.error = isOnline.value
@@ -120,11 +131,14 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     state.error = '';
 
     try {
-      const page = await fetchAnnouncementsPage(state.cursor, sortOption.value, pageSize.value);
+      const page = await fetchAnnouncementsPage(state.cursor, sortOption.value, pageSize.value, {
+        cacheScope: options.cacheScope?.value,
+      });
       if (currentVersion !== getVersion(state)) return;
       state.announcements = mergeAnnouncements(state.announcements, page.announcements);
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
+      state.updatedAt = Date.now();
     } catch {
       if (currentVersion === getVersion(state)) {
         state.error = isOnline.value
@@ -139,11 +153,18 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   }
 
   function refreshAnnouncements() {
+    if (currentState.value.announcements.length > 0 && isContentCacheFresh(currentState.value.updatedAt)) {
+      return Promise.resolve();
+    }
+    return loadFirstPage({ silent: currentState.value.announcements.length > 0 });
+  }
+
+  function forceRefreshAnnouncements() {
     return loadFirstPage({ silent: currentState.value.announcements.length > 0 });
   }
 
   function resetAnnouncements() {
-    stateCache.forEach((state) => {
+    announcementStateCache.forEach((state) => {
       bumpVersion(state);
       state.announcements = [];
       state.cursor = null;
@@ -151,16 +172,19 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
       state.loading = false;
       state.loadingMore = false;
       state.refreshing = false;
+      state.updatedAt = 0;
     });
   }
 
   function upsertAnnouncement(announcement: AnnouncementRecord) {
-    stateCache.forEach((state) => {
+    announcementStateCache.forEach((state) => {
       state.announcements = mergeAnnouncements(state.announcements, [announcement]);
     });
-    if (!stateCache.has(sortOption.value)) {
+    const key = `${options.cacheScope?.value ?? 'default'}:${sortOption.value}:${pageSize.value}`;
+    if (!announcementStateCache.has(key)) {
       const state = getState();
       state.announcements = [announcement];
+      state.updatedAt = Date.now();
     }
   }
 
@@ -168,16 +192,18 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     announcementId: string,
     updater: (announcement: AnnouncementRecord) => AnnouncementRecord,
   ) {
-    stateCache.forEach((state) => {
+    announcementStateCache.forEach((state) => {
       state.announcements = state.announcements.map((announcement) =>
         announcement.id === announcementId ? updater(announcement) : announcement
       );
+      state.updatedAt = Date.now();
     });
   }
 
   function removeAnnouncement(announcementId: string) {
-    stateCache.forEach((state) => {
+    announcementStateCache.forEach((state) => {
       state.announcements = state.announcements.filter((announcement) => announcement.id !== announcementId);
+      state.updatedAt = Date.now();
     });
   }
 
@@ -191,7 +217,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   });
 
   onScopeDispose(() => {
-    stateCache.forEach(bumpVersion);
+    announcementStateCache.forEach(bumpVersion);
   });
 
   return {
@@ -199,6 +225,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     cursor,
     loading,
     loadingMore,
+    updatedAt,
     error,
     hasMore,
     loadMoreAnnouncements,
@@ -206,6 +233,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     patchAnnouncement,
     removeAnnouncement,
     refreshAnnouncements,
+    forceRefreshAnnouncements,
     resetAnnouncements,
   };
 }

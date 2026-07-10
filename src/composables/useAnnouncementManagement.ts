@@ -1,6 +1,8 @@
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAnnouncements } from '@/composables/useAnnouncements';
+import { registerAppResumeHandler } from '@/composables/useAppResume';
+import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { useSession } from '@/composables/useSession';
 import { useToast } from '@/composables/useToast';
 import {
@@ -14,24 +16,39 @@ import { deleteUploadedImage } from '@/services/uploads';
 import type { UploadedImage } from '@/composables/useImageUpload';
 import type { AnnouncementRecord, AnnouncementSortOption } from '@/types';
 import { isContentUnavailableError } from '@/services/issues-core';
+import {
+  markContentRealtimeReliable,
+  markContentRealtimeUnreliable,
+  markContentWentOffline,
+  shouldRefreshContentAfterResume,
+} from '@/services/content-read-cache';
 
 export function useAnnouncementManagement() {
   const router = useRouter();
-  const { initialized, isAdmin, isAllowedUser, loading: authLoading, roleLoading } = useSession();
+  const { initialized, isAdmin, isAllowedUser, loading: authLoading, roleLoading, user } = useSession();
   const { showToast } = useToast();
+  const { isOnline } = useNetworkStatus();
   const sortOption = ref<AnnouncementSortOption>('latest');
+  const announcementCacheScope = computed(() => [
+    initialized.value ? 'ready' : 'booting',
+    isAllowedUser.value ? 'allowed' : 'blocked',
+    user.value?.uid ?? '',
+    isAdmin.value ? 'admin' : 'user',
+  ].join(':'));
   const {
     announcements,
     loading,
     loadingMore,
+    updatedAt,
     error,
     hasMore,
     loadMoreAnnouncements,
+    forceRefreshAnnouncements,
     patchAnnouncement,
     removeAnnouncement,
     refreshAnnouncements,
     resetAnnouncements,
-  } = useAnnouncements({ sortOption });
+  } = useAnnouncements({ cacheScope: announcementCacheScope, sortOption });
   const editingAnnouncement = ref<AnnouncementRecord | null>(null);
   const editorError = ref('');
   const editorOpen = ref(false);
@@ -43,6 +60,11 @@ export function useAnnouncementManagement() {
   const sessionLoading = computed(() => authLoading.value || !initialized.value);
   let realtimeUnsubscribe: (() => void) | null = null;
   let realtimeRefreshTimer = 0;
+  const unregisterResumeHandler = registerAppResumeHandler(() => {
+    if (!initialized.value || !isAllowedUser.value) return;
+    if (!shouldRefreshContentAfterResume(updatedAt.value)) return;
+    void refreshAnnouncementList({ force: true });
+  });
 
   function openAnnouncementDetails(announcement: AnnouncementRecord, initialTab: 'details' | 'comments' = 'details') {
     router.push({
@@ -156,14 +178,19 @@ export function useAnnouncementManagement() {
     removeAnnouncement(announcementId);
   }
 
-  async function refreshAnnouncementList() {
+  async function refreshAnnouncementList(options: { force?: boolean } = {}) {
+    if (options.force) {
+      await forceRefreshAnnouncements();
+      markContentRealtimeReliable();
+      return;
+    }
     await refreshAnnouncements();
   }
 
   function scheduleRealtimeRefresh() {
     window.clearTimeout(realtimeRefreshTimer);
     realtimeRefreshTimer = window.setTimeout(() => {
-      void refreshAnnouncementList();
+      void refreshAnnouncementList({ force: true });
     }, 300);
   }
 
@@ -199,6 +226,8 @@ export function useAnnouncementManagement() {
         }
         if (event.eventType !== 'announcement_changed') return;
         scheduleRealtimeRefresh();
+      }, () => {
+        markContentRealtimeUnreliable();
       });
     },
     { immediate: true },
@@ -206,7 +235,17 @@ export function useAnnouncementManagement() {
 
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
+    unregisterResumeHandler();
     window.clearTimeout(realtimeRefreshTimer);
+  });
+
+  watch(isOnline, (online) => {
+    if (!online) {
+      markContentWentOffline();
+      return;
+    }
+    if (!initialized.value || !isAllowedUser.value) return;
+    if (shouldRefreshContentAfterResume(updatedAt.value)) void refreshAnnouncementList({ force: true });
   });
 
   return {
@@ -217,7 +256,7 @@ export function useAnnouncementManagement() {
     error,
     hasMore,
     loadMoreAnnouncements,
-    refreshAnnouncements: refreshAnnouncementList,
+    refreshAnnouncements: () => refreshAnnouncementList({ force: true }),
     editingAnnouncement,
     editorError,
     editorOpen,
