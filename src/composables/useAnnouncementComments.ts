@@ -1,4 +1,4 @@
-import { onScopeDispose, ref } from 'vue';
+import { onScopeDispose, ref, watch } from 'vue';
 import type { AnnouncementCommentRecord, DiscussionCommentRecord } from '@/types';
 import {
   createAnnouncementComment,
@@ -17,7 +17,7 @@ export function useAnnouncementComments(
   onCommentCountChanged?: (payload: { announcementId: string; commentCount: number }) => void,
   onContentUnavailable?: (announcementId: string) => void,
 ) {
-  const { isAdmin, user } = useSession();
+  const { isAdmin, user, roleLoading } = useSession();
   const { showToast } = useToast();
   const { isOnline } = useNetworkStatus();
   const comments = ref<AnnouncementCommentRecord[]>([]);
@@ -96,7 +96,7 @@ export function useAnnouncementComments(
 
   async function reloadLoadedComments(options: { targetCommentId?: string } = {}) {
     const id = announcementId();
-    if (!id) return;
+    if (!id || roleLoading.value) return;
 
     const targetTopLevelCount = Math.max(comments.value.length, 1);
     const currentVersion = ++requestVersion;
@@ -163,6 +163,16 @@ export function useAnnouncementComments(
     window.clearTimeout(realtimeRefreshTimer);
     requestVersion += 1;
     requestController?.abort(new RequestFailure('公告留言載入已取消。', 'aborted'));
+  });
+
+  watch(roleLoading, (waitingForRole) => {
+    if (waitingForRole) {
+      realtimeUnsubscribe?.();
+      realtimeUnsubscribe = null;
+      window.clearTimeout(realtimeRefreshTimer);
+      return;
+    }
+    subscribeCurrentAnnouncementComments();
   });
 
   async function loadMoreComments() {

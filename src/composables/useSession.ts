@@ -30,13 +30,16 @@ const state = reactive<SessionState>({
   userLoading: false,
   appInitializing: true,
   appReady: false,
+  roleLoading: false,
   user: null,
   userRole: 'user',
   error: '',
 });
 
 let booted = false;
+let verificationSerial = 0;
 const sessionReadyWaiters: Array<() => void> = [];
+const roleReadyWaiters: Array<() => void> = [];
 
 function resolveSessionReadyWaiters() {
   if (!state.appReady) return;
@@ -53,6 +56,13 @@ function markAppReady() {
   state.initialized = true;
   state.appReady = true;
   resolveSessionReadyWaiters();
+}
+
+function resolveRoleReadyWaiters() {
+  if (state.roleLoading) return;
+  while (roleReadyWaiters.length > 0) {
+    roleReadyWaiters.shift()?.();
+  }
 }
 
 function observeAuthState(firebaseAuth: NonNullable<typeof auth>) {
@@ -91,7 +101,10 @@ function observeAuthState(firebaseAuth: NonNullable<typeof auth>) {
       if (!user) {
         debugLog('no active user after auth state change');
         clearActiveSessionData();
+        verificationSerial += 1;
         state.user = null;
+        state.roleLoading = false;
+        resolveRoleReadyWaiters();
         return;
       }
 
@@ -102,22 +115,7 @@ function observeAuthState(firebaseAuth: NonNullable<typeof auth>) {
         return;
       }
 
-      const tokenValidation = await validateUserAgainstToken(user);
-      if (!tokenValidation.ok) {
-        debugLog('token validation failed', tokenValidation);
-        await rejectCurrentUser(tokenValidation.reason);
-        return;
-      }
-
-      try {
-        await ensureSupabaseAuthenticatedRole(user);
-      } catch (error) {
-        debugLog('supabase auth initialization failed', error);
-        await rejectCurrentUser('登入初始化失敗，請重新登入後再試。');
-        return;
-      }
-
-      await acceptCurrentUser(user);
+      acceptCurrentUser(user);
     } catch (error) {
       debugLog('auth state processing failed', error);
       state.error = '登入狀態檢查逾時，請重新載入。';
@@ -132,30 +130,74 @@ async function rejectCurrentUser(reason: string) {
   const firebaseAuth = auth;
 
   clearActiveSessionData();
+  verificationSerial += 1;
   state.user = null;
   state.userRole = 'user';
+  state.roleLoading = false;
   state.error = reason;
   try {
     await withRequestTimeout(() => signOut(firebaseAuth), { label: '登出' });
   } finally {
+    resolveRoleReadyWaiters();
     markAppReady();
   }
 }
 
-async function acceptCurrentUser(user: NonNullable<SessionState['user']>) {
+function acceptCurrentUser(user: NonNullable<SessionState['user']>) {
   debugLog('login accepted', {
     uid: user.uid,
     email: user.email ?? '',
   });
 
   void initActiveSessionData(user.uid);
-  state.userRole = await fetchCurrentUserRole();
+  const verificationId = ++verificationSerial;
   state.user = user;
+  state.userRole = 'user';
+  state.roleLoading = true;
+  void refreshVerifiedSession(user, verificationId);
 
   if (user.photoURL) {
     void cacheUserAvatarOnLogin(user.photoURL);
   }
   void recordPlatformVisitOnLogin();
+}
+
+function isCurrentVerification(user: NonNullable<SessionState['user']>, verificationId: number) {
+  return verificationId === verificationSerial && state.user?.uid === user.uid;
+}
+
+async function refreshVerifiedSession(user: NonNullable<SessionState['user']>, verificationId: number) {
+  try {
+    const tokenValidation = await validateUserAgainstToken(user);
+    if (!isCurrentVerification(user, verificationId)) return;
+    if (!tokenValidation.ok) {
+      debugLog('background token validation failed', tokenValidation);
+      await rejectCurrentUser(tokenValidation.reason);
+      return;
+    }
+
+    try {
+      await ensureSupabaseAuthenticatedRole(user);
+      if (!isCurrentVerification(user, verificationId)) return;
+    } catch (error) {
+      debugLog('background supabase auth initialization failed', error);
+      await rejectCurrentUser('登入初始化失敗，請重新登入後再試。');
+      return;
+    }
+
+    const role = await fetchCurrentUserRole();
+    if (!isCurrentVerification(user, verificationId)) return;
+    state.userRole = role;
+  } catch (error) {
+    if (!isCurrentVerification(user, verificationId)) return;
+    debugLog('background session verification failed', error);
+    state.userRole = 'user';
+  } finally {
+    if (isCurrentVerification(user, verificationId)) {
+      state.roleLoading = false;
+      resolveRoleReadyWaiters();
+    }
+  }
 }
 
 export function initializeSession() {
@@ -193,6 +235,17 @@ export function waitForSessionReady() {
   });
 }
 
+export function waitForRoleReady() {
+  initializeSession();
+  if (!state.roleLoading) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    roleReadyWaiters.push(resolve);
+  });
+}
+
 export function useSession() {
   const userEmail = computed(() => String(state.user?.email ?? '').toLowerCase());
   const userRole = computed(() => state.userRole);
@@ -203,6 +256,7 @@ export function useSession() {
     userRole,
     isAdmin: computed(() => userRole.value === 'admin'),
     loading: computed(() => state.loading),
+    roleLoading: computed(() => state.roleLoading),
     authChecking: computed(() => state.authChecking),
     userLoading: computed(() => state.userLoading),
     appInitializing: computed(() => state.appInitializing),

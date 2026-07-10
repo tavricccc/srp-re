@@ -55,11 +55,13 @@
           :can-delete-reply="canDeleteComment"
           :can-reply="canCompose"
           :focus-comment-id="focusCommentId"
+          :replies-expanded="expandedReplyCommentIds.has(comment.id)"
           :deleting="deletingId === comment.id"
           :deleting-id="deletingId"
           @delete="requestDeleteComment(comment.id)"
           @delete-reply="requestDeleteComment"
           @reply="openReplyComposer(comment.id)"
+          @update-replies-expanded="updateRepliesExpanded"
         />
         <SkeletonCommentList v-if="loadingMore" class="mt-2" :count="2" />
         <div v-if="hasMore" ref="loadMoreSentinel" class="h-1" aria-hidden="true"></div>
@@ -147,6 +149,7 @@ const props = withDefaults(defineProps<{
 const isComposerOpen = ref(false);
 const replyingToCommentId = ref('');
 const commentPendingDelete = ref('');
+const expandedReplyCommentIds = ref<Set<string>>(new Set());
 const scrollContainerRef = ref<HTMLElement | null>(null);
 let focusInProgress = false;
 const { visibleLoading } = useMinimumLoading(toRef(props, 'loading'));
@@ -189,8 +192,19 @@ function closeComposer() {
 
 function openReplyComposer(commentId: string) {
   if (!props.canCompose) return;
+  updateRepliesExpanded({ commentId, expanded: true });
   replyingToCommentId.value = commentId;
   isComposerOpen.value = true;
+}
+
+function updateRepliesExpanded(payload: { commentId: string; expanded: boolean }) {
+  const nextIds = new Set(expandedReplyCommentIds.value);
+  if (payload.expanded) {
+    nextIds.add(payload.commentId);
+  } else {
+    nextIds.delete(payload.commentId);
+  }
+  expandedReplyCommentIds.value = nextIds;
 }
 
 async function handleSubmitComment(payload: { content: string; parentCommentId: string | null }) {

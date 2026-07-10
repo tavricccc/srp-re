@@ -13,7 +13,7 @@ import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import type { IssueRecord, IssueSortOption } from '@/types';
 
 export function useIssueBoardData() {
-  const { user, isAdmin, isAllowedUser, mySupportedIssueIds } = useSession();
+  const { user, isAdmin, isAllowedUser, mySupportedIssueIds, roleLoading } = useSession();
   const { activeFilter } = useFilter();
 
   const statusTab = ref<'active' | 'closed'>('active');
@@ -238,15 +238,16 @@ export function useIssueBoardData() {
   watch(
     () => [
       isAllowedUser.value,
+      roleLoading.value,
       user.value?.uid ?? '',
       activeFilter.value,
       statusTab.value,
     ] as const,
-    ([allowed, uid]) => {
+    ([allowed, waitingForRole, uid]) => {
       realtimeUnsubscribe?.();
       realtimeUnsubscribe = null;
       window.clearTimeout(realtimeRefreshTimer);
-      if (!allowed || !uid) return;
+      if (!allowed || waitingForRole || !uid) return;
 
       realtimeUnsubscribe = subscribeContentRealtimeEvents(
         `issues:${uid}:${activeFilter.value}:${statusTab.value}`,

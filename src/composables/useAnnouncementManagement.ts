@@ -17,7 +17,7 @@ import { isContentUnavailableError } from '@/services/issues-core';
 
 export function useAnnouncementManagement() {
   const router = useRouter();
-  const { initialized, isAdmin, isAllowedUser, loading: authLoading } = useSession();
+  const { initialized, isAdmin, isAllowedUser, loading: authLoading, roleLoading } = useSession();
   const { showToast } = useToast();
   const sortOption = ref<AnnouncementSortOption>('latest');
   const {
@@ -181,12 +181,12 @@ export function useAnnouncementManagement() {
   );
 
   watch(
-    [initialized, isAllowedUser, () => sortOption.value],
-    ([ready, allowed]) => {
+    [initialized, isAllowedUser, roleLoading, () => sortOption.value],
+    ([ready, allowed, waitingForRole]) => {
       realtimeUnsubscribe?.();
       realtimeUnsubscribe = null;
       window.clearTimeout(realtimeRefreshTimer);
-      if (!ready || !allowed) return;
+      if (!ready || !allowed || waitingForRole) return;
 
       realtimeUnsubscribe = subscribeContentRealtimeEvents(`announcements:${sortOption.value}`, (event) => {
         if (event.eventType !== 'announcement_changed') return;

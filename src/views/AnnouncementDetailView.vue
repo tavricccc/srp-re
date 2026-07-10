@@ -79,7 +79,7 @@ import type { AnnouncementRecord } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
-const { initialized, isAdmin, isAllowedUser, loading } = useSession();
+const { initialized, isAdmin, isAllowedUser, loading, roleLoading } = useSession();
 const { copyShareUrl } = useShareUrl();
 const { showToast } = useToast();
 
@@ -297,12 +297,12 @@ watch(
 );
 
 watch(
-  () => [canLoadAnnouncement.value, route.params.announcementId] as const,
-  ([canLoad, rawAnnouncementId]) => {
+  () => [canLoadAnnouncement.value, route.params.announcementId, roleLoading.value] as const,
+  ([canLoad, rawAnnouncementId, waitingForRole]) => {
     realtimeUnsubscribe?.();
     realtimeUnsubscribe = null;
     window.clearTimeout(realtimeRefreshTimer);
-    if (!canLoad) return;
+    if (!canLoad || waitingForRole) return;
 
     const announcementId = normalizeRouteParam(rawAnnouncementId);
     if (!announcementId) return;

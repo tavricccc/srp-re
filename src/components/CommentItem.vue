@@ -63,22 +63,22 @@
             v-if="hasReplies"
             type="button"
             class="reply-toggle relative inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-bold text-brand-700 transition hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 dark:text-brand-300 dark:hover:bg-brand-900/30"
-            :aria-expanded="repliesExpanded"
-            @click="repliesExpanded = !repliesExpanded"
+            :aria-expanded="isRepliesExpanded"
+            @click="setRepliesExpanded(!isRepliesExpanded)"
           >
             <AppIcon
               name="chevron-right"
               :size="3"
               :stroke-width="2.4"
               class="transition-transform"
-              :class="{ 'rotate-90': repliesExpanded }"
+              :class="{ 'rotate-90': isRepliesExpanded }"
             />
             {{ repliesToggleLabel }}
           </button>
         </div>
 
         <div
-          v-if="!isReply && hasReplies && repliesExpanded"
+          v-if="!isReply && hasReplies && isRepliesExpanded"
           class="reply-list relative mt-1 pl-4"
         >
           <CommentItem
@@ -115,6 +115,7 @@ const props = defineProps<{
   comment: DiscussionCommentRecord;
   deleting: boolean;
   deletingId?: string;
+  repliesExpanded?: boolean;
   focusCommentId?: string;
   isReply?: boolean;
 }>();
@@ -123,10 +124,12 @@ const emit = defineEmits<{
   delete: [];
   'delete-reply': [commentId: string];
   reply: [];
+  'update-replies-expanded': [payload: { commentId: string; expanded: boolean }];
 }>();
 
-const repliesExpanded = ref(false);
+const localRepliesExpanded = ref(false);
 const hasReplies = computed(() => !props.isReply && props.comment.replies.length > 0);
+const isRepliesExpanded = computed(() => props.repliesExpanded ?? localRepliesExpanded.value);
 const isFocused = computed(() => props.focusCommentId === props.comment.id);
 const shouldExpandForFocusedReply = computed(() =>
   !props.isReply
@@ -134,14 +137,19 @@ const shouldExpandForFocusedReply = computed(() =>
   && props.comment.replies.some((reply) => reply.id === props.focusCommentId)
 );
 const repliesToggleLabel = computed(() => (
-  repliesExpanded.value ? '隱藏回覆' : `${props.comment.replies.length} 則回覆`
+  isRepliesExpanded.value ? '隱藏回覆' : `${props.comment.replies.length} 則回覆`
 ));
+
+function setRepliesExpanded(expanded: boolean) {
+  localRepliesExpanded.value = expanded;
+  emit('update-replies-expanded', { commentId: props.comment.id, expanded });
+}
 
 watch(
   shouldExpandForFocusedReply,
   (shouldExpand) => {
     if (shouldExpand) {
-      repliesExpanded.value = true;
+      setRepliesExpanded(true);
     }
   },
   { immediate: true },

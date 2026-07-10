@@ -7,6 +7,7 @@ export interface SessionState {
   userLoading: boolean;
   appInitializing: boolean;
   appReady: boolean;
+  roleLoading: boolean;
   user: User | null;
   userRole: 'admin' | 'user';
   error: string;

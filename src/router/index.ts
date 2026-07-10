@@ -8,7 +8,7 @@ import { notificationRoutes } from '@/router/notificationRoutes';
 import { settingsRoutes } from '@/router/settingsRoutes';
 import { DEFAULT_ISSUE_ROUTE_FILTER } from '@/constants/categories';
 import { resetRouteRequestScope } from '@/lib/route-request';
-import { useSession, waitForSessionReady } from '@/composables/useSession';
+import { useSession, waitForRoleReady, waitForSessionReady } from '@/composables/useSession';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -69,8 +69,11 @@ router.beforeEach(async (to) => {
     };
   }
 
-  if (to.meta.requiresAdmin && !isAdmin.value) {
-    return defaultAuthenticatedRoute();
+  if (to.meta.requiresAdmin) {
+    await waitForRoleReady();
+    if (!isAdmin.value) {
+      return defaultAuthenticatedRoute();
+    }
   }
 
   return true;

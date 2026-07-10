@@ -39,7 +39,7 @@ function notificationLoadFailureMessage() {
     : '目前已離線，請恢復網路連線後重新整理。';
 }
 
-const { user, isAdmin } = useSession();
+const { user, isAdmin, roleLoading } = useSession();
 const firstPages = ref(emptySourceRecord<NotificationRecord[]>(() => []));
 const extraPages = ref(emptySourceRecord<NotificationRecord[]>(() => []));
 const cursors = ref(emptySourceRecord<NotificationCursor>(() => null));
@@ -127,7 +127,7 @@ function insertRealtimeNotification(source: NotificationSource, notification: No
 function startSubscriptions() {
   const uid = user.value?.uid ?? '';
   clearSubscriptions();
-  if (!uid) return;
+  if (!uid || roleLoading.value) return;
 
   loading.value = true;
   error.value = '';
@@ -210,7 +210,7 @@ function ensureNotificationsInitialized() {
   initialized = true;
 
   watch(
-    () => [user.value?.uid ?? '', isAdmin.value] as const,
+    () => [user.value?.uid ?? '', isAdmin.value, roleLoading.value] as const,
     startSubscriptions,
     { immediate: true },
   );

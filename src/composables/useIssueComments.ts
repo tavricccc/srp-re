@@ -9,7 +9,7 @@ import { isContentUnavailableError } from '@/services/issues-core';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 
 export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (issueId: string) => void) {
-  const { isAdmin, user } = useSession();
+  const { isAdmin, user, roleLoading } = useSession();
   const { showToast } = useToast();
   const { isOnline } = useNetworkStatus();
 
@@ -143,11 +143,11 @@ export function useIssueComments(issueId: Ref<string>, onContentUnavailable?: (i
     }, 300);
   }
 
-  watch(issueId, (issueIdValue) => {
+  watch([issueId, roleLoading], ([issueIdValue, waitingForRole]) => {
     realtimeUnsubscribe?.();
     realtimeUnsubscribe = null;
     window.clearTimeout(realtimeRefreshTimer);
-    if (!issueIdValue) return;
+    if (!issueIdValue || waitingForRole) return;
 
     realtimeUnsubscribe = subscribeContentRealtimeEvents(`issue-comments:${issueIdValue}`, (event) => {
       if (event.eventType !== 'issue_comment_changed') return;

@@ -5,6 +5,7 @@ import { getDerivedIssueStatus } from '@/lib/issue-status';
 import { getIssueStatusBucket } from '@/lib/issue-timeline';
 import { normalizeRouteParam } from '@/lib/route';
 import { useToast } from '@/composables/useToast';
+import { useSession } from '@/composables/useSession';
 import { fetchIssueRecordById } from '@/services/issues';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import type { IssueRecord } from '@/types';
@@ -18,6 +19,7 @@ export function useIssueRouteDetail(
   const route = useRoute();
   const router = useRouter();
   const { showToast } = useToast();
+  const { roleLoading } = useSession();
   const routeIssue = ref<IssueRecord | null>(null);
   const routeIssueLoading = ref(false);
   let requestId = 0;
@@ -166,13 +168,13 @@ export function useIssueRouteDetail(
   }
 
   watch(
-    () => [route.name, route.params.issueId, enabled?.value ?? true] as const,
-    ([routeName, rawIssueId, isEnabled]) => {
+    () => [route.name, route.params.issueId, enabled?.value ?? true, roleLoading.value] as const,
+    ([routeName, rawIssueId, isEnabled, waitingForRole]) => {
       realtimeUnsubscribe?.();
       realtimeUnsubscribe = null;
       window.clearTimeout(realtimeRefreshTimer);
       const issueId = normalizeRouteParam(rawIssueId);
-      if (!isEnabled || routeName !== 'issue-detail' || !issueId) return;
+      if (!isEnabled || waitingForRole || routeName !== 'issue-detail' || !issueId) return;
 
       realtimeUnsubscribe = subscribeContentRealtimeEvents(`issue-detail:${issueId}`, (event) => {
         if (event.eventType !== 'issue_changed') return;
