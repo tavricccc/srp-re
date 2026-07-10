@@ -2,6 +2,23 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "提升 App 更新與啟動穩定性",
+    version: "v2.0.144",
+    date: "2026-07-10",
+    time: "16:59",
+    items: [
+      {
+        title: "改善 App 啟動逾時處理，避免畫面持續顯示載入狀態。"
+      },
+      {
+        title: "提升版本重新載入可靠性，未完成時自動重試並維持更新提示。"
+      },
+      {
+        title: "調整更新期間的背景遮罩，提升更新狀態辨識度。"
+      }
+    ]
+  },
+  {
     title: "提升啟動速度與留言體驗",
     version: "v2.0.143",
     date: "2026-07-10",

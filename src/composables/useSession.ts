@@ -40,6 +40,18 @@ let booted = false;
 let verificationSerial = 0;
 const sessionReadyWaiters: Array<() => void> = [];
 const roleReadyWaiters: Array<() => void> = [];
+let sessionStartupTimeout: number | null = null;
+
+const SESSION_PERSISTENCE_TIMEOUT_MS = 5_000;
+const SESSION_STARTUP_TIMEOUT_MS = 12_000;
+const ROLE_READY_TIMEOUT_MS = 12_000;
+
+function clearSessionStartupTimeout() {
+  if (sessionStartupTimeout !== null) {
+    window.clearTimeout(sessionStartupTimeout);
+    sessionStartupTimeout = null;
+  }
+}
 
 function resolveSessionReadyWaiters() {
   if (!state.appReady) return;
@@ -49,6 +61,7 @@ function resolveSessionReadyWaiters() {
 }
 
 function markAppReady() {
+  clearSessionStartupTimeout();
   state.loading = false;
   state.authChecking = false;
   state.userLoading = false;
@@ -56,6 +69,13 @@ function markAppReady() {
   state.initialized = true;
   state.appReady = true;
   resolveSessionReadyWaiters();
+}
+
+function recoverFromSessionStartupTimeout() {
+  if (state.initialized) return;
+  debugLog('session startup timed out; continuing without blocking the app');
+  state.error = '登入狀態載入時間過長，已先開啟 App。';
+  markAppReady();
 }
 
 function resolveRoleReadyWaiters() {
@@ -90,11 +110,14 @@ function observeAuthState(firebaseAuth: NonNullable<typeof auth>) {
           providers: user.providerData.map((provider) => provider.providerId),
         }
       : null);
+    const isStartupResolution = !state.initialized;
     state.loading = true;
     state.authChecking = false;
-    state.userLoading = Boolean(user);
-    state.appInitializing = true;
-    state.appReady = false;
+    if (isStartupResolution) {
+      state.userLoading = Boolean(user);
+      state.appInitializing = true;
+      state.appReady = false;
+    }
     state.error = '';
 
     try {
@@ -120,6 +143,12 @@ function observeAuthState(firebaseAuth: NonNullable<typeof auth>) {
       debugLog('auth state processing failed', error);
       state.error = '登入狀態檢查逾時，請重新載入。';
     } finally {
+      markAppReady();
+    }
+  }, (error) => {
+    debugLog('auth state observer failed', error);
+    state.error = '登入狀態載入失敗，請稍後再試。';
+    if (!state.initialized) {
       markAppReady();
     }
   });
@@ -214,9 +243,13 @@ export function initializeSession() {
   }
 
   const firebaseAuth = auth;
+  sessionStartupTimeout = window.setTimeout(
+    recoverFromSessionStartupTimeout,
+    SESSION_STARTUP_TIMEOUT_MS,
+  );
   void withRequestTimeout(
     () => setPersistence(firebaseAuth, browserLocalPersistence),
-    { label: '登入狀態初始化' },
+    { label: '登入狀態初始化', timeoutMs: SESSION_PERSISTENCE_TIMEOUT_MS },
   )
     .catch((error) => {
       debugLog('local auth persistence unavailable', error);
@@ -235,14 +268,26 @@ export function waitForSessionReady() {
   });
 }
 
-export function waitForRoleReady() {
+export function waitForRoleReady(): Promise<boolean> {
   initializeSession();
   if (!state.roleLoading) {
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
 
-  return new Promise<void>((resolve) => {
-    roleReadyWaiters.push(resolve);
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    let timeoutId = 0;
+    const finish = (ready: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      const waiterIndex = roleReadyWaiters.indexOf(roleReady);
+      if (waiterIndex >= 0) roleReadyWaiters.splice(waiterIndex, 1);
+      resolve(ready);
+    };
+    const roleReady = () => finish(true);
+    roleReadyWaiters.push(roleReady);
+    timeoutId = window.setTimeout(() => finish(false), ROLE_READY_TIMEOUT_MS);
   });
 }
 

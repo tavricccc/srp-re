@@ -70,8 +70,8 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAdmin) {
-    await waitForRoleReady();
-    if (!isAdmin.value) {
+    const roleReady = await waitForRoleReady();
+    if (!roleReady || !isAdmin.value) {
       return defaultAuthenticatedRoute();
     }
   }

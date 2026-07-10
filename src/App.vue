@@ -3,6 +3,8 @@
     v-if="startupGateOpen"
     :aria-label="startupAriaLabel"
     :message="startupMessage"
+    :stalled="startupGateStalled"
+    @retry="reloadApp({ reason: 'restart' })"
   />
   <AppShell v-else>
     <RouterView v-slot="{ Component }">
@@ -45,7 +47,7 @@
     <Transition name="dialog" appear>
       <div
         v-if="reloading"
-        class="fixed inset-0 z-[70] flex items-center justify-center bg-ink-900/50 text-white backdrop-blur-sm"
+        class="fixed inset-0 z-[90] flex items-center justify-center bg-ink-950/65 text-white backdrop-blur-md"
         role="status"
         aria-live="assertive"
         :aria-label="reloadingAriaLabel"
@@ -88,7 +90,7 @@ if (typeof document !== 'undefined') {
 }
 
 const { canAutoReloadCurrentVersion, reloadApp, reloading, updateAvailable } = useAppUpdate();
-const { open: startupGateOpen } = useAppStartupGate();
+const { open: startupGateOpen, stalled: startupGateStalled } = useAppStartupGate();
 const route = useRoute();
 const router = useRouter();
 const { appReady, user } = useSession();
