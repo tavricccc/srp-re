@@ -27,7 +27,6 @@ export function useAnnouncementManagement() {
     error,
     hasMore,
     loadMoreAnnouncements,
-    upsertAnnouncement,
     patchAnnouncement,
     removeAnnouncement,
     refreshAnnouncements,
@@ -69,17 +68,11 @@ export function useAnnouncementManagement() {
     editorError.value = '';
     try {
       if (editingAnnouncement.value) {
-        const announcement = await updateAnnouncement(editingAnnouncement.value.id, payload);
-        upsertAnnouncement({
-          ...announcement,
-          currentUserLiked: editingAnnouncement.value.currentUserLiked,
-          like_count: editingAnnouncement.value.like_count,
-          comment_count: editingAnnouncement.value.comment_count,
-        });
+        await updateAnnouncement(editingAnnouncement.value.id, payload);
       } else {
-        const announcement = await createAnnouncement(payload);
-        upsertAnnouncement(announcement);
+        await createAnnouncement(payload);
       }
+      await refreshAnnouncementList();
       editorOpen.value = false;
       showToast('公告已儲存。', 'success');
     } catch (caught) {

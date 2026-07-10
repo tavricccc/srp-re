@@ -14,6 +14,7 @@ import { resetAppConnection } from '@/lib/reconnect';
 type Unsubscribe = () => void;
 
 const notificationSources: NotificationSource[] = ['broadcast', 'admin', 'user'];
+const NOTIFICATION_FOREGROUND_REFRESH_MS = 30_000;
 const defaultPersonalPreferences = {
   comments: true,
   issueUpdates: true,
@@ -53,6 +54,8 @@ const loading = ref(false);
 const loadingMore = ref(false);
 const error = ref('');
 let initialized = false;
+let firstPageRefreshPromise: Promise<void> | null = null;
+let foregroundRefreshTimer: number | null = null;
 let loadingTimer: number | null = null;
 let subscriptionVersion = 0;
 let unsubscribes: Unsubscribe[] = [];
@@ -91,8 +94,14 @@ function clearLoadingTimer() {
   loadingTimer = null;
 }
 
+function clearForegroundRefreshTimer() {
+  if (foregroundRefreshTimer !== null) window.clearInterval(foregroundRefreshTimer);
+  foregroundRefreshTimer = null;
+}
+
 function clearSubscriptions() {
   clearLoadingTimer();
+  clearForegroundRefreshTimer();
   subscriptionVersion += 1;
   unsubscribes.forEach((unsubscribe) => unsubscribe());
   unsubscribes = [];
@@ -166,6 +175,7 @@ function startSubscriptions() {
       (notification) => {
         if (currentVersion !== subscriptionVersion) return;
         insertRealtimeNotification(source, notification);
+        void refreshSourceFirstPage(source).catch(() => void 0);
       },
       () => {
         if (currentVersion !== subscriptionVersion) return;
@@ -188,6 +198,11 @@ function startSubscriptions() {
       }
     },
   ));
+
+  foregroundRefreshTimer = window.setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    void refreshFirstPages().catch(() => void 0);
+  }, NOTIFICATION_FOREGROUND_REFRESH_MS);
 }
 
 function ensureNotificationsInitialized() {
@@ -212,6 +227,7 @@ async function openNotifications() {
   if (!user.value) return;
 
   try {
+    await refreshFirstPages();
     const result = await markNotificationsOpened();
     const openedAt = new Date(result.openedAtMs);
     readState.value = {
@@ -223,6 +239,40 @@ async function openNotifications() {
   } catch {
     void 0;
   }
+}
+
+async function refreshFirstPages() {
+  const uid = user.value?.uid;
+  if (!uid) return;
+  if (firstPageRefreshPromise) return firstPageRefreshPromise;
+
+  firstPageRefreshPromise = Promise.all(activeSources.value.map(async (source) => ({
+    page: await fetchNotificationSourcePage(source, uid, null),
+    source,
+  })))
+    .then((pages) => {
+      pages.forEach(({ page, source }) => {
+        firstPages.value[source] = page.notifications;
+        cursors.value[source] = page.cursor;
+        sourceHasMore.value[source] = page.hasMore;
+      });
+    })
+    .finally(() => {
+      firstPageRefreshPromise = null;
+    });
+
+  return firstPageRefreshPromise;
+}
+
+async function refreshSourceFirstPage(source: NotificationSource) {
+  const uid = user.value?.uid;
+  if (!uid) return;
+
+  const page = await fetchNotificationSourcePage(source, uid, null);
+  if (!activeSources.value.includes(source)) return;
+  firstPages.value[source] = page.notifications;
+  cursors.value[source] = page.cursor;
+  sourceHasMore.value[source] = page.hasMore;
 }
 
 async function retryNotifications() {

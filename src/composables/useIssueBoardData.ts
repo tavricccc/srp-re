@@ -179,7 +179,7 @@ export function useIssueBoardData() {
     addUserIssue(issue);
   }
 
-  function handleIssueUpdated(issue: IssueRecord) {
+  async function handleIssueUpdated(issue: IssueRecord) {
     upsertIssueAcrossBuckets(issue);
     removeSearchIssue(issue.id);
     addSearchIssue(issue);
@@ -188,6 +188,7 @@ export function useIssueBoardData() {
     } else {
       removeUserIssue(issue.id);
     }
+    await refreshCurrentData();
   }
 
   function handleIssueDeleted(issueId: string) {
