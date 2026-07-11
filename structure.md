@@ -6,8 +6,10 @@
 
 ## 根目錄
 
-- `README.md` — 專案摘要
-- `docs/*` — 開源文件（總覽、架構、成本、設定、安全、維運、部署）
+- `README.md` — 中英文專案摘要與快速入口
+- `LICENSE` / `CONTRIBUTING.md` / `SECURITY.md` / `CODE_OF_CONDUCT.md` — MIT 授權與社群政策入口
+- `docs/*.md` — 繁中開源文件（總覽、快速開始、使用、架構、設定、部署、維運、故障排除、安全、成本、貢獻）
+- `docs/en/*.md` — 與繁中對照的英文文件
 - `config/issue-categories.config.json` — 提案分類設定入口
 - `config/rate-limits.config.json` — 限流與圖片壓縮設定入口
 - `structure.md` / `AGENTS.md` — 結構地圖 / 代理人規則
@@ -94,6 +96,7 @@
 ## generated / constants / lib / types
 
 - `generated/issue-categories.ts` — 分類 codegen
+- `constants/app.ts` — Novae 品牌名稱與學校顯示設定
 - `constants/categories.ts` / `statuses.ts` / `changelog.ts`
 - `lib/` — `firebase`、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
 - `types/index.ts` / `types/pwa.d.ts`

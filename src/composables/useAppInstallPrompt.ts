@@ -13,7 +13,7 @@ import {
 
 export type AppInstallPromptMode = 'in-app-browser' | 'native-install' | 'ios-install' | 'ios-open-safari';
 
-const DISMISSED_KEY = 'srp-app-install-prompt-dismissed';
+const DISMISSED_KEY = 'novae-app-install-prompt-dismissed';
 
 function hasDismissedPrompt() {
   try {

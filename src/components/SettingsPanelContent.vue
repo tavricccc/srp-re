@@ -22,6 +22,9 @@
 
     <div class="min-h-0 overflow-y-auto px-4" :class="flat ? '!px-1' : ''">
       <section aria-label="目前帳號" class="border-b border-ink-100 py-4 dark:border-ink-800/60">
+        <p v-if="SCHOOL_NAME" class="mb-3 text-xs font-semibold text-ink-500 dark:text-ink-400">
+          {{ SCHOOL_NAME }}
+        </p>
         <div class="flex items-center gap-3">
           <UserAvatar :photo-url="displayPhotoUrl" :name="displayName || 'U'" size="md" alt-text="使用者頭像" class="h-10 w-10 shrink-0" />
           <div class="min-w-0 flex-1">
@@ -187,6 +190,7 @@
 import { RouterLink } from 'vue-router';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
+import { SCHOOL_NAME } from '@/constants/app';
 import type { PersonalPushPreferenceKey, PersonalPushPreferences } from '@/services/notifications';
 
 withDefaults(defineProps<{

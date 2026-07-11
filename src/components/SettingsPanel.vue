@@ -195,11 +195,6 @@ async function handleRestartApp() {
   await reloadApp({ reason: 'restart' });
 }
 
-// Clear legacy key once; no ongoing listener needed.
-if (typeof localStorage !== 'undefined') {
-  localStorage.removeItem('srp:remembered-accounts');
-}
-
 watch(error, (message) => {
   if (message) {
     showToast(message, 'error');

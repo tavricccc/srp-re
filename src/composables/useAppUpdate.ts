@@ -15,9 +15,9 @@ const SERVICE_WORKER_PREPARE_TIMEOUT_MS = 4_000;
 const RELOAD_NAVIGATION_RETRY_MS = 4_000;
 const RELOAD_RECOVERY_TIMEOUT_MS = 10_000;
 const MAX_AUTO_RELOAD_ATTEMPTS = 3;
-const AUTO_RELOAD_STORAGE_KEY = 'srp:auto-update-reloaded-version';
-const AUTO_RELOAD_COUNT_KEY = 'srp:auto-update-reloaded-count';
-const PENDING_UPDATE_VERSION_STORAGE_KEY = 'srp:pending-update-version';
+const AUTO_RELOAD_STORAGE_KEY = 'novae:auto-update-reloaded-version';
+const AUTO_RELOAD_COUNT_KEY = 'novae:auto-update-reloaded-count';
+const PENDING_UPDATE_VERSION_STORAGE_KEY = 'novae:pending-update-version';
 
 interface VersionResponse {
   version?: string;

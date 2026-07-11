@@ -2,6 +2,37 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "新增 Novae 品牌識別",
+    version: "v2.0.154",
+    date: "2026-07-11",
+    time: "14:10",
+    items: [
+      { title: "統一採用 Novae 名稱與群星匯聚的品牌意象。" },
+      { title: "支援在啟動畫面與我的頁面顯示學校名稱。" }
+    ]
+  },
+  {
+    title: "統一平台名稱顯示",
+    version: "v2.0.153",
+    date: "2026-07-11",
+    time: "13:42",
+    items: [
+      { title: "統一網頁、啟動畫面與安裝後的應用程式名稱。" },
+      { title: "修正平台名稱未設定或留空時的顯示。" }
+    ]
+  },
+  {
+    title: "完善中英文使用與維護資訊",
+    version: "v2.0.152",
+    date: "2026-07-11",
+    time: "12:38",
+    items: [
+      { title: "新增中英文使用手冊，說明提案、附議、通知與管理流程。" },
+      { title: "完善設定行為、部署、維運、安全與故障排除資訊。" },
+      { title: "新增開源授權與社群參與規範。" }
+    ]
+  },
+  {
     title: "最佳化平台載入與通知效率",
     version: "v2.0.151",
     date: "2026-07-11",

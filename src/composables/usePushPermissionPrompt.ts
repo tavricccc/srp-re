@@ -11,9 +11,9 @@ const PUSH_PROMPT_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1_000;
 const PUSH_REPAIR_PROMPT_COOLDOWN_MS = 24 * 60 * 60 * 1_000;
 const PUSH_PREFERENCE_REFRESH_MS = 15 * 60 * 1_000;
 const PUSH_PROMPT_STORAGE_PREFIXES: Record<PushPromptReason, string> = {
-  install: 'srp:push-install-prompted-at:',
-  permission: 'srp:push-permission-prompted:',
-  repair: 'srp:push-registration-repair-prompted-at:',
+  install: 'novae:push-install-prompted-at:',
+  permission: 'novae:push-permission-prompted:',
+  repair: 'novae:push-registration-repair-prompted-at:',
 };
 
 function pushPromptStorageKey(uid: string, reason: PushPromptReason) {

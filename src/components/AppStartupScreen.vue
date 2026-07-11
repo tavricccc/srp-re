@@ -7,6 +7,7 @@
 
       <div class="startup-screen__copy">
         <h1 class="startup-screen__title">{{ title }}</h1>
+        <p v-if="schoolName" class="startup-screen__school">{{ schoolName }}</p>
         <p v-if="message" class="startup-screen__message">{{ message }}</p>
       </div>
 
@@ -22,6 +23,7 @@
 <script setup lang="ts">
 import BrandMark from '@/components/ui/BrandMark.vue';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
+import { APP_NAME, SCHOOL_NAME } from '@/constants/app';
 
 const emit = defineEmits<{
   retry: [];
@@ -39,8 +41,8 @@ const props = withDefaults(defineProps<{
   title: '',
 });
 
-const appTitle = import.meta.env.VITE_APP_TITLE ?? 'SRP';
-const title = props.title || appTitle;
+const title = props.title || APP_NAME;
+const schoolName = SCHOOL_NAME;
 </script>
 
 <style scoped>
@@ -134,6 +136,14 @@ const title = props.title || appTitle;
 
 .startup-screen__loader {
   color: rgb(var(--color-on-surface));
+}
+
+.startup-screen__school {
+  margin: 0;
+  color: rgb(var(--color-on-surface-variant));
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .startup-screen__recovery {

@@ -10,7 +10,7 @@ export function isTouchPrimaryDevice() {
 export type IosBrowserGuide = 'Chrome' | 'Google';
 export type AppInstallPromptReason = 'default' | 'notifications';
 
-export const REQUEST_APP_INSTALL_PROMPT_EVENT = 'srp:request-app-install-prompt';
+export const REQUEST_APP_INSTALL_PROMPT_EVENT = 'novae:request-app-install-prompt';
 
 function isIosDevice(userAgent: string, platform: string, maxTouchPoints: number) {
   return /iPad|iPhone|iPod/i.test(userAgent)

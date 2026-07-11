@@ -25,13 +25,14 @@ function versionFilePlugin(version: string): Plugin {
   };
 }
 
-function htmlEnvPlugin(appTitle: string, appShortName: string, appVersion: string): Plugin {
+const APP_NAME = 'Novae';
+
+function htmlEnvPlugin(appVersion: string): Plugin {
   return {
     name: 'app-html-env',
     transformIndexHtml(html) {
       return html
-        .replaceAll('%APP_TITLE%', appTitle)
-        .replaceAll('%APP_SHORT_NAME%', appShortName)
+        .replaceAll('%APP_NAME%', APP_NAME)
         .replaceAll('%APP_VERSION%', appVersion);
     },
   };
@@ -39,8 +40,6 @@ function htmlEnvPlugin(appTitle: string, appShortName: string, appVersion: strin
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const appTitle = env.VITE_APP_TITLE || '學生權益提案平台';
-  const appShortName = env.VITE_APP_SHORT_NAME || 'SRP';
   const appVersion = env.VITE_APP_VERSION
     || process.env.VERCEL_GIT_COMMIT_SHA
     || process.env.GITHUB_SHA
@@ -52,7 +51,7 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
     plugins: [
-      htmlEnvPlugin(appTitle, appShortName, appVersion),
+      htmlEnvPlugin(appVersion),
       versionFilePlugin(appVersion),
       vue(),
       VitePWA({
@@ -62,9 +61,9 @@ export default defineConfig(({ mode }) => {
         srcDir: 'src',
         strategies: 'injectManifest',
         manifest: {
-          name: appTitle,
-          short_name: appShortName,
-          description: '校內學生公共議題、設備需求與學生權益維護提案平台',
+          name: APP_NAME,
+          short_name: APP_NAME,
+          description: '讓每一個學生的提案與倡議匯聚成改變校園的力量',
           lang: 'zh-Hant',
           start_url: '/',
           scope: '/',

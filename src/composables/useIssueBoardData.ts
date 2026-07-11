@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { ISSUE_FILTER_OPTIONS } from '@/constants/categories';
+import { APP_NAME } from '@/constants/app';
 import { useDocumentTitle } from '@/composables/useDocumentTitle';
 import { useFilter } from '@/composables/useFilter';
 import { useIssueBoardPagination } from '@/composables/useIssueBoardPagination';
@@ -27,7 +28,7 @@ export function useIssueBoardData() {
 
   const statusTab = ref<'active' | 'closed'>('active');
   const sortOption = ref<IssueSortOption>('latest');
-  const defaultDocumentTitle = import.meta.env.VITE_APP_TITLE ?? 'SRP';
+  const defaultDocumentTitle = APP_NAME;
   const userUid = computed(() => user.value?.uid ?? '');
   const { message: composerMessage, showMessage: showComposerMessage } = useTimedMessage();
 

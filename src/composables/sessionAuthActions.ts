@@ -10,7 +10,7 @@ import type { SessionState } from '@/composables/sessionTypes';
 import { withRequestTimeout } from '@/lib/request';
 import { debugLog } from '@/composables/sessionDebug';
 
-const LOGIN_ATTEMPT_KEY = 'srp-login-attempts';
+const LOGIN_ATTEMPT_KEY = 'novae-login-attempts';
 const LOGIN_ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 const LOGIN_ATTEMPT_LIMIT = 30;
 const LOGIN_CLICK_COOLDOWN_MS = 2_000;

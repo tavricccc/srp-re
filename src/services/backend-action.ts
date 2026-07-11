@@ -32,7 +32,7 @@ function operationStorageKey(name: BackendActionName, payload: Record<string, un
     hash ^= source.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  return `srp:pending-action:${name}:${(hash >>> 0).toString(36)}`;
+  return `novae:pending-action:${name}:${(hash >>> 0).toString(36)}`;
 }
 
 function withStableRequestId<TRequest>(name: BackendActionName, payload: TRequest) {

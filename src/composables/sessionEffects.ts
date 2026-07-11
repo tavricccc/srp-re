@@ -9,8 +9,8 @@ export const customPhotoUrl = ref<string | null>(null);
 
 let activeSessionToken = 0;
 const VISIT_RECORD_INTERVAL_MS = 6 * 60 * 60 * 1_000;
-const VISIT_RECORDED_AT_KEY = 'srp:platform-visit-recorded-at';
-const AVATAR_CACHE_PREFIX = 'srp:avatar-cached-source:';
+const VISIT_RECORDED_AT_KEY = 'novae:platform-visit-recorded-at';
+const AVATAR_CACHE_PREFIX = 'novae:avatar-cached-source:';
 
 export function clearActiveSessionData() {
   activeSessionToken += 1;

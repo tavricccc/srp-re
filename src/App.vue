@@ -85,9 +85,9 @@ import { computed, watch } from 'vue';
 import { DEFAULT_ISSUE_ROUTE_FILTER } from '@/constants/categories';
 
 const APP_RELEASE_MARKER = '2026-06-27-1516';
-const LAST_APP_VERSION_STORAGE_KEY = 'srp:last-app-version';
-const LEGACY_PENDING_UPDATE_TOAST_STORAGE_KEY = 'srp:pending-update-toast';
-const PENDING_UPDATE_VERSION_STORAGE_KEY = 'srp:pending-update-version';
+const LAST_APP_VERSION_STORAGE_KEY = 'novae:last-app-version';
+const LEGACY_PENDING_UPDATE_TOAST_STORAGE_KEY = 'novae:pending-update-toast';
+const PENDING_UPDATE_VERSION_STORAGE_KEY = 'novae:pending-update-version';
 
 if (typeof document !== 'undefined') {
   document.documentElement.dataset.appRelease = APP_RELEASE_MARKER;

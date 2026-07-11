@@ -18,8 +18,8 @@ import {
 
 const PUSH_SERVICE_TIMEOUT_MS = 10_000;
 const PUSH_TOKEN_TIMEOUT_MS = 15_000;
-const PUSH_DEVICE_ID_STORAGE_KEY = 'srp:push-device-id';
-const PUSH_EXPLICITLY_DISABLED_STORAGE_PREFIX = 'srp:push-explicitly-disabled:';
+const PUSH_DEVICE_ID_STORAGE_KEY = 'novae:push-device-id';
+const PUSH_EXPLICITLY_DISABLED_STORAGE_PREFIX = 'novae:push-explicitly-disabled:';
 const supported = ref(false);
 const permission = ref<PushNotificationPermission>('default');
 const deviceEnabled = ref(false);
