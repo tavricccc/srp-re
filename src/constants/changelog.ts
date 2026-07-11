@@ -2,6 +2,16 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "修正字型顯示與提升載入穩定性",
+    version: "v2.0.155",
+    date: "2026-07-11",
+    time: "14:28",
+    items: [
+      { title: "修正特定環境下自訂字型未正確套用的問題，提升視覺一致性。" },
+      { title: "最佳化應用程式的載入機制，確保字型與圖標可正常顯示。" }
+    ]
+  },
+  {
     title: "新增 Novae 品牌識別",
     version: "v2.0.154",
     date: "2026-07-11",

@@ -104,7 +104,7 @@ export default defineConfig(({ mode }) => {
           globPatterns: [
             'index.html',
             'manifest.webmanifest',
-            'assets/**/*.{js,css,wasm}',
+            'assets/**/*.{js,css,wasm,woff2}',
             '*.{png,ico}',
           ],
         },
