@@ -114,7 +114,9 @@ const {
   openNotifications,
   loadMoreNotifications,
   retryNotifications,
+  initializeNotifications,
 } = useNotifications();
+initializeNotifications();
 
 const notificationPanelKey = computed(() => {
   if (loading.value) return 'loading';

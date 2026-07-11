@@ -15,6 +15,7 @@ export const BACKEND_ACTION_NAMES = [
   'getCurrentUserRole',
   'getIssue',
   'getNotificationReadState',
+  'getNotificationUnreadHint',
   'getNotificationSnapshot',
   'getPlatformDashboard',
   'getPushNotificationPreference',

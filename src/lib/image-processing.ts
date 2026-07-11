@@ -110,6 +110,14 @@ export async function processImageForUpload(file: File): Promise<ProcessedImage>
   if (sourceWidth * sourceHeight > maxImagePixels) {
     throw new Error(`[IMG-SOURCE-PIXELS] 圖片解析度過高；dimensions=${sourceWidth}x${sourceHeight}`);
   }
+  if (
+    file.size <= maxImageUploadBytes
+    && sourceWidth <= maxImageDimension
+    && sourceHeight <= maxImageDimension
+    && await isWebpFile(file)
+  ) {
+    return { file, height: sourceHeight, width: sourceWidth };
+  }
 
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');

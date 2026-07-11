@@ -245,14 +245,7 @@ async function focusTargetComment() {
 }
 
 watch(
-  () => [
-    props.focusCommentId,
-    props.loaded,
-    props.loading,
-    props.loadingMore,
-    props.comments.length,
-    props.comments.map((comment) => `${comment.id}:${comment.replies.length}`).join('|'),
-  ] as const,
+  () => [props.focusCommentId, props.loaded, props.loading, props.loadingMore, props.comments.length] as const,
   () => {
     void focusTargetComment();
   },

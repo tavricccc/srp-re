@@ -1,6 +1,7 @@
 import { computed, readonly, ref, watch } from 'vue';
-import { deleteToken, getToken, onMessage, type Messaging } from 'firebase/messaging';
-import { firebaseVapidKey, messagingPromise } from '@/lib/firebase';
+import { firebaseVapidKey } from '@/lib/firebase';
+import { loadFirebaseMessaging } from '@/lib/firebase-messaging';
+import { ensureFirebaseAppCheck } from '@/lib/firebase-app-check';
 import { requestAppInstallPrompt, shouldInstallPwaBeforePush } from '@/lib/pwa-install';
 import { withRequestTimeout } from '@/lib/request';
 import { useSession } from '@/composables/useSession';
@@ -63,14 +64,15 @@ async function resolveMessaging() {
     return null;
   }
 
-  const messaging = await messagingPromise;
-  supported.value = Boolean(messaging) && 'Notification' in window && 'serviceWorker' in navigator;
+  await ensureFirebaseAppCheck();
+  const bundle = await loadFirebaseMessaging();
+  supported.value = Boolean(bundle) && 'Notification' in window && 'serviceWorker' in navigator;
   if (!supported.value) {
     permission.value = 'unsupported';
     return null;
   }
   permission.value = browserPermission();
-  return messaging;
+  return bundle;
 }
 
 async function waitForPushServiceWorker() {
@@ -84,10 +86,10 @@ async function waitForPushServiceWorker() {
   );
 }
 
-async function getPushToken(messaging: Messaging) {
+async function getPushToken(bundle: NonNullable<Awaited<ReturnType<typeof loadFirebaseMessaging>>>) {
   const registration = await waitForPushServiceWorker();
   return withRequestTimeout(
-    () => getToken(messaging, {
+    () => bundle.sdk.getToken(bundle.messaging, {
       vapidKey: firebaseVapidKey,
       serviceWorkerRegistration: registration,
     }),
@@ -95,9 +97,9 @@ async function getPushToken(messaging: Messaging) {
   );
 }
 
-async function deletePushToken(messaging: Messaging) {
+async function deletePushToken(bundle: NonNullable<Awaited<ReturnType<typeof loadFirebaseMessaging>>>) {
   return withRequestTimeout(
-    () => deleteToken(messaging),
+    () => bundle.sdk.deleteToken(bundle.messaging),
     { label: '關閉推播通知', timeoutMs: PUSH_TOKEN_TIMEOUT_MS },
   );
 }
@@ -249,7 +251,7 @@ export function usePushNotifications() {
       applyPreference(preference);
 
       if (!foregroundUnsubscribe) {
-        foregroundUnsubscribe = onMessage(messaging, (payload) => {
+        foregroundUnsubscribe = messaging.sdk.onMessage(messaging.messaging, (payload) => {
           const title = payload.data?.title ?? '收到新通知';
           const body = payload.data?.body ?? '';
           showToast(body ? `${title}：${body}` : title, 'info');

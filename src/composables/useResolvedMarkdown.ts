@@ -8,6 +8,41 @@ import {
 import { resolveUploadImageUrls } from '@/services/uploads';
 import type { MarkdownImageRecord } from '@/types';
 
+type ResolveResult = Awaited<ReturnType<typeof resolveUploadImageUrls>>;
+const queuedResolveRequests: Array<{
+  ids: string[];
+  resolve: (value: ResolveResult) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+let resolveFlushScheduled = false;
+
+function resolveUploadImageUrlsPooled(ids: string[]) {
+  return new Promise<ResolveResult>((resolve, reject) => {
+    queuedResolveRequests.push({ ids, reject, resolve });
+    if (resolveFlushScheduled) return;
+    resolveFlushScheduled = true;
+    queueMicrotask(async () => {
+      resolveFlushScheduled = false;
+      const requests = queuedResolveRequests.splice(0);
+      const allIds = [...new Set(requests.flatMap((request) => request.ids))];
+      try {
+        const result = await resolveUploadImageUrls(allIds);
+        for (const request of requests) {
+          const requested = new Set(request.ids);
+          request.resolve({
+            errors: Object.fromEntries(Object.entries(result.errors ?? {}).filter(([id]) => requested.has(id))),
+            expiresAtByUploadId: Object.fromEntries(Object.entries(result.expiresAtByUploadId).filter(([id]) => requested.has(id))),
+            expiresAtMs: result.expiresAtMs,
+            urls: Object.fromEntries(Object.entries(result.urls).filter(([id]) => requested.has(id))),
+          });
+        }
+      } catch (error) {
+        requests.forEach((request) => request.reject(error));
+      }
+    });
+  });
+}
+
 export function useResolvedMarkdown(content: MaybeRefOrGetter<string>) {
   const resolvedUrls = ref<Record<string, string>>({});
   const expiresAtByUploadId = ref<Record<string, number>>({});
@@ -55,7 +90,7 @@ export function useResolvedMarkdown(content: MaybeRefOrGetter<string>) {
 
       isResolving.value = true;
       try {
-        const result = await resolveUploadImageUrls(ids);
+        const result = await resolveUploadImageUrlsPooled(ids);
         if (token !== requestToken) return;
         resolvedUrls.value = result.urls;
         expiresAtByUploadId.value = result.expiresAtByUploadId;

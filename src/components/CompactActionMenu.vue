@@ -1,5 +1,5 @@
 <template>
-  <div class="relative inline-block text-left z-30">
+  <div class="relative z-30 inline-block text-left">
     <button
       ref="triggerRef"
       type="button"
@@ -21,7 +21,7 @@
         <div
           v-if="isOpen"
           ref="dropdownRef"
-          class="fixed z-[100] w-44 origin-top-right rounded-2xl border border-ink-200/70 bg-white/92 p-1.5 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+          class="popover-panel popover-panel--compact fixed z-[100] w-44 origin-top-right"
           :style="dropdownStyle"
         >
           <button
@@ -54,8 +54,9 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
+import { useClickOutside } from '@/composables/useClickOutside';
 import { useDropdownPosition } from '@/composables/useDropdownPosition';
 
 withDefaults(defineProps<{
@@ -88,13 +89,9 @@ const { dropdownStyle } = useDropdownPosition(
   dropdownRef,
 );
 
-function closeMenu(event: MouseEvent) {
-  const target = event.target as HTMLElement;
-  if (triggerRef.value?.contains(target) || dropdownRef.value?.contains(target)) {
-    return;
-  }
+useClickOutside(isOpen, [triggerRef, dropdownRef], () => {
   isOpen.value = false;
-}
+});
 
 function select(action: 'delete' | 'edit') {
   isOpen.value = false;
@@ -102,20 +99,10 @@ function select(action: 'delete' | 'edit') {
     emit('delete');
     return;
   }
-
   emit('edit');
 }
 
 watch(isOpen, (open) => {
   emit('dropdown-open', open);
-  if (open) {
-    window.addEventListener('click', closeMenu);
-  } else {
-    window.removeEventListener('click', closeMenu);
-  }
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', closeMenu);
 });
 </script>

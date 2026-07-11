@@ -4,6 +4,7 @@ import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { asNumber, readCursor, readCursorDate, asUuid, utcHourWindow } from "./utils.ts";
 import { requiredText } from "./validation.ts";
+import { subscribeTokensToTopic, unsubscribeTokensFromTopic } from "../_shared/fcm.ts";
 
 const PUSH_TOKEN_LIMITS = {
   deviceId: 160,
@@ -16,6 +17,7 @@ export function isNotificationAction(action: string) {
   return action === "listNotifications"
     || action === "getNotificationSnapshot"
     || action === "getNotificationReadState"
+    || action === "getNotificationUnreadHint"
     || action === "markNotificationsOpened"
     || action === "getPushNotificationPreference"
     || action === "registerPushToken"
@@ -103,6 +105,15 @@ export async function handleNotificationAction(
     return { state: data };
   }
 
+  if (action === "getNotificationUnreadHint") {
+    const { data, error } = await supabase.schema("app_api").rpc("backend_get_notification_unread_hint", {
+      actor_is_admin: auth.isAdmin,
+      actor_uid: auth.uid,
+    });
+    if (error) throw error;
+    return data;
+  }
+
   if (action === "markNotificationsOpened") {
     const openedAt = new Date().toISOString();
     const { data, error } = await supabase.schema("app_api").rpc("backend_mark_notifications_opened", {
@@ -115,26 +126,52 @@ export async function handleNotificationAction(
 
   if (action === "registerPushToken") {
     await claimFixedWindowRateLimit(auth.uid, "push-token.write", utcHourWindow(), RATE_LIMITS.pushTokenWriteHourly);
+    const token = requiredText(payload.token, "token", PUSH_TOKEN_LIMITS.token);
     const { data, error } = await supabase.schema("app_api").rpc("backend_register_push_token", {
       actor_uid: auth.uid,
       device_id: requiredText(payload.deviceId, "deviceId", PUSH_TOKEN_LIMITS.deviceId),
-      token: requiredText(payload.token, "token", PUSH_TOKEN_LIMITS.token),
+      token,
       permission: readPermission(payload),
       platform: optionalLimitedText(payload.platform, "platform", PUSH_TOKEN_LIMITS.platform),
       user_agent: optionalLimitedText(payload.userAgent, "userAgent", PUSH_TOKEN_LIMITS.userAgent),
     });
     if (error) throw error;
+    try {
+      await subscribeTokensToTopic([token], "srp-broadcast");
+      if (auth.isAdmin) await subscribeTokensToTopic([token], "srp-admin");
+      else await unsubscribeTokensFromTopic([token], "srp-admin");
+      const { error: topicStateError } = await supabase.schema("app_private").from("push_tokens").update({
+        topic_admin: auth.isAdmin,
+        topic_broadcast: true,
+      }).eq("uid", auth.uid).eq("device_id", requiredText(payload.deviceId, "deviceId", PUSH_TOKEN_LIMITS.deviceId));
+      if (topicStateError) throw topicStateError;
+    } catch (topicError) {
+      console.error(JSON.stringify({ error: String(topicError), operation: "push-topic-subscribe", uid: auth.uid }));
+    }
     return data;
   }
 
   if (action === "unregisterPushToken") {
     await claimFixedWindowRateLimit(auth.uid, "push-token.write", utcHourWindow(), RATE_LIMITS.pushTokenWriteHourly);
+    const deviceId = requiredText(payload.deviceId, "deviceId", PUSH_TOKEN_LIMITS.deviceId);
+    const { data: existingToken } = await supabase.schema("app_private").from("push_tokens")
+      .select("token").eq("uid", auth.uid).eq("device_id", deviceId).maybeSingle();
     const { data, error } = await supabase.schema("app_api").rpc("backend_unregister_push_token", {
       actor_uid: auth.uid,
-      device_id: requiredText(payload.deviceId, "deviceId", PUSH_TOKEN_LIMITS.deviceId),
+      device_id: deviceId,
       permission: readPermission(payload),
     });
     if (error) throw error;
+    if (existingToken?.token) {
+      try {
+        await Promise.all([
+          unsubscribeTokensFromTopic([existingToken.token], "srp-broadcast"),
+          unsubscribeTokensFromTopic([existingToken.token], "srp-admin"),
+        ]);
+      } catch (topicError) {
+        console.error(JSON.stringify({ error: String(topicError), operation: "push-topic-unsubscribe", uid: auth.uid }));
+      }
+    }
     return data;
   }
 

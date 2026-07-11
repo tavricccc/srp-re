@@ -5,12 +5,11 @@
         <h2 class="shrink-0 text-xl font-bold tracking-tight text-ink-950 dark:text-ink-50 md:text-2xl">公告</h2>
       </div>
 
-      <div class="flex shrink-0 flex-row items-center justify-end gap-1.5 sm:gap-2 w-full md:w-auto">
-        <!-- 排序方式（圓形 sort 圖示按鈕） -->
+      <div class="flex w-full shrink-0 flex-row items-center justify-end gap-1.5 sm:gap-2 md:w-auto">
         <div class="static md:relative" @click.stop @pointerdown.stop>
           <button
             type="button"
-            class="button-toolbar h-10 w-10 rounded-full p-0 md:h-9 md:w-9 flex items-center justify-center shrink-0"
+            class="button-toolbar flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
             :class="{ 'button-toolbar--active': isSortOpen || sortOption !== 'latest' }"
             :title="`排序公告：${selectedSortLabel}`"
             :aria-label="`排序公告：${selectedSortLabel}`"
@@ -23,11 +22,9 @@
           <transition name="popover">
             <div
               v-if="isSortOpen"
-              class="absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-max md:min-w-[10rem] rounded-2xl border border-ink-200/70 bg-white/92 p-2 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+              class="popover-panel popover-panel--section absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-max md:min-w-[10rem]"
             >
-              <div class="mb-1.5 px-2 text-xs font-semibold text-ink-400 dark:text-ink-50 tracking-wider uppercase whitespace-nowrap">
-                排序方式
-              </div>
+              <div class="popover-section-label mb-1.5 whitespace-nowrap">排序方式</div>
               <div class="space-y-0.5">
                 <button
                   v-for="option in announcementSortOptions"
@@ -52,8 +49,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
+import { useClickOutside } from '@/composables/useClickOutside';
 import type { AnnouncementSortOption } from '@/types';
 
 const props = defineProps<{
@@ -75,9 +73,9 @@ const selectedSortLabel = computed(() =>
   announcementSortOptions.find((option) => option.value === props.sortOption)?.label ?? '最新'
 );
 
-function closeFloatingPanels() {
+useClickOutside(isSortOpen, [], () => {
   isSortOpen.value = false;
-}
+});
 
 function toggleSort() {
   isSortOpen.value = !isSortOpen.value;
@@ -87,16 +85,4 @@ function selectSort(value: AnnouncementSortOption) {
   emit('update:sortOption', value);
   isSortOpen.value = false;
 }
-
-watch(isSortOpen, (sortOpen) => {
-  if (sortOpen) {
-    window.addEventListener('click', closeFloatingPanels);
-    return;
-  }
-  window.removeEventListener('click', closeFloatingPanels);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', closeFloatingPanels);
-});
 </script>

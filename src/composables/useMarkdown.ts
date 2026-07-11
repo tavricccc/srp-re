@@ -6,6 +6,9 @@ const imageAltSizePattern = /^(.*)\|(\d{1,5})x(\d{1,5})$/u;
 const listItemPattern = /^ {0,3}(?:[-*+]\s+|\d{1,9}[.)]\s+)/u;
 const indentedContinuationPattern = /^ {2,}\S/u;
 const fencedCodePattern = /^ {0,3}(```|~~~)/u;
+const markdownSyntaxPattern = /(?:^|\n)\s{0,3}(?:[#>*+-]|\d+[.)])\s|[`[\]_|~\\]|https?:\/\//u;
+const markdownHtmlCache = new Map<string, string>();
+const MARKDOWN_CACHE_LIMIT = 100;
 
 interface MarkdownImageToken {
   href?: unknown;
@@ -107,21 +110,41 @@ marked.use({
     image: renderImage,
   },
 });
+marked.setOptions({ breaks: true, gfm: true });
+
+function escapeHtml(value: string) {
+  return escapeAttribute(value).replace(/\n/gu, '<br>');
+}
+
+function cacheHtml(key: string, html: string) {
+  markdownHtmlCache.delete(key);
+  markdownHtmlCache.set(key, html);
+  while (markdownHtmlCache.size > MARKDOWN_CACHE_LIMIT) {
+    const oldestKey = markdownHtmlCache.keys().next().value;
+    if (typeof oldestKey !== 'string') break;
+    markdownHtmlCache.delete(oldestKey);
+  }
+  return html;
+}
 
 export function useMarkdown(content: MaybeRefOrGetter<string>) {
   return computed(() => {
     const rawMarkdown = toValue(content) || '';
+    const cached = markdownHtmlCache.get(rawMarkdown);
+    if (cached !== undefined) {
+      markdownHtmlCache.delete(rawMarkdown);
+      markdownHtmlCache.set(rawMarkdown, cached);
+      return cached;
+    }
+    if (!markdownSyntaxPattern.test(rawMarkdown)) {
+      return cacheHtml(rawMarkdown, escapeHtml(rawMarkdown));
+    }
     const normalizedMarkdown = normalizeLooseListContinuations(rawMarkdown);
-
-    marked.setOptions({
-      breaks: true,
-      gfm: true
-    });
 
     const rawHtml = marked.parse(normalizedMarkdown, { async: false }) as string;
 
-    return DOMPurify.sanitize(rawHtml, {
+    return cacheHtml(rawMarkdown, DOMPurify.sanitize(rawHtml, {
       ADD_ATTR: ['loading', 'decoding'],
-    });
+    }));
   });
 }

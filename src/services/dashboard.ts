@@ -38,6 +38,10 @@ interface DashboardResponse {
   };
 }
 
+const DASHBOARD_CACHE_MS = 60_000;
+let cachedDashboard: { data: PlatformDashboardData; updatedAt: number } | null = null;
+let pendingDashboard: Promise<PlatformDashboardData> | null = null;
+
 function toDate(value: number | null) {
   return typeof value === 'number' ? new Date(value) : null;
 }
@@ -52,6 +56,21 @@ export async function recordPlatformVisit() {
 }
 
 export async function fetchPlatformDashboard(): Promise<PlatformDashboardData> {
+  if (cachedDashboard && Date.now() - cachedDashboard.updatedAt < DASHBOARD_CACHE_MS) {
+    return cachedDashboard.data;
+  }
+  if (pendingDashboard) return pendingDashboard;
+  pendingDashboard = loadPlatformDashboard();
+  try {
+    const data = await pendingDashboard;
+    cachedDashboard = { data, updatedAt: Date.now() };
+    return data;
+  } finally {
+    pendingDashboard = null;
+  }
+}
+
+async function loadPlatformDashboard(): Promise<PlatformDashboardData> {
   try {
     const fn = invokeBackendAction<Record<string, never>, DashboardResponse>('getPlatformDashboard', {
       signal: getRouteRequestSignal(),

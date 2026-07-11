@@ -63,7 +63,7 @@
         <div
           v-if="isDropdownOpen"
           ref="dropdownRef"
-          class="fixed z-[100] origin-top-right rounded-2xl border border-ink-200/70 bg-white/92 p-1.5 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+          class="popover-panel popover-panel--compact fixed z-[100] origin-top-right"
           :class="compact ? 'w-44' : 'w-60'"
           :style="dropdownStyle"
           @click.stop
@@ -130,11 +130,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRef, watch, onBeforeUnmount } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useSession } from '@/composables/useSession';
 import { ISSUE_STATUS_LABELS } from '@/constants/statuses';
-import { useIssueDisplay } from '@/composables/useIssueDisplay';
 import { useStatusStyling } from '@/composables/useStatusStyling';
+import { useClickOutside } from '@/composables/useClickOutside';
 import { useDropdownPosition } from '@/composables/useDropdownPosition';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import type { IssueRecord, IssueStatus } from '@/types';
@@ -156,7 +156,6 @@ const emit = defineEmits<{
   'delete': [];
 }>();
 
-const { derivedStatus } = useIssueDisplay(toRef(props, 'issue'));
 const triggerRef = ref<HTMLButtonElement | null>(null);
 const dropdownRef = ref<HTMLDivElement | null>(null);
 
@@ -181,25 +180,12 @@ const { isAdmin } = useSession();
 const adminStatus = computed(() => props.issue.status);
 const isDropdownOpen = ref(false);
 
-function closeDropdown(event: MouseEvent) {
-  const target = event.target as HTMLElement;
-  if (triggerRef.value?.contains(target) || dropdownRef.value?.contains(target)) {
-    return;
-  }
+useClickOutside(isDropdownOpen, [triggerRef, dropdownRef], () => {
   isDropdownOpen.value = false;
-}
+});
 
 watch(isDropdownOpen, (open) => {
   emit('dropdown-open', open);
-  if (open) {
-    window.addEventListener('click', closeDropdown);
-  } else {
-    window.removeEventListener('click', closeDropdown);
-  }
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', closeDropdown);
 });
 
 const { dropdownStyle } = useDropdownPosition(

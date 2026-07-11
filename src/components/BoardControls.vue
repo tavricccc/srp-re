@@ -4,11 +4,15 @@
       <div class="hidden min-w-0 flex-row items-center gap-3 sm:gap-4 md:flex md:gap-6">
         <h2 class="shrink-0 text-xl font-bold tracking-tight text-ink-950 dark:text-ink-50 md:text-2xl">提案</h2>
 
-        <!-- 桌機版分類 Dropdown -->
-        <div v-if="activeFilter !== 'my-proposals'" class="relative" @click.stop @pointerdown.stop>
+        <div
+          v-if="activeFilter !== 'my-proposals'"
+          class="relative"
+          @click.stop
+          @pointerdown.stop
+        >
           <button
             type="button"
-            class="button-toolbar flex items-center gap-1.5 h-9 px-3 rounded-full shrink-0 text-sm font-semibold"
+            class="button-toolbar hidden h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold md:flex"
             :class="{ 'button-toolbar--active': isCategoryOpen }"
             title="選擇分類"
             aria-label="選擇分類"
@@ -22,15 +26,13 @@
           <transition name="popover">
             <div
               v-if="isCategoryOpen"
-              class="absolute z-[100] mt-2 left-0 right-auto w-max min-w-[10rem] rounded-2xl border border-ink-200/70 bg-white/92 p-2 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+              class="popover-panel popover-panel--section absolute z-[100] mt-2 hidden w-max min-w-[10rem] left-0 right-auto md:block"
             >
-              <div class="px-2 pb-1.5 text-xs font-semibold text-ink-400 dark:text-ink-50 tracking-wider uppercase whitespace-nowrap">
-                提案分類
-              </div>
+              <div class="popover-section-label mb-1.5 whitespace-nowrap">提案分類</div>
               <div class="space-y-0.5">
                 <button
                   v-for="option in categoryOptions"
-                  :key="option.value"
+                  :key="`desk-${option.value}`"
                   type="button"
                   class="menu-item justify-between gap-4 whitespace-nowrap"
                   :class="{ 'button-toolbar--active': option.value === activeFilter }"
@@ -45,12 +47,16 @@
         </div>
       </div>
 
-      <div class="flex shrink-0 flex-row items-center justify-end gap-1.5 sm:gap-2 w-full md:w-auto">
-        <!-- 行動版分類 Dropdown -->
-        <div v-if="activeFilter !== 'my-proposals'" class="static mr-auto md:hidden" @click.stop @pointerdown.stop>
+      <div class="flex w-full shrink-0 flex-row items-center justify-end gap-1.5 sm:gap-2 md:w-auto">
+        <div
+          v-if="activeFilter !== 'my-proposals'"
+          class="static mr-auto md:hidden"
+          @click.stop
+          @pointerdown.stop
+        >
           <button
             type="button"
-            class="button-toolbar flex items-center gap-1.5 h-10 px-3 rounded-full shrink-0 text-sm font-semibold"
+            class="button-toolbar flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold"
             :class="{ 'button-toolbar--active': isCategoryOpen }"
             title="選擇分類"
             aria-label="選擇分類"
@@ -64,15 +70,13 @@
           <transition name="popover">
             <div
               v-if="isCategoryOpen"
-              class="absolute z-[100] mt-2 left-4 right-4 w-auto rounded-2xl border border-ink-200/70 bg-white/92 p-2 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+              class="popover-panel popover-panel--section absolute z-[100] mt-2 left-4 right-4 w-auto"
             >
-              <div class="px-2 pb-1.5 text-xs font-semibold text-ink-400 dark:text-ink-50 tracking-wider uppercase">
-                提案分類
-              </div>
+              <div class="popover-section-label mb-1.5">提案分類</div>
               <div class="space-y-0.5">
                 <button
                   v-for="option in categoryOptions"
-                  :key="option.value"
+                  :key="`mob-${option.value}`"
                   type="button"
                   class="menu-item justify-between"
                   :class="{ 'button-toolbar--active': option.value === activeFilter }"
@@ -93,11 +97,10 @@
           class="shrink-0"
         />
 
-        <!-- 排序（圓形 sort 圖示按鈕） -->
         <div class="static md:relative" @click.stop @pointerdown.stop>
           <button
             type="button"
-            class="button-toolbar h-10 w-10 rounded-full p-0 md:h-9 md:w-9 flex items-center justify-center shrink-0"
+            class="button-toolbar flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
             :class="{ 'button-toolbar--active': isSortOpen || sortOption !== 'latest' }"
             title="排序提案"
             aria-label="排序提案"
@@ -110,35 +113,30 @@
           <transition name="popover">
             <div
               v-if="isSortOpen"
-              class="absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-max md:min-w-[10rem] rounded-2xl border border-ink-200/70 bg-white/92 p-2 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+              class="popover-panel popover-panel--section absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-max md:min-w-[10rem]"
             >
-              <div>
-                <div class="mb-1.5 px-2 text-xs font-semibold text-ink-400 dark:text-ink-50 tracking-wider uppercase whitespace-nowrap">
-                  排序方式
-                </div>
-                <div class="space-y-0.5">
-                  <button
-                    v-for="option in visibleSortOptions"
-                    :key="option.value"
-                    type="button"
-                    class="menu-item justify-between gap-4 whitespace-nowrap"
-                    :class="{ 'button-toolbar--active': option.value === sortOption }"
-                    @click="selectSort(option.value)"
-                  >
-                    <span>{{ option.label }}</span>
-                    <span v-if="option.value === sortOption" class="text-xs">✓</span>
-                  </button>
-                </div>
+              <div class="popover-section-label mb-1.5 whitespace-nowrap">排序方式</div>
+              <div class="space-y-0.5">
+                <button
+                  v-for="option in visibleSortOptions"
+                  :key="option.value"
+                  type="button"
+                  class="menu-item justify-between gap-4 whitespace-nowrap"
+                  :class="{ 'button-toolbar--active': option.value === sortOption }"
+                  @click="selectSort(option.value)"
+                >
+                  <span>{{ option.label }}</span>
+                  <span v-if="option.value === sortOption" class="text-xs">✓</span>
+                </button>
               </div>
             </div>
           </transition>
         </div>
 
-        <!-- 搜尋按鈕 -->
         <div class="static md:relative" @click.stop @pointerdown.stop>
           <button
             type="button"
-            class="button-toolbar h-10 w-10 rounded-full p-0 md:h-9 md:w-9 flex items-center justify-center shrink-0"
+            class="button-toolbar flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
             :class="{ 'button-toolbar--active': isSearchOpen || searchQuery }"
             title="搜尋提案"
             aria-label="搜尋提案"
@@ -151,7 +149,7 @@
           <transition name="popover">
             <div
               v-if="isSearchOpen"
-              class="absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-80 rounded-2xl border border-ink-200/70 bg-white/92 p-3 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/92"
+              class="popover-panel popover-panel--search absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-80"
             >
               <div class="relative">
                 <AppIcon name="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-ink-500" />
@@ -193,11 +191,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import PillSegmentedControl from '@/components/ui/PillSegmentedControl.vue';
 import { ISSUE_FILTER_OPTIONS } from '@/constants/categories';
+import { useClickOutside } from '@/composables/useClickOutside';
 import type { IssueSortOption } from '@/types';
 
 const props = defineProps<{
@@ -238,12 +237,15 @@ const isSearchOpen = ref(false);
 const isSortOpen = ref(false);
 const isCategoryOpen = ref(false);
 const searchInputRef = ref<HTMLInputElement | null>(null);
+const anyPanelOpen = computed(() => isSearchOpen.value || isSortOpen.value || isCategoryOpen.value);
 
 function closeFloatingPanels() {
   isSearchOpen.value = false;
   isSortOpen.value = false;
   isCategoryOpen.value = false;
 }
+
+useClickOutside(anyPanelOpen, [], closeFloatingPanels);
 
 function toggleSearch() {
   isSearchOpen.value = !isSearchOpen.value;
@@ -288,16 +290,4 @@ async function handleCategoryChangeInPopover(value: string) {
   isCategoryOpen.value = false;
   await handleCategoryChange(value);
 }
-
-watch([isSearchOpen, isSortOpen, isCategoryOpen], ([searchOpen, sortOpen, categoryOpen]) => {
-  if (searchOpen || sortOpen || categoryOpen) {
-    window.addEventListener('click', closeFloatingPanels);
-    return;
-  }
-  window.removeEventListener('click', closeFloatingPanels);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', closeFloatingPanels);
-});
 </script>

@@ -12,25 +12,9 @@ function isAdminEmail(email: string) {
 }
 
 export async function requireAuth(supabase: BackendSupabase, request: Request): Promise<AuthContext> {
+  void supabase;
   const firebaseUser = await requireVerifiedFirebaseUser(request);
-
-  const { data: role, error } = await supabase
-    .schema("app_private")
-    .from("user_roles")
-    .select("role")
-    .eq("uid", firebaseUser.uid)
-    .maybeSingle();
-  if (error) throw error;
-
   const isAdminFromEmail = isAdminEmail(firebaseUser.email);
-  const authoritativeRole = isAdminFromEmail ? "admin" : "user";
-  if (role?.role !== authoritativeRole) {
-    const { error: upsertError } = await supabase
-      .schema("app_private")
-      .from("user_roles")
-      .upsert({ role: authoritativeRole, uid: firebaseUser.uid, updated_at: new Date().toISOString() }, { onConflict: "uid" });
-    if (upsertError) throw upsertError;
-  }
 
   return {
     email: firebaseUser.email,

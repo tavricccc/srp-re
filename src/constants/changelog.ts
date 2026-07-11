@@ -2,6 +2,36 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "最佳化平台載入與通知效率",
+    version: "v2.0.151",
+    date: "2026-07-11",
+    time: "03:51",
+    items: [
+      { title: "改善提案、公告與留言內容更新速度。" },
+      { title: "提升通知載入與推播傳送效率。" },
+      { title: "最佳化圖片處理與顯示所需流量。" },
+      { title: "調整附議資訊同步頻率並提升失敗復原能力。" },
+      { title: "提升管理員統計頁面載入效率。" }
+    ]
+  },
+  {
+    title: "提升維護穩定性",
+    version: "v2.0.150",
+    date: "2026-07-11",
+    time: "03:20",
+    items: [
+      {
+        title: "統一下拉選單外觀與點擊外部關閉行為。"
+      },
+      {
+        title: "簡化提案與公告留言狀態管理流程。"
+      },
+      {
+        title: "調整內容編輯器結構，降低維護成本。"
+      }
+    ]
+  },
+  {
     title: "改善操作回饋與動畫體驗",
     version: "v2.0.149",
     date: "2026-07-11",

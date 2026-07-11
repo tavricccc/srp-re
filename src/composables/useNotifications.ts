@@ -11,6 +11,7 @@ import {
   type NotificationReadState,
 } from '@/services/notifications';
 import { resetAppConnection } from '@/lib/reconnect';
+import { setNotificationBadgeUnread } from '@/composables/useNotificationBadge';
 
 type Unsubscribe = () => void;
 
@@ -235,6 +236,7 @@ async function openNotifications() {
       admin: isAdmin.value ? openedAt : readState.value.admin,
       personalPreferences: readState.value.personalPreferences,
     };
+    setNotificationBadgeUnread(false);
   } catch {
     void 0;
   }
@@ -281,8 +283,6 @@ async function loadMoreNotifications() {
 }
 
 export function useNotifications() {
-  ensureNotificationsInitialized();
-
   return {
     notifications,
     hasUnread,
@@ -293,5 +293,6 @@ export function useNotifications() {
     openNotifications,
     loadMoreNotifications,
     retryNotifications,
+    initializeNotifications: ensureNotificationsInitialized,
   };
 }

@@ -442,6 +442,7 @@ export async function syncIssueStatusChangedToNotion(
 export async function syncIssueSupportToNotion(
   supabase: AppSupabase,
   targetId: string,
+  options: { appendTimeline?: boolean } = {},
 ): Promise<void> {
   if (!notionEnabled()) return;
 
@@ -473,7 +474,9 @@ export async function syncIssueSupportToNotion(
       ...issueTimeProperties(issue ?? {}),
     },
   });
-  await appendBlock(pageId, `【附議更新】目前附議數：${label}`);
+  if (options.appendTimeline !== false) {
+    await appendBlock(pageId, `【附議更新】目前附議數：${label}`);
+  }
 }
 
 export async function syncIssueResultUpdatedToNotion(

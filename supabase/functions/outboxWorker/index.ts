@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { Database } from "../_shared/database.ts";
 import { requireEnv } from "../_shared/env.ts";
-import { isInvalidFcmTokenError, sendFcmMessage } from "../_shared/fcm.ts";
+import { isInvalidFcmTokenError, sendFcmMessage, sendFcmTopicMessage } from "../_shared/fcm.ts";
 import { errorMessage, errorStatus, jsonResponse, publicError, requireMethod } from "../_shared/http.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimits, utcMinuteWindow, utcSecondWindow } from "../_shared/upstash-rate-limit.ts";
@@ -325,8 +325,6 @@ async function syncNotionForEvent(
     case "issue.comment_created":
       await syncIssueCommentToNotion(supabase, event.target_id, event.payload);
       break;
-    case "support.created":
-    case "support.deleted":
     case "support.goal_met":
       await syncIssueSupportToNotion(supabase, event.target_id);
       break;
@@ -350,6 +348,12 @@ async function sendPushes(
 ) {
   const source = asString(notification.source);
   const recipientUid = asString(notification.recipient_uid);
+  const notificationType = asString(notification.type);
+  const topic = !recipientUid && source === "broadcast" && notificationType === "announcement_created"
+    ? "srp-broadcast"
+    : !recipientUid && source === "admin" && notificationType === "issue_created"
+      ? "srp-admin"
+      : "";
   let adminUids: string[] = [];
   if (!recipientUid && source === "admin") {
     const { data: roles, error: roleError } = await supabase
@@ -366,7 +370,7 @@ async function sendPushes(
   const seenTokens = new Set<string>();
   for (let offset = 0; ; offset += 200) {
     let query = supabase.schema("app_private").from("push_tokens")
-      .select("uid,token").order("uid", { ascending: true }).order("device_id", { ascending: true })
+      .select("uid,token,topic_admin,topic_broadcast").order("uid", { ascending: true }).order("device_id", { ascending: true })
       .range(offset, offset + 199);
     if (recipientUid) query = query.eq("uid", recipientUid);
     else if (adminUids.length > 0) query = query.in("uid", adminUids);
@@ -376,12 +380,13 @@ async function sendPushes(
       const token = asString(row.token);
       if (!token || seenTokens.has(token)) continue;
       seenTokens.add(token);
-      tokens.push({ token, uid: asString(row.uid) });
+      if (!topic || (topic === "srp-admin" ? row.topic_admin !== true : row.topic_broadcast !== true)) {
+        tokens.push({ token, uid: asString(row.uid) });
+      }
     }
     if ((data ?? []).length < 200) break;
   }
 
-  const notificationType = asString(notification.type);
   const targetType = asString(notification.target_type);
   const targetId = asString(notification.target_id);
   const commentId = asString(notification.comment_id);
@@ -393,6 +398,26 @@ async function sendPushes(
     : targetType === "announcement"
     ? `/announcements/${encodeURIComponent(targetId)}${isComment ? `?tab=comments${commentQuery}` : ""}`
     : `/issues/${encodeURIComponent(category || "public-issues")}/${encodeURIComponent(targetId)}${isComment ? `?tab=comments${commentQuery}` : ""}`;
+  const topicData = {
+    body: asString(notification.body_preview), comment_id: commentId, issue_category: category, link,
+    target_id: targetId, target_type: targetType, title: asString(notification.title),
+    type: notificationType, view: isComment ? "comment" : "detail", tab: isComment ? "comments" : "details",
+  };
+  if (topic) {
+    try {
+      await sendFcmTopicMessage(topic, topicData);
+    } catch (error) {
+      console.error(JSON.stringify({ error: errorMessage(error), notificationType, operation: "fcm-topic-send", topic }));
+      // Topic subscribers must be included in the token fallback when fanout fails.
+      tokens.length = 0;
+      let fallbackQuery = supabase.schema("app_private").from("push_tokens").select("uid,token").limit(1000);
+      if (adminUids.length > 0) fallbackQuery = fallbackQuery.in("uid", adminUids);
+      else if (recipientUid) fallbackQuery = fallbackQuery.eq("uid", recipientUid);
+      const { data: fallbackTokens, error: fallbackError } = await fallbackQuery;
+      if (fallbackError) throw fallbackError;
+      for (const row of fallbackTokens ?? []) tokens.push({ token: row.token, uid: row.uid });
+    }
+  }
   const recipientUids = [...new Set(tokens.map((row) => asString(row.uid)).filter(Boolean))];
   const preferences = new Map<string, { comments: boolean; issueUpdates: boolean }>();
   let pushFailureTraceCode = "";
@@ -551,8 +576,6 @@ async function processEvent(supabase: AppSupabase, event: OutboxEvent) {
     || event.event_type === "announcement.deleted"
     || event.event_type === "issue.status_changed"
     || event.event_type === "issue.result_updated"
-    || event.event_type === "support.created"
-    || event.event_type === "support.deleted"
     || event.event_type === "support.goal_met"
     || event.event_type === "issue.created"
     || event.event_type === "issue.comment_created"

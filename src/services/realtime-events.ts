@@ -29,6 +29,7 @@ export interface ContentRealtimeEvent {
   eventType: ContentRealtimeEventType;
   parentId: string | null;
   likeCount: number | null;
+  op: 'insert' | 'update' | 'delete' | null;
   supportCount: number | null;
   targetId: string;
 }
@@ -77,6 +78,7 @@ function normalizeRealtimeEvent(data: Record<string, unknown>): ContentRealtimeE
     likeCount: typeof data.like_count === 'number' && Number.isFinite(data.like_count)
       ? data.like_count
       : null,
+    op: data.op === 'insert' || data.op === 'update' || data.op === 'delete' ? data.op : null,
     parentId: normalizeNullableString(data.parent_id),
     supportCount: typeof data.support_count === 'number' && Number.isFinite(data.support_count)
       ? data.support_count

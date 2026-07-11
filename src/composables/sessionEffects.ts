@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { recordPlatformVisit } from '@/services/dashboard';
 import { cacheUserAvatar } from '@/services/users-write';
 import { clearResolvedUploadCache } from '@/services/uploads';
+import { clearContentReadCache } from '@/services/content-read-cache';
 
 export const mySupportedIssueIds = ref<Set<string>>(new Set());
 export const customPhotoUrl = ref<string | null>(null);
@@ -16,6 +17,7 @@ export function clearActiveSessionData() {
   mySupportedIssueIds.value = new Set();
   customPhotoUrl.value = null;
   clearResolvedUploadCache();
+  clearContentReadCache();
 }
 
 export async function initActiveSessionData(uid: string) {

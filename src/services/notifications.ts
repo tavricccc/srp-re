@@ -258,6 +258,45 @@ export async function fetchNotificationSnapshot(
   };
 }
 
+export async function fetchNotificationUnreadHint() {
+  const fn = invokeBackendAction<Record<string, never>, { hasUnread: boolean }>('getNotificationUnreadHint', {
+    timeoutMs: READ_REQUEST_TIMEOUT_MS,
+  });
+  return (await fn({})).hasUnread;
+}
+
+export function subscribeNotificationBadge(
+  uid: string,
+  isAdmin: boolean,
+  onNotification: () => void,
+  onStateChanged: () => void,
+  onError?: (error: Error) => void,
+) {
+  const client = getSupabaseClient();
+  const channel = client.channel(`notification-badge:${uid}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'app_private',
+      table: 'notifications',
+    }, (payload) => {
+      const row = payload.new as Record<string, unknown>;
+      const source = row.source;
+      if (source === 'broadcast' || source === 'user' || (source === 'admin' && isAdmin)) onNotification();
+    })
+    .on('postgres_changes', {
+      event: '*',
+      filter: `uid=eq.${uid}`,
+      schema: 'app_private',
+      table: 'notification_states',
+    }, onStateChanged)
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        onError?.(new Error('notification-badge-realtime-unavailable'));
+      }
+    });
+  return () => { void client.removeChannel(channel); };
+}
+
 function normalizeNotificationReadState(data: Record<string, unknown>): NotificationReadState {
   return {
     admin: normalizeDate(data.admin_opened_at_ms ?? data.admin_opened_at),

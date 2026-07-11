@@ -98,6 +98,10 @@ export default defineConfig(({ mode }) => {
           ],
         },
         injectManifest: {
+          globIgnores: [
+            'assets/firebase-app-check-*.js',
+            'assets/firebase-messaging-*.js',
+          ],
           globPatterns: [
             'index.html',
             'manifest.webmanifest',
@@ -115,8 +119,23 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
+          chunkFileNames(chunkInfo) {
+            if (chunkInfo.moduleIds.some((id) => id.includes('node_modules/@firebase/messaging/') || id.includes('node_modules/firebase/messaging/'))) {
+              return 'assets/firebase-messaging-[hash].js';
+            }
+            if (chunkInfo.moduleIds.some((id) => id.includes('node_modules/@firebase/app-check/') || id.includes('node_modules/firebase/app-check/'))) {
+              return 'assets/firebase-app-check-[hash].js';
+            }
+            return 'assets/[name]-[hash].js';
+          },
           manualChunks(id) {
             if (id.includes('node_modules')) {
+              if (id.includes('node_modules/@firebase/messaging/') || id.includes('node_modules/firebase/messaging/')) {
+                return;
+              }
+              if (id.includes('node_modules/@firebase/app-check/') || id.includes('node_modules/firebase/app-check/')) {
+                return;
+              }
               if (id.includes('firebase')) {
                 return 'vendor-firebase';
               }

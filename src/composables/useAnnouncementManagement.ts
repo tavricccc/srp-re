@@ -8,6 +8,7 @@ import { useToast } from '@/composables/useToast';
 import {
   createAnnouncement,
   deleteAnnouncement,
+  fetchAnnouncementRecordById,
   setAnnouncementLike,
   updateAnnouncement,
 } from '@/services/announcements';
@@ -59,7 +60,6 @@ export function useAnnouncementManagement() {
   const deletePendingAnnouncement = ref<AnnouncementRecord | null>(null);
   const sessionLoading = computed(() => authLoading.value || !initialized.value);
   let realtimeUnsubscribe: (() => void) | null = null;
-  let realtimeRefreshTimer = 0;
   const unregisterResumeHandler = registerAppResumeHandler(() => {
     if (!initialized.value || !isAllowedUser.value) return;
     if (!shouldRefreshContentAfterResume(updatedAt.value)) return;
@@ -187,13 +187,6 @@ export function useAnnouncementManagement() {
     await refreshAnnouncements();
   }
 
-  function scheduleRealtimeRefresh() {
-    window.clearTimeout(realtimeRefreshTimer);
-    realtimeRefreshTimer = window.setTimeout(() => {
-      void refreshAnnouncementList({ force: true });
-    }, 300);
-  }
-
   watch(
     [initialized, isAllowedUser],
     ([ready, allowed]) => {
@@ -212,7 +205,6 @@ export function useAnnouncementManagement() {
     ([ready, allowed, waitingForRole]) => {
       realtimeUnsubscribe?.();
       realtimeUnsubscribe = null;
-      window.clearTimeout(realtimeRefreshTimer);
       if (!ready || !allowed || waitingForRole) return;
 
       realtimeUnsubscribe = subscribeContentRealtimeEvents(`announcements:${sortOption.value}`, (event) => {
@@ -225,7 +217,16 @@ export function useAnnouncementManagement() {
           return;
         }
         if (event.eventType !== 'announcement_changed') return;
-        scheduleRealtimeRefresh();
+        if (event.op === 'delete') {
+          removeAnnouncement(event.targetId);
+          return;
+        }
+        void fetchAnnouncementRecordById(event.targetId, {
+          cacheScope: announcementCacheScope.value,
+          forceRefresh: true,
+        }).then((announcement) => {
+          patchAnnouncement(announcement.id, () => announcement);
+        }).catch(() => removeAnnouncement(event.targetId));
       }, () => {
         markContentRealtimeUnreliable();
       });
@@ -236,7 +237,6 @@ export function useAnnouncementManagement() {
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
     unregisterResumeHandler();
-    window.clearTimeout(realtimeRefreshTimer);
   });
 
   watch(isOnline, (online) => {

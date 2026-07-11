@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase';
 import { withRequestTimeout } from '@/lib/request';
-import { auth } from '@/lib/firebase';
+import { getFirebaseIdToken } from '@/lib/auth-token';
 import { readSupabaseFunctionError } from '@/services/supabase-function-error';
 import type { BackendActionName } from '@/services/backend-action-contract';
 
@@ -67,7 +67,7 @@ export function invokeBackendAction<TRequest = Record<string, unknown>, TRespons
   return (initialPayload: TRequest): Promise<TResponse> => {
     const stableOperation = withStableRequestId(name, initialPayload);
     return withRequestTimeout(async (signal) => {
-      const token = await auth?.currentUser?.getIdToken();
+      const token = await getFirebaseIdToken();
       if (!token) {
         throw new Error('請先登入後再操作。');
       }

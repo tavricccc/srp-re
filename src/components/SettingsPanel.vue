@@ -28,7 +28,7 @@
           ref="menuRef"
           role="dialog"
           aria-label="我的"
-          class="absolute right-0 top-full z-50 mt-2 max-h-[min(82dvh,42rem)] w-[min(calc(100vw-2rem),24rem)] origin-top-right rounded-[1.25rem] border border-ink-200/70 bg-white/94 shadow-elevated backdrop-blur-xl dark:border-ink-700/70 dark:bg-ink-900/94"
+          class="popover-panel absolute right-0 top-full z-50 mt-2 max-h-[min(82dvh,42rem)] w-[min(calc(100vw-2rem),24rem)] origin-top-right rounded-[1.25rem] bg-white/94 dark:bg-ink-900/94"
           :content-class="'max-h-[min(82dvh,42rem)]'"
           :display-name="user.displayName || '校內使用者'"
           :display-photo-url="displayPhotoUrl"
@@ -53,11 +53,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
 import SettingsPanelContent from '@/components/SettingsPanelContent.vue';
+import { useClickOutside } from '@/composables/useClickOutside';
 import { usePushNotifications } from '@/composables/usePushNotifications';
 import { useAppUpdate } from '@/composables/useAppUpdate';
 import { useSession } from '@/composables/useSession';
@@ -154,6 +155,8 @@ function closePanel() {
   isOpen.value = false;
 }
 
+useClickOutside(isOpen, [rootRef], closePanel);
+
 const handleLogout = async () => {
   closePanel();
   if (pushEnabled.value) {
@@ -192,24 +195,10 @@ async function handleRestartApp() {
   await reloadApp({ reason: 'restart' });
 }
 
-const handleClickOutside = (event: MouseEvent) => {
-  if (
-    isOpen.value
-    && rootRef.value
-    && !rootRef.value.contains(event.target as Node)
-  ) {
-    closePanel();
-  }
-};
-
-onMounted(() => {
+// Clear legacy key once; no ongoing listener needed.
+if (typeof localStorage !== 'undefined') {
   localStorage.removeItem('srp:remembered-accounts');
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
+}
 
 watch(error, (message) => {
   if (message) {

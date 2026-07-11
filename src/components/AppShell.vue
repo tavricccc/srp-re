@@ -163,12 +163,12 @@ import { DEFAULT_ISSUE_CATEGORY, DEFAULT_ISSUE_ROUTE_FILTER, isIssueCategory } f
 import { requestCreateAnnouncement, requestCreateIssue } from '@/composables/useCreateEntryActions';
 import { useIssueRouteFilter } from '@/composables/useIssueRouteFilter';
 import { useSession } from '@/composables/useSession';
-import { useNotifications } from '@/composables/useNotifications';
+import { useNotificationBadge } from '@/composables/useNotificationBadge';
 import type { IssueCategory } from '@/types';
 
 const { customPhotoUrl, isAdmin, isAllowedUser, user } = useSession();
 const { activeFilter } = useIssueRouteFilter();
-const { hasUnread } = useNotifications();
+const { hasUnread } = useNotificationBadge();
 const route = useRoute();
 const router = useRouter();
 

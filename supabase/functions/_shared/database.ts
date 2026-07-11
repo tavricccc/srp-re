@@ -127,15 +127,11 @@ interface UploadRow {
   attached_target_id: string | null;
   attached_target_type: string | null;
   content_type: string | null;
-  delivery_type: string;
   expires_at: string;
-  resource_type: string;
-  secure_url: string | null;
   delivery_url: string | null;
   delivery_url_expires_at: string | null;
+  delivery_url_scope: string | null;
   size_bytes: number | null;
-  original_url: string | null;
-  preview_url: string | null;
   visibility: string | null;
   width: number | null;
   height: number | null;
@@ -176,6 +172,8 @@ interface PushTokenRow {
   user_agent: string;
   created_at: string;
   updated_at: string;
+  topic_admin: boolean;
+  topic_broadcast: boolean;
 }
 
 interface UserProfileRow {
@@ -258,6 +256,9 @@ interface AppPrivateTables {
 }
 
 interface AppApiFunctions {
+  backend_get_notification_unread_hint: AppFunction<{ actor_is_admin: boolean; actor_uid: string }, Json>;
+  claim_notion_support_dirty: AppFunction<{ batch_size?: number }, Array<{ issue_id: string; updated_at: string }>>;
+  complete_notion_support_dirty: AppFunction<{ claimed_updated_at: string; issue_id: string }, void>;
   backend_announcement_to_json: AppFunction<{
     actor_uid: string;
     announcement_record: AnnouncementRow;
@@ -498,6 +499,7 @@ interface AppApiFunctions {
   get_platform_dashboard_snapshot: AppFunction<Record<string, never>, Json>;
   backend_delete_issue: AppFunction<{ actor_is_admin: boolean; actor_uid: string; issue_id: string }, void>;
   release_idempotency_key: AppFunction<{ action_name: string; actor_uid: string; request_id: string }, void>;
+  release_notion_support_dirty: AppFunction<{ issue_id: string }, void>;
   resignal_background_worker: AppFunction<{ worker_name: string }, void>;
   run_maintenance_cleanup: AppFunction<{ valid_issue_categories?: string[] | null }, Json>;
 }

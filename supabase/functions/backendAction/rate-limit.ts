@@ -27,10 +27,23 @@ export async function claimBackendActionRateLimit(uid: string, definition: Backe
       limits = { prefix: "backend.sensitive-write", second: RATE_LIMITS.backendActionSensitiveWriteSecond, hourly: RATE_LIMITS.backendActionSensitiveWriteHourly };
       break;
   }
-  await claimFixedWindowRateLimits([
-    { identifier: uid, actionName: `${limits.prefix}.${action}.second`, window: utcSecondWindow(), config: limits.second },
+  const windows: Array<{
+    identifier: string;
+    actionName: string;
+    window: ReturnType<typeof utcHourWindow>;
+    config: { limit: number; message: string };
+  }> = [
     { identifier: uid, actionName: `${limits.prefix}.${action}`, window: utcHourWindow(), config: limits.hourly },
-  ]);
+  ];
+  if (definition.rateLimitGroup !== "read" && definition.rateLimitGroup !== "upload-resolve") {
+    windows.unshift({
+      identifier: uid,
+      actionName: `${limits.prefix}.${action}.second`,
+      window: utcSecondWindow(),
+      config: limits.second,
+    });
+  }
+  await claimFixedWindowRateLimits(windows);
 }
 
 export async function claimBackendHealthcheckRateLimit() {

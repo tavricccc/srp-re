@@ -200,7 +200,7 @@ test('backendAction covers frontend actions and Cloudinary direct upload', async
   assert.match(backendAction, /console\.error\(JSON\.stringify/u);
   assert.match(backendAction, /method-not-allowed/u);
   assert.match(backendAction, /readJsonRecord/u);
-  assert.match(backendActionService, /auth\?\.currentUser\?\.getIdToken/u);
+  assert.match(backendActionService, /getFirebaseIdToken/u);
   assert.match(backendActionService, /Authorization: `Bearer \$\{token\}`/u);
   assert.match(backendActionService, /readSupabaseFunctionError/u);
   assert.match(backendActionService, /BackendActionEnvelope/u);
@@ -512,7 +512,7 @@ test('private issue data and upload URLs stay behind backend authorization', asy
   const support = await read('supabase/functions/backendAction/issue-support.ts');
 
   assert.match(migration, /revoke all on app_api\.issues from anon, authenticated/u);
-  assert.match(uploads, /async function uploadAccess/u);
+  assert.match(uploads, /async function resolveUploadAccessBatch/u);
   assert.match(uploads, /canReadIssue\(issue, auth\)/u);
   assert.match(uploads, /issueIsPrivateToOwner/u);
   assert.match(support, /issueAllowsSupport/u);
@@ -609,4 +609,39 @@ test('notification navigation verifies target access before routing', async () =
   assert.match(issueRead, /rpc\("backend_get_issue"/u);
   assert.match(issueReadMigration, /author_uid = actor_uid/u);
   assert.match(issueReadMigration, /status in \('under-review', 'review-rejected'\)/u);
+});
+
+test('cost-sensitive hot paths use aggregation, patching, and lazy startup', async () => {
+  const supportMigration = await read('supabase/migrations/202607110001_cost_perf_support_notion.sql');
+  const realtimeMigration = await read('supabase/migrations/202607110003_realtime_patch_operations.sql');
+  const dashboardMigration = await read('supabase/migrations/202607110005_dashboard_counters.sql');
+  const cleanupMigration = await read('supabase/migrations/202607110006_remove_obsolete_runtime_data.sql');
+  const topicMigration = await read('supabase/migrations/202607110007_push_topic_state.sql');
+  const board = await read('src/composables/useIssueBoardData.ts');
+  const appShell = await read('src/components/AppShell.vue');
+  const firebase = await read('src/lib/firebase.ts');
+  const messaging = await read('src/lib/firebase-messaging.ts');
+  const fcm = await read('supabase/functions/_shared/fcm.ts');
+  const uploads = await read('supabase/functions/backendAction/uploads.ts');
+  const vite = await read('vite.config.ts');
+
+  assert.match(supportMigration, /locked_until/u);
+  assert.match(supportMigration, /claimed_updated_at/u);
+  assert.match(realtimeMigration, /add column if not exists op/u);
+  assert.match(board, /fetchIssueRecordById/u);
+  assert.doesNotMatch(board, /scheduleRealtimeRefresh/u);
+  assert.match(appShell, /useNotificationBadge/u);
+  assert.doesNotMatch(firebase, /firebase\/messaging/u);
+  assert.match(messaging, /import\('firebase\/messaging'\)/u);
+  assert.match(vite, /firebase-messaging-\*\.js/u);
+  assert.match(vite, /firebase-app-check-\*\.js/u);
+  assert.match(fcm, /srp-broadcast/u);
+  assert.match(fcm, /iid\/v1/u);
+  assert.match(topicMigration, /topic_broadcast/u);
+  assert.match(uploads, /resolveUploadAccessBatch/u);
+  assert.match(uploads, /select\("id,category,status,author_uid"\)/u);
+  assert.match(dashboardMigration, /platform_category_counters/u);
+  assert.doesNotMatch(dashboardMigration, /from app_private\.issues group by category\) grouped/u);
+  assert.match(cleanupMigration, /support\.created/u);
+  assert.match(cleanupMigration, /drop column if exists secure_url/u);
 });

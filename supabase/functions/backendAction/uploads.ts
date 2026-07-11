@@ -11,7 +11,7 @@ import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { asNumber, taipeiDayWindow } from "./utils.ts";
-import { canReadIssue, selectIssue } from "./issue-shared.ts";
+import { canReadIssue } from "./issue-shared.ts";
 import { issueIsPrivateToOwner, issueRequiresReview } from "../_shared/issue-categories.ts";
 
 const MARKDOWN_UPLOAD_ID_PATTERN = /srp-upload:\/\/([0-9a-fA-F-]{36})/gu;
@@ -67,41 +67,66 @@ async function assertMarkdownUploadsAttachable(
   if (validIds.size !== uploadIds.length) throw new Error("upload-attachment-invalid");
 }
 
-async function uploadAccess(
-  upload: JsonRecord,
+function issueDeliveryAccess(
+  issue: JsonRecord | undefined,
+  auth: AuthContext,
+) {
+  if (!issue) return { allowed: false, privateDelivery: true };
+  return {
+    allowed: canReadIssue(issue, auth),
+    privateDelivery: issueIsPrivateToOwner(asString(issue.category))
+      || (issueRequiresReview(asString(issue.category))
+        && ["under-review", "review-rejected"].includes(asString(issue.status))),
+  };
+}
+
+async function resolveUploadAccessBatch(
+  uploads: JsonRecord[],
   auth: AuthContext,
   supabase: BackendSupabase,
 ) {
-  const targetType = asString(upload.attached_target_type);
-  const targetId = asString(upload.attached_target_id);
-  if (!targetType || !targetId) {
-    return { allowed: asString(upload.owner_uid) === auth.uid, privateDelivery: true };
+  const issueIds = new Set<string>();
+  const commentIds = new Set<string>();
+  for (const upload of uploads) {
+    const type = asString(upload.attached_target_type);
+    const id = asString(upload.attached_target_id);
+    if (type === "issue" && id) issueIds.add(id);
+    if (type === "comment" && id) commentIds.add(id);
   }
-  if (targetType === "issue") {
-    const issue = await selectIssue(supabase, targetId);
-    return {
-      allowed: canReadIssue(issue, auth),
-      privateDelivery: issueIsPrivateToOwner(asString(issue.category))
-        || (issueRequiresReview(asString(issue.category))
-          && ["under-review", "review-rejected"].includes(asString(issue.status))),
-    };
+  const commentToIssue = new Map<string, string>();
+  if (commentIds.size > 0) {
+    const { data, error } = await supabase.schema("app_private").from("comments")
+      .select("id,issue_id").in("id", [...commentIds]);
+    if (error) throw error;
+    for (const comment of data ?? []) {
+      commentToIssue.set(String(comment.id), String(comment.issue_id));
+      issueIds.add(String(comment.issue_id));
+    }
   }
-  if (targetType === "comment") {
-    const { data } = await supabase.schema("app_private").from("comments")
-      .select("issue_id").eq("id", targetId).maybeSingle();
-    if (!data) return { allowed: false, privateDelivery: true };
-    const issue = await selectIssue(supabase, data.issue_id);
-    return {
-      allowed: canReadIssue(issue, auth),
-      privateDelivery: issueIsPrivateToOwner(asString(issue.category))
-        || (issueRequiresReview(asString(issue.category))
-          && ["under-review", "review-rejected"].includes(asString(issue.status))),
-    };
+  const issues = new Map<string, JsonRecord>();
+  if (issueIds.size > 0) {
+    const { data, error } = await supabase.schema("app_private").from("issues")
+      .select("id,category,status,author_uid").in("id", [...issueIds]);
+    if (error) throw error;
+    for (const issue of data ?? []) issues.set(String(issue.id), issue as JsonRecord);
   }
-  if (targetType === "announcement" || targetType === "announcement_comment") {
-    return { allowed: true, privateDelivery: false };
-  }
-  return { allowed: false, privateDelivery: true };
+  return new Map(uploads.map((upload) => {
+    const targetType = asString(upload.attached_target_type);
+    const targetId = asString(upload.attached_target_id);
+    if (!targetType || !targetId) {
+      return [asString(upload.id), { allowed: asString(upload.owner_uid) === auth.uid, privateDelivery: true }];
+    }
+    if (targetType === "issue") {
+      return [asString(upload.id), issueDeliveryAccess(issues.get(targetId), auth)];
+    }
+    if (targetType === "comment") {
+      return [asString(upload.id), issueDeliveryAccess(issues.get(commentToIssue.get(targetId) ?? ""), auth)];
+    }
+    if (targetType === "announcement" || targetType === "announcement_comment") {
+      return [asString(upload.id), { allowed: true, privateDelivery: false }];
+    }
+    return [asString(upload.id), { allowed: false, privateDelivery: true }];
+  }));
 }
 
 export function isUploadAction(action: string) {
@@ -201,7 +226,7 @@ export async function handleUploadAction(
   if (action === "finalizeImageUpload") {
     const uploadId = asString(payload.uploadId);
     const { data: upload, error: uploadError } = await supabase.schema("app_private").from("uploads")
-      .select("*")
+      .select("id,owner_uid,cloudinary_public_id,status,width,height,size_bytes")
       .eq("id", uploadId)
       .eq("owner_uid", auth.uid)
       .maybeSingle();
@@ -245,7 +270,7 @@ export async function handleUploadAction(
         .eq("id", uploadId)
         .eq("owner_uid", auth.uid)
         .eq("status", "pending")
-        .select("*")
+        .select("id,cloudinary_public_id,height,width")
         .maybeSingle();
       if (finalizeError) throw finalizeError;
       if (finalized) {
@@ -253,7 +278,7 @@ export async function handleUploadAction(
       } else {
         const { data: webhookFinalized, error: webhookError } = await supabase.schema("app_private")
           .from("uploads")
-          .select("*")
+          .select("id,cloudinary_public_id,height,width")
           .eq("id", uploadId)
           .eq("owner_uid", auth.uid)
           .eq("status", "ready")
@@ -273,7 +298,8 @@ export async function handleUploadAction(
   if (action === "deleteUploadedImage") {
     const storagePath = asString(payload.storagePath);
     const uploadId = asString(payload.uploadId);
-    let query = supabase.schema("app_private").from("uploads").select("*").eq("owner_uid", auth.uid);
+    let query = supabase.schema("app_private").from("uploads")
+      .select("id,cloudinary_public_id").eq("owner_uid", auth.uid);
     query = uploadId ? query.eq("id", uploadId) : query.eq("cloudinary_public_id", storagePath);
     const { data, error } = await query.maybeSingle();
     if (error) throw error;
@@ -292,23 +318,37 @@ export async function handleUploadAction(
 
   const uploadIds = Array.isArray(payload.uploadIds) ? payload.uploadIds.map((id) => asString(id)).filter(Boolean).slice(0, 50) : [];
   const { data, error } = await supabase.schema("app_private").from("uploads")
-    .select("id,owner_uid,cloudinary_public_id,attached_target_type,attached_target_id,delivery_url,delivery_url_expires_at")
+    .select("id,owner_uid,cloudinary_public_id,attached_target_type,attached_target_id,delivery_url,delivery_url_expires_at,delivery_url_scope")
     .in("id", uploadIds)
     .in("status", ["ready", "attached"]);
   if (error) throw error;
+  const accessByUploadId = await resolveUploadAccessBatch((data ?? []) as JsonRecord[], auth, supabase);
   const resolved = await Promise.all((data ?? []).map(async (upload) => {
-    const access = await uploadAccess(upload as JsonRecord, auth, supabase);
+    const access = accessByUploadId.get(upload.id) ?? { allowed: false, privateDelivery: true };
     if (!access.allowed || !upload.cloudinary_public_id) return null;
     if (!access.privateDelivery) {
+      const cachedExpiresAtMs = Date.parse(upload.delivery_url_expires_at ?? "");
+      if (upload.delivery_url_scope === "public" && upload.delivery_url && cachedExpiresAtMs > Date.now() + PRIVATE_URL_REFRESH_BUFFER_MS) {
+        return { expiresAtMs: cachedExpiresAtMs, id: upload.id, url: upload.delivery_url };
+      }
+      const expiresAt = new Date(Date.now() + PUBLIC_URL_CACHE_MS);
+      const url = await createCloudinaryAuthenticatedImageUrl(upload.cloudinary_public_id);
+      const { error: cacheError } = await supabase.schema("app_private").from("uploads").update({
+        delivery_url: url,
+        delivery_url_expires_at: expiresAt.toISOString(),
+        delivery_url_scope: "public",
+      }).eq("id", upload.id);
+      if (cacheError) throw cacheError;
       return {
-        expiresAtMs: Date.now() + PUBLIC_URL_CACHE_MS,
+        expiresAtMs: expiresAt.getTime(),
         id: upload.id,
-        url: await createCloudinaryAuthenticatedImageUrl(upload.cloudinary_public_id),
+        url,
       };
     }
     const cachedExpiresAtMs = Date.parse(upload.delivery_url_expires_at ?? "");
     if (
-      upload.delivery_url
+      upload.delivery_url_scope === "private"
+      && upload.delivery_url
       && Number.isFinite(cachedExpiresAtMs)
       && cachedExpiresAtMs > Date.now() + PRIVATE_URL_REFRESH_BUFFER_MS
     ) {
@@ -319,6 +359,7 @@ export async function handleUploadAction(
     const { error: cacheError } = await supabase.schema("app_private").from("uploads").update({
       delivery_url: url,
       delivery_url_expires_at: expiresAt.toISOString(),
+      delivery_url_scope: "private",
     }).eq("id", upload.id);
     if (cacheError) throw cacheError;
     return { expiresAtMs: expiresAt.getTime(), id: upload.id, url };

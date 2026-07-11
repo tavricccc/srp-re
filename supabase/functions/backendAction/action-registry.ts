@@ -110,6 +110,7 @@ export const backendActionDefinitions = [
   action("listNotifications", "notification", "read", notificationHandler),
   action("getNotificationSnapshot", "notification", "read", notificationHandler),
   action("getNotificationReadState", "notification", "read", notificationHandler),
+  action("getNotificationUnreadHint", "notification", "read", notificationHandler),
   action("markNotificationsOpened", "notification", "general-write", notificationHandler),
   action("getPushNotificationPreference", "notification", "read", notificationHandler),
   action("registerPushToken", "notification", "sensitive-write", notificationHandler),

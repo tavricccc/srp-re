@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { auth } from '@/lib/firebase';
+import { getFirebaseIdToken } from '@/lib/auth-token';
 
 const supabaseUrl = readEnv('VITE_SUPABASE_URL');
 const supabasePublishableKey = readEnv('VITE_SUPABASE_PUBLISHABLE_KEY');
@@ -18,7 +18,7 @@ export function getSupabaseClient() {
   }
 
   const client = supabaseClient ?? createClient<any, 'app_api'>(supabaseUrl, supabasePublishableKey, {
-    accessToken: async () => auth?.currentUser?.getIdToken() ?? null,
+    accessToken: getFirebaseIdToken,
     auth: {
       persistSession: false,
       autoRefreshToken: false,

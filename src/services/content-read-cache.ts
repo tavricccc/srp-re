@@ -7,6 +7,7 @@ interface CacheEntry<T> {
 }
 
 const cache = new Map<string, CacheEntry<unknown>>();
+const MAX_CACHE_ENTRIES = 200;
 let realtimeReliable = true;
 let wasOffline = false;
 
@@ -44,6 +45,17 @@ export function setCachedContent<T>(key: string, value: T, updatedAt = Date.now(
     updatedAt,
     value,
   });
+  if (cache.size <= MAX_CACHE_ENTRIES) return;
+
+  const now = Date.now();
+  for (const [entryKey, entry] of cache) {
+    if (entry.stale || !isContentCacheFresh(entry.updatedAt, now)) cache.delete(entryKey);
+  }
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value;
+    if (typeof oldestKey !== 'string') break;
+    cache.delete(oldestKey);
+  }
 }
 
 export function patchCachedContent<T>(key: string, updater: (value: T) => T) {

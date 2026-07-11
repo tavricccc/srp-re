@@ -10,7 +10,6 @@ import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { useSession } from '@/composables/useSession';
 import { useTimedMessage } from '@/composables/useTimedMessage';
 import { useUserIssuesData } from '@/composables/useUserIssuesData';
-import { resolveViewportPageSize } from '@/lib/page-size';
 import {
   markContentRealtimeReliable,
   markContentRealtimeUnreliable,
@@ -18,6 +17,7 @@ import {
   shouldRefreshContentAfterResume,
 } from '@/services/content-read-cache';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
+import { fetchIssueRecordById } from '@/services/issues';
 import type { IssueRecord, IssueSortOption } from '@/types';
 
 export function useIssueBoardData() {
@@ -46,12 +46,7 @@ export function useIssueBoardData() {
   const { restoreDocumentTitle } = useDocumentTitle(activeCategoryLabel, defaultDocumentTitle);
 
   const supportedIssueIds = mySupportedIssueIds;
-  const currentPageSize = computed(() => resolveViewportPageSize({
-    min: 10,
-    max: 24,
-    reservedHeight: 220,
-    rowHeight: 64,
-  }));
+  const currentPageSize = computed(() => 20);
 
   const {
     activeState,
@@ -114,7 +109,6 @@ export function useIssueBoardData() {
     filterIssues,
   });
   let realtimeUnsubscribe: (() => void) | null = null;
-  let realtimeRefreshTimer = 0;
   const unregisterResumeHandler = registerAppResumeHandler(() => {
     if (!isAllowedUser.value) return;
     const updatedAt = activeFilter.value === 'my-proposals'
@@ -196,7 +190,7 @@ export function useIssueBoardData() {
     addUserIssue(issue);
   }
 
-  async function handleIssueUpdated(issue: IssueRecord) {
+  function handleIssueUpdated(issue: IssueRecord) {
     upsertIssueAcrossBuckets(issue);
     removeSearchIssue(issue.id);
     addSearchIssue(issue);
@@ -205,7 +199,6 @@ export function useIssueBoardData() {
     } else {
       removeUserIssue(issue.id);
     }
-    await refreshCurrentData();
   }
 
   function handleIssueDeleted(issueId: string) {
@@ -245,13 +238,6 @@ export function useIssueBoardData() {
     searchQuery.value = '';
   });
 
-  function scheduleRealtimeRefresh() {
-    window.clearTimeout(realtimeRefreshTimer);
-    realtimeRefreshTimer = window.setTimeout(() => {
-      void refreshCurrentData();
-    }, 300);
-  }
-
   watch(
     () => [
       isAllowedUser.value,
@@ -263,19 +249,15 @@ export function useIssueBoardData() {
     ([allowed, waitingForRole, uid]) => {
       realtimeUnsubscribe?.();
       realtimeUnsubscribe = null;
-      window.clearTimeout(realtimeRefreshTimer);
       if (!allowed || waitingForRole || !uid) return;
 
       realtimeUnsubscribe = subscribeContentRealtimeEvents(
         `issues:${uid}:${activeFilter.value}:${statusTab.value}`,
         (event) => {
           if (event.eventType === 'issue_support_changed') {
-            if (activeFilter.value === 'my-proposals') {
-              scheduleRealtimeRefresh();
-              return;
-            }
-            if (event.category !== activeFilter.value || event.supportCount === null) return;
-            patchCachedIssues(event.targetId, (issue) => ({
+            if (event.supportCount === null) return;
+            if (activeFilter.value !== 'my-proposals' && event.category !== activeFilter.value) return;
+            patchIssueAcrossBuckets(event.targetId, (issue) => ({
               ...issue,
               support_count: event.supportCount ?? issue.support_count,
             }));
@@ -283,7 +265,16 @@ export function useIssueBoardData() {
           }
           if (event.eventType !== 'issue_changed') return;
           if (activeFilter.value !== 'my-proposals' && event.category !== activeFilter.value) return;
-          scheduleRealtimeRefresh();
+          if (event.op === 'delete') {
+            handleIssueDeleted(event.targetId);
+            return;
+          }
+          void fetchIssueRecordById(event.targetId, {
+            cacheScope: `realtime:${userUid.value}`,
+            forceRefresh: true,
+          }).then(handleIssueUpdated).catch(() => {
+            handleIssueDeleted(event.targetId);
+          });
         },
         () => {
           markContentRealtimeUnreliable();
@@ -329,7 +320,6 @@ export function useIssueBoardData() {
   onBeforeUnmount(() => {
     realtimeUnsubscribe?.();
     unregisterResumeHandler();
-    window.clearTimeout(realtimeRefreshTimer);
     restoreDocumentTitle();
     bumpUserIssuesRequestToken();
     resetSearchResults();

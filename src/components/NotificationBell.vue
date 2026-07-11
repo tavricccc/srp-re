@@ -14,7 +14,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0m6 0H9" />
         </svg>
         <span
-          v-if="hasUnread"
+          v-if="badgeHasUnread"
           class="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-error dark:border-ink-900"
           :class="badgeClass"
           aria-label="有新通知"
@@ -29,7 +29,7 @@
           v-if="isOpen"
           id="notification-panel"
           ref="panelRef"
-          class="fixed z-50 flex h-auto max-h-[min(70dvh,38rem)] w-96 origin-top-right flex-col overflow-hidden rounded-3xl border border-ink-200/90 bg-white/98 shadow-2xl backdrop-blur-xl dark:border-ink-700/80 dark:bg-ink-900/98"
+          class="popover-panel fixed z-50 flex h-auto max-h-[min(70dvh,38rem)] w-96 origin-top-right flex-col overflow-hidden rounded-3xl border-ink-200/90 bg-white/98 shadow-2xl dark:border-ink-700/80 dark:bg-ink-900/98"
           :style="panelPositionStyle"
           role="region"
           aria-label="通知中心"
@@ -40,7 +40,7 @@
               <div class="flex items-center gap-2">
                 <h2 class="text-base font-bold tracking-tight text-ink-950 dark:text-ink-50">通知中心</h2>
                 <span
-                  v-if="hasUnread"
+                  v-if="badgeHasUnread"
                   class="rounded-full bg-error-container px-2 py-0.5 text-[11px] font-semibold text-on-error-container"
                 >
                   有新通知
@@ -147,8 +147,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue';
 import AuthorAvatar from '@/components/AuthorAvatar.vue';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
+import { useClickOutside } from '@/composables/useClickOutside';
 import { useNotificationNavigation } from '@/composables/useNotificationNavigation';
 import { useNotifications } from '@/composables/useNotifications';
+import { useNotificationBadge } from '@/composables/useNotificationBadge';
 import { formatDate } from '@/lib/format';
 import type { NotificationRecord } from '@/types';
 
@@ -169,7 +171,6 @@ const props = withDefaults(defineProps<{
 const { openNotificationTarget } = useNotificationNavigation();
 const {
   notifications,
-  hasUnread,
   hasMore,
   loading,
   loadingMore,
@@ -177,7 +178,9 @@ const {
   openNotifications,
   loadMoreNotifications,
   retryNotifications,
+  initializeNotifications,
 } = useNotifications();
+const { hasUnread: badgeHasUnread } = useNotificationBadge();
 
 const isOpen = ref(false);
 const rootRef = ref<HTMLElement | null>(null);
@@ -188,11 +191,12 @@ const triggerClasses = computed(() => [
   props.triggerClass,
   { [props.triggerActiveClass]: isOpen.value && Boolean(props.triggerActiveClass) },
 ]);
-const triggerAriaLabel = computed(() => hasUnread.value ? '通知，有新通知' : '通知');
+const triggerAriaLabel = computed(() => badgeHasUnread.value ? '通知，有新通知' : '通知');
 
 async function togglePanel() {
   isOpen.value = !isOpen.value;
   if (isOpen.value) {
+    initializeNotifications();
     await nextTick();
     updatePanelPosition();
     await openNotifications();
@@ -245,14 +249,7 @@ function closePanel() {
   isOpen.value = false;
 }
 
-function handleDocumentClick(event: MouseEvent) {
-  const target = event.target as Node;
-  if (!rootRef.value?.contains(target) && !panelRef.value?.contains(target)) closePanel();
-}
-
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') closePanel();
-}
+useClickOutside(isOpen, [rootRef, panelRef], closePanel, { escape: true });
 
 function openNotification(notification: NotificationRecord) {
   closePanel();
@@ -260,14 +257,10 @@ function openNotification(notification: NotificationRecord) {
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleDocumentClick);
-  document.addEventListener('keydown', handleKeydown);
   window.addEventListener('resize', updatePanelPosition);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick);
-  document.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('resize', updatePanelPosition);
 });
 </script>
