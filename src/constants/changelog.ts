@@ -2,6 +2,17 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "統一官網導覽體驗",
+    version: "v2.0.166",
+    date: "2026-07-12",
+    time: "00:55",
+    items: [
+      { title: "統一官網頂部導覽，並將產品亮點、彈性自訂與校園導入整合於首頁。" },
+      { title: "新增桌面滑入與手機點擊皆可完整展開的分段導覽。" },
+      { title: "修正產品介紹區塊圖示未顯示的問題。" }
+    ]
+  },
+  {
     title: "完善產品介紹與設定體驗",
     version: "v2.0.165",
     date: "2026-07-12",
