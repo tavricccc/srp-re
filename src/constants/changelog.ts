@@ -2,6 +2,17 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "修正內容排序與分頁",
+    version: "v2.0.160",
+    date: "2026-07-11",
+    time: "16:21",
+    items: [
+      { title: "修正新提案送出後可能顯示在列表底部的問題。" },
+      { title: "統一提案審核時間、建立時間與分頁載入的排序規則。" },
+      { title: "改善公告即時更新及熱門排序的顯示位置。" }
+    ]
+  },
+  {
     title: "修正圖片提案發布",
     version: "v2.0.159",
     date: "2026-07-11",

@@ -408,6 +408,9 @@ test('backend list actions use stable cursor pagination at the service boundary'
   const announcements = await read('src/services/announcements.ts');
   const notifications = await read('src/services/notifications.ts');
   const mostSupportedCursorMigration = await read('supabase/migrations/202607090002_fix_most_supported_cursor.sql');
+  const alignedIssueSortMigration = await read('supabase/migrations/202607110009_align_issue_sort_cursor.sql');
+  const issueSort = await read('src/lib/issue-sort.ts');
+  const announcementSort = await read('src/lib/announcement-sort.ts');
 
   assert.match(backendAction, /function applyDescendingDateCursor/u);
   assert.match(backendAction, /function applyAscendingDateCursor/u);
@@ -432,6 +435,11 @@ test('backend list actions use stable cursor pagination at the service boundary'
   assert.match(mostSupportedCursorMigration, /effective_sort_name = 'most-supported'/u);
   assert.match(mostSupportedCursorMigration, /coalesce\(cursor_sort_date, cursor_created_at\)/u);
   assert.match(mostSupportedCursorMigration, /when effective_sort_name = 'most-supported' then last_issue -> 'created_at_ms'/u);
+  assert.match(alignedIssueSortMigration, /coalesce\(last_issue -> 'review_approved_at_ms', last_issue -> 'created_at_ms'\)/u);
+  assert.match(alignedIssueSortMigration, /coalesce\(review_approved_at, created_at\) < coalesce\(cursor_sort_date, cursor_created_at\)/u);
+  assert.match(issueSort, /issue\.review_approved_at \?\? issue\.created_at/u);
+  assert.match(issueSort, /issue\.closed_at \?\? issue\.created_at/u);
+  assert.match(announcementSort, /right\.published_at/u);
 });
 
 test('content writes validate markdown uploads before database writes', async () => {

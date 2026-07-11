@@ -46,6 +46,7 @@ export function useAnnouncementManagement() {
     loadMoreAnnouncements,
     forceRefreshAnnouncements,
     patchAnnouncement,
+    upsertAnnouncement,
     removeAnnouncement,
     refreshAnnouncements,
     resetAnnouncements,
@@ -228,7 +229,7 @@ export function useAnnouncementManagement() {
           cacheScope: announcementCacheScope.value,
           forceRefresh: true,
         }).then((announcement) => {
-          patchAnnouncement(announcement.id, () => announcement);
+          upsertAnnouncement(announcement);
         }).catch(() => removeAnnouncement(event.targetId));
       }, () => {
         markContentRealtimeUnreliable();

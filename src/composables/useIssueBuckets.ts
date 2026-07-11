@@ -1,6 +1,7 @@
 import { computed, reactive, watch, type Ref } from 'vue';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
 import { getIssueStatusBucket } from '@/lib/issue-timeline';
+import { sortIssues } from '@/lib/issue-sort';
 import { fetchIssuesPageByStatus } from '@/services/issues';
 import { isContentCacheFresh } from '@/services/content-read-cache';
 import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption, IssueStatusBucket } from '@/types';
@@ -43,10 +44,15 @@ function createBucketState(): BucketState {
   });
 }
 
-function mergeIssues(existing: IssueRecord[], incoming: IssueRecord[]) {
+function mergeIssues(
+  existing: IssueRecord[],
+  incoming: IssueRecord[],
+  statusBucket: IssueStatusBucket,
+  sortOption: IssueSortOption,
+) {
   const issueMap = new Map(existing.map((issue) => [issue.id, issue]));
   incoming.forEach((issue) => issueMap.set(issue.id, issue));
-  return Array.from(issueMap.values());
+  return sortIssues(Array.from(issueMap.values()), statusBucket, sortOption);
 }
 
 export function useIssueBuckets(deps: BucketDeps) {
@@ -117,7 +123,9 @@ export function useIssueBuckets(deps: BucketDeps) {
         },
       );
       if (version !== getBucketVersion(bucket)) return;
-      bucket.issues = options.append ? mergeIssues(bucket.issues, result.issues) : result.issues;
+      bucket.issues = options.append
+        ? mergeIssues(bucket.issues, result.issues, statusBucket, sortOption.value)
+        : sortIssues(result.issues, statusBucket, sortOption.value);
       bucket.cursor = result.cursor;
       bucket.hasMore = result.hasMore;
       bucket.initialized = true;
@@ -170,7 +178,7 @@ export function useIssueBuckets(deps: BucketDeps) {
     const statusBucket = getIssueStatusBucket(issue);
     if (issue.category !== activeFilter.value) return;
     const bucket = getBucketState(statusBucket);
-    bucket.issues = mergeIssues(bucket.issues, [issue]);
+    bucket.issues = mergeIssues(bucket.issues, [issue], statusBucket, sortOption.value);
     bucket.initialized = true;
     bucket.updatedAt = Date.now();
   }

@@ -2,6 +2,7 @@ import { computed, onScopeDispose, reactive, ref, watch, type Ref } from 'vue';
 import type { AnnouncementRecord, AnnouncementSortOption } from '@/types';
 import { fetchAnnouncementsPage, type AnnouncementCursor } from '@/services/announcements';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
+import { sortAnnouncements } from '@/lib/announcement-sort';
 import { resolveViewportPageSize } from '@/lib/page-size';
 import { isContentCacheFresh } from '@/services/content-read-cache';
 
@@ -19,13 +20,14 @@ interface AnnouncementListState {
   loading: boolean;
   loadingMore: boolean;
   refreshing: boolean;
+  sortOption: AnnouncementSortOption;
   updatedAt: number;
 }
 
 const announcementStateCache = new Map<string, AnnouncementListState>();
 const announcementRequestVersions = new WeakMap<AnnouncementListState, number>();
 
-function createListState(): AnnouncementListState {
+function createListState(sortOption: AnnouncementSortOption): AnnouncementListState {
   return reactive({
     announcements: [],
     cursor: null,
@@ -34,14 +36,19 @@ function createListState(): AnnouncementListState {
     loading: false,
     loadingMore: false,
     refreshing: false,
+    sortOption,
     updatedAt: 0,
   });
 }
 
-function mergeAnnouncements(existing: AnnouncementRecord[], incoming: AnnouncementRecord[]) {
+function mergeAnnouncements(
+  existing: AnnouncementRecord[],
+  incoming: AnnouncementRecord[],
+  sortOption: AnnouncementSortOption,
+) {
   const announcementMap = new Map(existing.map((announcement) => [announcement.id, announcement]));
   incoming.forEach((announcement) => announcementMap.set(announcement.id, announcement));
-  return Array.from(announcementMap.values());
+  return sortAnnouncements(Array.from(announcementMap.values()), sortOption);
 }
 
 export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
@@ -59,7 +66,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     const cached = announcementStateCache.get(key);
     if (cached) return cached;
 
-    const state = createListState();
+    const state = createListState(sortOption.value);
     announcementStateCache.set(key, state);
     return state;
   }
@@ -104,7 +111,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
         forceRefresh: loadOptions.silent === true,
       });
       if (currentVersion !== getVersion(state)) return;
-      state.announcements = page.announcements;
+      state.announcements = sortAnnouncements(page.announcements, sortOption.value);
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
       state.error = '';
@@ -135,7 +142,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
         cacheScope: options.cacheScope?.value,
       });
       if (currentVersion !== getVersion(state)) return;
-      state.announcements = mergeAnnouncements(state.announcements, page.announcements);
+      state.announcements = mergeAnnouncements(state.announcements, page.announcements, sortOption.value);
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
       state.updatedAt = Date.now();
@@ -178,7 +185,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
 
   function upsertAnnouncement(announcement: AnnouncementRecord) {
     announcementStateCache.forEach((state) => {
-      state.announcements = mergeAnnouncements(state.announcements, [announcement]);
+      state.announcements = mergeAnnouncements(state.announcements, [announcement], state.sortOption);
     });
     const key = `${options.cacheScope?.value ?? 'default'}:${sortOption.value}:${pageSize.value}`;
     if (!announcementStateCache.has(key)) {
@@ -193,9 +200,9 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     updater: (announcement: AnnouncementRecord) => AnnouncementRecord,
   ) {
     announcementStateCache.forEach((state) => {
-      state.announcements = state.announcements.map((announcement) =>
+      state.announcements = sortAnnouncements(state.announcements.map((announcement) =>
         announcement.id === announcementId ? updater(announcement) : announcement
-      );
+      ), state.sortOption);
       state.updatedAt = Date.now();
     });
   }

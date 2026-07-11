@@ -1,6 +1,7 @@
 import { computed, reactive, watch, type Ref } from 'vue';
 import { fetchUserIssues } from '@/services/issues';
 import { createContentCacheKey, isContentCacheFresh } from '@/services/content-read-cache';
+import { sortIssues } from '@/lib/issue-sort';
 import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption } from '@/types';
 
 type IssueBoardFilter = IssueFilter | 'my-proposals';
@@ -76,7 +77,7 @@ export function useUserIssuesData(
       ...issue,
       currentUserSupported: issue.currentUserSupported || supportedIssueIds.value.has(issue.id),
     });
-    userIssuesState.allIssues = Array.from(issueMap.values());
+    userIssuesState.allIssues = sortIssues(Array.from(issueMap.values()), 'active', sortOption.value);
     saveSnapshot();
   }
 
@@ -129,7 +130,7 @@ export function useUserIssuesData(
         supportedIssueIds: supportedIssueIds.value,
       });
       if (currentToken !== requestToken) return;
-      userIssuesState.allIssues = page.issues;
+      userIssuesState.allIssues = sortIssues(page.issues, 'active', sortOption.value);
       userIssuesState.cursor = page.cursor;
       userIssuesState.hasMore = page.hasMore;
       userIssuesState.updatedAt = Date.now();
@@ -157,10 +158,10 @@ export function useUserIssuesData(
         supportedIssueIds: supportedIssueIds.value,
       });
       const ids = new Set(userIssuesState.allIssues.map((issue) => issue.id));
-      userIssuesState.allIssues = [
+      userIssuesState.allIssues = sortIssues([
         ...userIssuesState.allIssues,
         ...page.issues.filter((issue) => !ids.has(issue.id)),
-      ];
+      ], 'active', sortOption.value);
       userIssuesState.cursor = page.cursor;
       userIssuesState.hasMore = page.hasMore;
       userIssuesState.updatedAt = Date.now();
