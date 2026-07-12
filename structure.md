@@ -9,7 +9,8 @@
 - `README.md` — 中英文專案摘要與快速入口
 - `LICENSE` / `CONTRIBUTING.md` / `SECURITY.md` / `CODE_OF_CONDUCT.md` — MIT 授權與社群政策入口
 - `docs/*.md` — 繁中開源文件（總覽、快速開始、使用、架構、設定、部署、維運、故障排除、安全、成本、貢獻）
-- `docs/en/*.md` — 與繁中對照的英文文件
+- `docs/deployment/*.md` — 繁中零基礎部署教材（GitHub、Firebase、Supabase、Cloudinary、Notion、Upstash、Vercel）
+- `docs/en/*.md`、`docs/en/deployment/*.md` — 與繁中對照的英文文件及部署教材
 - `website/` — 雙語單頁產品介紹與文件網站；首頁以浮動分段導覽串接產品亮點、彈性自訂、跨裝置與校園導入，建置時直接使用根目錄 `docs/`，由 GitHub Pages 部署
 - `config/issue-categories.config.json` — 提案分類設定入口
 - `config/rate-limits.config.json` — 限流與圖片壓縮設定入口
