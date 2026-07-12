@@ -2,6 +2,15 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "最佳化系統字型顯示",
+    version: "v2.0.170",
+    date: "2026-07-12",
+    time: "21:22",
+    items: [
+      { title: "全站與產品介紹網站字型改用 HarmonyOS Sans，提升中文與英文字元的可讀性與細緻度。" }
+    ]
+  },
+  {
     title: "統一更新操作與圖示風格",
     version: "v2.0.169",
     date: "2026-07-12",
