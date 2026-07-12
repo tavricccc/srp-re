@@ -2,6 +2,16 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "改善介紹與文件版面",
+    version: "v2.0.180",
+    date: "2026-07-12",
+    time: "23:00",
+    items: [
+      { title: "改善文件閱讀寬度、章節間距與部署教材返回導覽，並簡化校園參與方式的介紹內容。" },
+      { title: "統一介紹頁與產品介面的品牌標誌比例。" }
+    ]
+  },
+  {
     title: "完善零基礎部署教學",
     version: "v2.0.179",
     date: "2026-07-12",

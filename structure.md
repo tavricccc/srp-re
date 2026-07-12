@@ -14,7 +14,7 @@
 - `website/` — 雙語單頁產品介紹與文件網站；首頁以浮動分段導覽串接產品亮點、彈性自訂、跨裝置與校園導入，建置時直接使用根目錄 `docs/`，由 GitHub Pages 部署
 - `config/issue-categories.config.json` — 提案分類設定入口
 - `config/rate-limits.config.json` — 限流與圖片壓縮設定入口
-- `structure.md` / `AGENTS.md` — 結構地圖 / 代理人規則
+- `structure.md` / `AGENTS.md` / `design-qa.md` — 結構地圖 / 代理人規則 / 最近一次視覺比對紀錄
 - `package.json` — scripts（typecheck、lint、build、check:edge、test:architecture、verify:local…）
 - `index.html` / `vite.config.ts` / `vercel.json` / `eslint.config.js` / `tsconfig*.json` / `tailwind.config.cjs`
 - `.env.example` / `.gitignore` / `skills-lock.json`
