@@ -232,8 +232,8 @@ test('backendAction covers frontend actions and Cloudinary direct upload', async
   assert.match(http, /record\.details/u);
   assert.match(http, /request-in-progress/u);
   assert.doesNotMatch(session, /adminEmails/u);
-  assert.match(backendAction, /max_file_size/u);
-  assert.match(uploads, /body\.set\('max_file_size'/u);
+  assert.doesNotMatch(backendAction, /max_file_size/u);
+  assert.doesNotMatch(uploads, /body\.set\('max_file_size'/u);
 });
 
 test('backendAction registry owns action metadata and frontend action names', async () => {

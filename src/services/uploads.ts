@@ -27,7 +27,6 @@ interface ImageUploadSession {
   allowedFormats?: string;
   cloudName: string;
   folder?: string;
-  maxFileSize?: string;
   overwrite?: string;
   notificationUrl?: string;
   publicId: string;
@@ -76,7 +75,7 @@ async function createCloudinaryUploadError(response: Response) {
   }
 
   if (response.status === 401) {
-    if (/timestamp|stale/i.test(providerMessage)) {
+    if (/stale|expired|timestamp.{0,40}(?:too old|out of range)|(?:too old|out of range).{0,40}timestamp/i.test(providerMessage)) {
       return new Error('圖片上傳驗證已逾時，請重新選擇圖片後再試。');
     }
     return new Error('圖片服務驗證失敗，請聯絡管理員檢查 Cloudinary 金鑰設定。');
@@ -99,7 +98,6 @@ async function uploadToCloudinary(file: File, session: ImageUploadSession) {
   body.set('signature', session.signature);
   if (session.allowedFormats) body.set('allowed_formats', session.allowedFormats);
   if (session.folder) body.set('folder', session.folder);
-  if (session.maxFileSize) body.set('max_file_size', session.maxFileSize);
   if (session.overwrite) body.set('overwrite', session.overwrite);
   if (session.notificationUrl) body.set('notification_url', session.notificationUrl);
   if (session.type) body.set('type', session.type);
