@@ -1,15 +1,13 @@
-import { computed, onScopeDispose, reactive, ref, watch, type Ref } from 'vue';
-import type { AnnouncementRecord, AnnouncementSortOption } from '@/types';
+import { computed, onScopeDispose, reactive, type Ref } from 'vue';
+import type { AnnouncementRecord } from '@/types';
 import { fetchAnnouncementsPage, type AnnouncementCursor } from '@/services/announcements';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
-import { sortAnnouncements } from '@/lib/announcement-sort';
 import { resolveViewportPageSize } from '@/lib/page-size';
 import { isContentCacheFresh } from '@/services/content-read-cache';
 
 interface UseAnnouncementsOptions {
   cacheScope?: Ref<string>;
   immediate?: boolean;
-  sortOption?: Ref<AnnouncementSortOption>;
 }
 
 interface AnnouncementListState {
@@ -20,14 +18,13 @@ interface AnnouncementListState {
   loading: boolean;
   loadingMore: boolean;
   refreshing: boolean;
-  sortOption: AnnouncementSortOption;
   updatedAt: number;
 }
 
 const announcementStateCache = new Map<string, AnnouncementListState>();
 const announcementRequestVersions = new WeakMap<AnnouncementListState, number>();
 
-function createListState(sortOption: AnnouncementSortOption): AnnouncementListState {
+function createListState(): AnnouncementListState {
   return reactive({
     announcements: [],
     cursor: null,
@@ -36,7 +33,6 @@ function createListState(sortOption: AnnouncementSortOption): AnnouncementListSt
     loading: false,
     loadingMore: false,
     refreshing: false,
-    sortOption,
     updatedAt: 0,
   });
 }
@@ -44,16 +40,17 @@ function createListState(sortOption: AnnouncementSortOption): AnnouncementListSt
 function mergeAnnouncements(
   existing: AnnouncementRecord[],
   incoming: AnnouncementRecord[],
-  sortOption: AnnouncementSortOption,
 ) {
   const announcementMap = new Map(existing.map((announcement) => [announcement.id, announcement]));
   incoming.forEach((announcement) => announcementMap.set(announcement.id, announcement));
-  return sortAnnouncements(Array.from(announcementMap.values()), sortOption);
+  return Array.from(announcementMap.values()).sort((left, right) =>
+    (right.published_at?.getTime() ?? 0) - (left.published_at?.getTime() ?? 0)
+    || right.id.localeCompare(left.id)
+  );
 }
 
 export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   const { isOnline } = useNetworkStatus();
-  const sortOption = options.sortOption ?? ref<AnnouncementSortOption>('latest');
   const pageSize = computed(() => resolveViewportPageSize({
     min: 10,
     max: 24,
@@ -62,11 +59,11 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   }));
 
   function getState() {
-    const key = `${options.cacheScope?.value ?? 'default'}:${sortOption.value}:${pageSize.value}`;
+    const key = `${options.cacheScope?.value ?? 'default'}:${pageSize.value}`;
     const cached = announcementStateCache.get(key);
     if (cached) return cached;
 
-    const state = createListState(sortOption.value);
+    const state = createListState();
     announcementStateCache.set(key, state);
     return state;
   }
@@ -106,12 +103,12 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     }
 
     try {
-      const page = await fetchAnnouncementsPage(null, sortOption.value, pageSize.value, {
+      const page = await fetchAnnouncementsPage(null, pageSize.value, {
         cacheScope: options.cacheScope?.value,
         forceRefresh: loadOptions.silent === true,
       });
       if (currentVersion !== getVersion(state)) return;
-      state.announcements = sortAnnouncements(page.announcements, sortOption.value);
+      state.announcements = mergeAnnouncements([], page.announcements);
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
       state.error = '';
@@ -138,11 +135,11 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     state.error = '';
 
     try {
-      const page = await fetchAnnouncementsPage(state.cursor, sortOption.value, pageSize.value, {
+      const page = await fetchAnnouncementsPage(state.cursor, pageSize.value, {
         cacheScope: options.cacheScope?.value,
       });
       if (currentVersion !== getVersion(state)) return;
-      state.announcements = mergeAnnouncements(state.announcements, page.announcements, sortOption.value);
+      state.announcements = mergeAnnouncements(state.announcements, page.announcements);
       state.cursor = page.cursor;
       state.hasMore = page.hasMore;
       state.updatedAt = Date.now();
@@ -185,9 +182,9 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
 
   function upsertAnnouncement(announcement: AnnouncementRecord) {
     announcementStateCache.forEach((state) => {
-      state.announcements = mergeAnnouncements(state.announcements, [announcement], state.sortOption);
+      state.announcements = mergeAnnouncements(state.announcements, [announcement]);
     });
-    const key = `${options.cacheScope?.value ?? 'default'}:${sortOption.value}:${pageSize.value}`;
+    const key = `${options.cacheScope?.value ?? 'default'}:${pageSize.value}`;
     if (!announcementStateCache.has(key)) {
       const state = getState();
       state.announcements = [announcement];
@@ -200,9 +197,9 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
     updater: (announcement: AnnouncementRecord) => AnnouncementRecord,
   ) {
     announcementStateCache.forEach((state) => {
-      state.announcements = sortAnnouncements(state.announcements.map((announcement) =>
+      state.announcements = mergeAnnouncements([], state.announcements.map((announcement) =>
         announcement.id === announcementId ? updater(announcement) : announcement
-      ), state.sortOption);
+      ));
       state.updatedAt = Date.now();
     });
   }
@@ -217,11 +214,6 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   if (options.immediate) {
     void refreshAnnouncements();
   }
-
-  watch(sortOption, () => {
-    const state = currentState.value;
-    if (state.announcements.length === 0 && !state.loading) void refreshAnnouncements();
-  });
 
   onScopeDispose(() => {
     announcementStateCache.forEach(bumpVersion);

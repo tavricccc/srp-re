@@ -420,7 +420,6 @@ test('backend list actions use stable cursor pagination at the service boundary'
   const mostSupportedCursorMigration = await read('supabase/migrations/202607090002_fix_most_supported_cursor.sql');
   const alignedIssueSortMigration = await read('supabase/migrations/202607110009_align_issue_sort_cursor.sql');
   const issueSort = await read('src/lib/issue-sort.ts');
-  const announcementSort = await read('src/lib/announcement-sort.ts');
 
   assert.match(backendAction, /function applyDescendingDateCursor/u);
   assert.match(backendAction, /function applyAscendingDateCursor/u);
@@ -449,7 +448,7 @@ test('backend list actions use stable cursor pagination at the service boundary'
   assert.match(alignedIssueSortMigration, /coalesce\(review_approved_at, created_at\) < coalesce\(cursor_sort_date, cursor_created_at\)/u);
   assert.match(issueSort, /issue\.review_approved_at \?\? issue\.created_at/u);
   assert.match(issueSort, /issue\.closed_at \?\? issue\.created_at/u);
-  assert.match(announcementSort, /right\.published_at/u);
+  assert.doesNotMatch(announcements, /sortNumber|most-liked|most-commented/u);
 });
 
 test('content writes validate markdown uploads before database writes', async () => {
@@ -553,7 +552,6 @@ test('realtime-backed lists revalidate cached content after inactive periods', a
   const issueBoard = await read('src/composables/useIssueBoardData.ts');
   const realtimeEvents = await read('src/services/realtime-events.ts');
   const boardControls = await read('src/components/BoardControls.vue');
-  const announcementControls = await read('src/components/AnnouncementControls.vue');
   const appShell = await read('src/components/AppShell.vue');
   const activeNavigationRefresh = await read('src/composables/useActiveNavigationRefresh.ts');
   const announcements = await read('src/services/announcements.ts');
@@ -569,7 +567,7 @@ test('realtime-backed lists revalidate cached content after inactive periods', a
   assert.match(realtimeEvents, /scheduleReconnect/u);
   assert.match(realtimeEvents, /status !== 'CHANNEL_ERROR'.*status !== 'TIMED_OUT'.*status !== 'CLOSED'/u);
   assert.doesNotMatch(boardControls, /aria-label="重新整理提案"/u);
-  assert.doesNotMatch(announcementControls, /aria-label="重新整理公告"/u);
+  await assert.rejects(read('src/components/AnnouncementControls.vue'));
   assert.match(appShell, /handleNavigationClick\(item\.isActive\)/u);
   assert.match(activeNavigationRefresh, /refreshFromActiveNavigation/u);
   assert.match(announcements, /ANNOUNCEMENT_COMMENTS_CACHE_PREFIX/u);

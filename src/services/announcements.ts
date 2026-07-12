@@ -2,7 +2,6 @@ import type {
   AnnouncementCommentRecord,
   AnnouncementInput,
   AnnouncementRecord,
-  AnnouncementSortOption,
 } from '@/types';
 import { invokeBackendAction } from '@/services/backend-action';
 import { createRequestId } from '@/lib/request-id';
@@ -20,7 +19,7 @@ import { normalizeCommentCursor } from './comment-cursor';
 const ANNOUNCEMENT_LIMIT = 10;
 const ANNOUNCEMENT_LIST_CACHE_PREFIX = 'announcement-list-page|';
 const ANNOUNCEMENT_COMMENTS_CACHE_PREFIX = 'announcement-comments-page|';
-export type AnnouncementCursor = { id: string; publishedAtMs: number; sortNumber?: number | null } | null;
+export type AnnouncementCursor = { id: string; publishedAtMs: number } | null;
 
 function dateFromMs(value: unknown) {
   return typeof value === 'number' ? new Date(value) : normalizeDate(value);
@@ -41,7 +40,6 @@ function normalizeAnnouncementCursor(data: unknown): AnnouncementCursor {
   return {
     id,
     publishedAtMs,
-    sortNumber: typeof record.sortNumber === 'number' ? record.sortNumber : null,
   };
 }
 
@@ -82,17 +80,14 @@ function normalizeAnnouncementComment(data: Record<string, unknown>): Announceme
 
 export async function fetchAnnouncementsPage(
   cursor: AnnouncementCursor = null,
-  sort: AnnouncementSortOption = 'latest',
   pageSize = ANNOUNCEMENT_LIMIT,
   options: { cacheScope?: string; forceRefresh?: boolean } = {},
 ) {
   const cacheKey = createContentCacheKey([
     'announcement-list-page',
     options.cacheScope ?? 'default',
-    sort,
     pageSize,
     cursor?.id ?? 'first',
-    cursor?.sortNumber ?? '',
     cursor?.publishedAtMs ?? '',
   ]);
   if (!options.forceRefresh) {
@@ -102,10 +97,10 @@ export async function fetchAnnouncementsPage(
 
   try {
     const fn = invokeBackendAction<
-      { cursor: AnnouncementCursor; pageSize: number; sort: AnnouncementSortOption },
+      { cursor: AnnouncementCursor; pageSize: number },
       { announcements: Record<string, unknown>[]; cursor: AnnouncementCursor; hasMore: boolean }
     >('listAnnouncements', { timeoutMs: READ_REQUEST_TIMEOUT_MS });
-    const result = await fn({ cursor, pageSize, sort });
+    const result = await fn({ cursor, pageSize });
     const page = {
       announcements: result.announcements.map(normalizeAnnouncementRecord),
       cursor: normalizeAnnouncementCursor(result.cursor),

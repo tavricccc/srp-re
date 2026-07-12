@@ -9,13 +9,13 @@ export function usePlatformDashboard() {
   const error = ref('');
   let requestVersion = 0;
 
-  async function loadDashboard() {
+  async function loadDashboard(options: { forceRefresh?: boolean } = {}) {
     const currentVersion = ++requestVersion;
     loading.value = true;
     error.value = '';
 
     try {
-      const nextDashboard = await fetchPlatformDashboard();
+      const nextDashboard = await fetchPlatformDashboard(options);
       if (currentVersion === requestVersion) dashboard.value = nextDashboard;
     } catch (caught) {
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {

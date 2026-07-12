@@ -14,7 +14,6 @@ export type WritableIssueCategory = IssueCategory;
 export type IssueFilter = IssueCategory;
 export type IssueRouteFilter = IssueFilter | 'my-proposals';
 export type IssueSortOption = 'latest' | 'most-supported' | 'ending-soon';
-export type AnnouncementSortOption = 'latest' | 'most-liked' | 'most-commented';
 export type NotificationType =
   | 'announcement_created'
   | 'announcement_comment_created'

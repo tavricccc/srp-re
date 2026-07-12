@@ -187,7 +187,7 @@ const { initialized, isAdmin, loading: authLoading } = useSession();
 const { stats, operations, loading, error, loadDashboard } = usePlatformDashboard();
 async function retryDashboard() {
   await resetAppConnection();
-  await loadDashboard();
+  await loadDashboard({ forceRefresh: true });
 }
 const sessionLoading = computed(() => authLoading.value || !initialized.value);
 const dashboardLoading = computed(() => sessionLoading.value || loading.value);

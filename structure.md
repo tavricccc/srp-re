@@ -75,7 +75,7 @@
 - 留言：`CommentThreadPanel`、`CommentItem`、`CommentComposer`、`IssueComments`、`AnnouncementComments`
 - 內容：`MarkdownRenderer`、`MarkdownMediaContent`、`AuthorAvatar`、`VoteButtons`
 - 看板：`IssueBoard`、`BoardControls`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailContent`、`IssueDetailSupportFooter`
-- 公告：`AnnouncementControls`、`AnnouncementTable`、`AnnouncementTableRow`、`AnnouncementDetailPagePanel`、`AnnouncementDetailContent`、`AnnouncementDetailActions`、`CompactActionMenu`
+- 公告：`AnnouncementTable`、`AnnouncementTableRow`、`AnnouncementDetailPagePanel`、`AnnouncementDetailContent`、`AnnouncementDetailActions`、`CompactActionMenu`
 
 ---
 
@@ -99,7 +99,7 @@
 - `generated/issue-categories.ts` — 分類 codegen
 - `constants/app.ts` — Novae 品牌名稱與學校顯示設定
 - `constants/categories.ts` / `statuses.ts` / `changelog.ts`
-- `lib/` — `firebase`、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-sort`、`announcement-sort`、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
+- `lib/` — `firebase`、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-sort`、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
 - `types/index.ts` / `types/pwa.d.ts`
 
 ---

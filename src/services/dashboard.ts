@@ -55,18 +55,19 @@ export async function recordPlatformVisit() {
   }
 }
 
-export async function fetchPlatformDashboard(): Promise<PlatformDashboardData> {
-  if (cachedDashboard && Date.now() - cachedDashboard.updatedAt < DASHBOARD_CACHE_MS) {
+export async function fetchPlatformDashboard(options: { forceRefresh?: boolean } = {}): Promise<PlatformDashboardData> {
+  if (!options.forceRefresh && cachedDashboard && Date.now() - cachedDashboard.updatedAt < DASHBOARD_CACHE_MS) {
     return cachedDashboard.data;
   }
-  if (pendingDashboard) return pendingDashboard;
-  pendingDashboard = loadPlatformDashboard();
+  if (!options.forceRefresh && pendingDashboard) return pendingDashboard;
+  const request = loadPlatformDashboard();
+  pendingDashboard = request;
   try {
-    const data = await pendingDashboard;
+    const data = await request;
     cachedDashboard = { data, updatedAt: Date.now() };
     return data;
   } finally {
-    pendingDashboard = null;
+    if (pendingDashboard === request) pendingDashboard = null;
   }
 }
 

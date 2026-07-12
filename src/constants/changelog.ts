@@ -2,6 +2,16 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "簡化公告瀏覽與維運狀態更新",
+    version: "v2.0.170",
+    date: "2026-07-13",
+    time: "01:20",
+    items: [
+      { title: "簡化公告列表操作，統一依最新發布時間顯示。" },
+      { title: "修正圖片清理後統計頁面可能持續顯示舊狀態的問題。" }
+    ]
+  },
+  {
     title: "統一更新操作與圖示風格",
     version: "v2.0.169",
     date: "2026-07-12",

@@ -14,7 +14,7 @@ import {
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import { deleteUploadedImages } from '@/services/uploads';
 import type { UploadedImage } from '@/composables/useImageUpload';
-import type { AnnouncementRecord, AnnouncementSortOption } from '@/types';
+import type { AnnouncementRecord } from '@/types';
 import { isContentUnavailableError } from '@/services/issues-core';
 import {
   markContentRealtimeReliable,
@@ -28,7 +28,6 @@ export function useAnnouncementManagement() {
   const { initialized, isAdmin, isAllowedUser, loading: authLoading, roleLoading, user } = useSession();
   const { showProgressToast, showToast } = useToast();
   const { isOnline } = useNetworkStatus();
-  const sortOption = ref<AnnouncementSortOption>('latest');
   const announcementCacheScope = computed(() => [
     initialized.value ? 'ready' : 'booting',
     isAllowedUser.value ? 'allowed' : 'blocked',
@@ -49,7 +48,7 @@ export function useAnnouncementManagement() {
     removeAnnouncement,
     refreshAnnouncements,
     resetAnnouncements,
-  } = useAnnouncements({ cacheScope: announcementCacheScope, sortOption });
+  } = useAnnouncements({ cacheScope: announcementCacheScope });
   const composerError = ref('');
   const composerOpen = ref(false);
   const liking = ref(false);
@@ -198,13 +197,13 @@ export function useAnnouncementManagement() {
   );
 
   watch(
-    [initialized, isAllowedUser, roleLoading, () => sortOption.value],
+    [initialized, isAllowedUser, roleLoading],
     ([ready, allowed, waitingForRole]) => {
       realtimeUnsubscribe?.();
       realtimeUnsubscribe = null;
       if (!ready || !allowed || waitingForRole) return;
 
-      realtimeUnsubscribe = subscribeContentRealtimeEvents(`announcements:${sortOption.value}`, (event) => {
+      realtimeUnsubscribe = subscribeContentRealtimeEvents('announcements', (event) => {
         if (event.eventType === 'announcement_metrics_changed') {
           patchAnnouncement(event.targetId, (announcement) => ({
             ...announcement,
@@ -264,7 +263,6 @@ export function useAnnouncementManagement() {
 
   return {
     announcements,
-    sortOption,
     loading,
     loadingMore,
     error,
