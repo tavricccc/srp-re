@@ -26,7 +26,6 @@
         :compact="compact"
         :liking="liking"
         @delete="emit('delete')"
-        @edit="emit('edit')"
         @share="emit('share')"
         @toggle-like="emit('toggleLike')"
       />
@@ -68,7 +67,6 @@ const emit = defineEmits<{
   contentUnavailable: [announcementId: string];
   share: [];
   delete: [];
-  edit: [];
   toggleLike: [];
   commentCountChanged: [payload: { announcementId: string; commentCount: number }];
 }>();

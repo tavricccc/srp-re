@@ -51,7 +51,6 @@
               class="shrink-0 opacity-80 transition-opacity group-hover:opacity-100"
               :delete-disabled="deleting"
               :delete-label="deleting ? '刪除中...' : '刪除留言'"
-              :show-edit="false"
               title="管理留言"
               @delete="emit('delete')"
             />

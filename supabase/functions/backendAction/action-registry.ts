@@ -101,7 +101,6 @@ export const backendActionDefinitions = [
   action("listAnnouncements", "announcement", "read", announcementHandler),
   action("getAnnouncement", "announcement", "read", announcementHandler),
   idempotentWrite("createAnnouncement", "announcement", "admin-write", announcementHandler),
-  idempotentWrite("updateAnnouncement", "announcement", "admin-write", announcementHandler),
   idempotentWrite("deleteAnnouncement", "announcement", "admin-write", announcementHandler),
   idempotentWrite("setAnnouncementLike", "announcement", "sensitive-write", announcementHandler),
   action("listAnnouncementComments", "announcement", "read", announcementHandler),

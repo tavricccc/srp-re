@@ -24,19 +24,9 @@
       @back="goBackToAnnouncements"
       @content-unavailable="handleAnnouncementUnavailable"
       @delete="openDeleteDialog"
-      @edit="openEditor"
       @share="copyAnnouncementUrl"
       @toggle-like="handleToggleLike"
       @comment-count-changed="handleCommentCountChanged"
-    />
-
-    <AnnouncementEditorDialog
-      :announcement="announcement"
-      :error="editorError"
-      :open="editorOpen"
-      :submitting="saving"
-      @close="closeEditor"
-      @save="handleSave"
     />
 
     <ConfirmDialog
@@ -56,11 +46,9 @@
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AnnouncementDetailPagePanel from '@/components/AnnouncementDetailPagePanel.vue';
-import AnnouncementEditorDialog from '@/components/AnnouncementEditorDialog.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
-import type { UploadedImage } from '@/composables/useImageUpload';
 import { useLoadingTimeout } from '@/composables/useLoadingTimeout';
 import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
@@ -73,10 +61,8 @@ import {
   deleteAnnouncement,
   fetchAnnouncementRecordById,
   setAnnouncementLike,
-  updateAnnouncement,
 } from '@/services/announcements';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
-import { deleteUploadedImages } from '@/services/uploads';
 import type { AnnouncementRecord } from '@/types';
 import {
   createContentCacheKey,
@@ -97,10 +83,7 @@ const { isOnline } = useNetworkStatus();
 
 const announcement = ref<AnnouncementRecord | null>(null);
 const loadingAnnouncement = ref(false);
-const editorError = ref('');
-const editorOpen = ref(false);
 const liking = ref(false);
-const saving = ref(false);
 const deleting = ref(false);
 const deleteDialogOpen = ref(false);
 let requestId = 0;
@@ -147,41 +130,6 @@ function copyAnnouncementUrl() {
     params: { announcementId: announcement.value.id },
   }).href;
   copyShareUrl(new URL(href, window.location.origin).toString());
-}
-
-function openEditor() {
-  editorError.value = '';
-  editorOpen.value = true;
-}
-
-function closeEditor() {
-  if (saving.value) return;
-  editorOpen.value = false;
-}
-
-async function handleSave(payload: { title: string; content: string; uploadedImages: UploadedImage[] }) {
-  if (!announcement.value) return;
-
-  saving.value = true;
-  editorError.value = '';
-  const progressToast = showProgressToast('正在更新公告...');
-  try {
-    const updatedAnnouncement = await updateAnnouncement(announcement.value.id, payload);
-    announcement.value = {
-      ...updatedAnnouncement,
-      currentUserLiked: announcement.value.currentUserLiked,
-      like_count: announcement.value.like_count,
-      comment_count: announcement.value.comment_count,
-    };
-    editorOpen.value = false;
-    progressToast.succeed('公告已更新。');
-  } catch (caught) {
-    await deleteUploadedImages(payload.uploadedImages.map((image) => image.storagePath)).catch(() => undefined);
-    editorError.value = caught instanceof Error ? caught.message : '公告更新失敗。';
-    progressToast.fail(editorError.value);
-  } finally {
-    saving.value = false;
-  }
 }
 
 function openDeleteDialog() {

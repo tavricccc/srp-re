@@ -36,7 +36,6 @@
           :can-manage="canManage"
           :liking="likingAnnouncementId === announcement.id"
           @delete="emit('delete', $event)"
-          @edit="emit('edit', $event)"
           @open="emit('open', $event)"
           @open-comments="emit('openComments', $event)"
           @toggle-like="emit('toggleLike', $event)"
@@ -59,7 +58,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   delete: [announcement: AnnouncementRecord];
-  edit: [announcement: AnnouncementRecord];
   open: [announcement: AnnouncementRecord];
   openComments: [announcement: AnnouncementRecord];
   toggleLike: [announcement: AnnouncementRecord];

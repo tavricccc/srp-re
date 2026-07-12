@@ -52,7 +52,6 @@
             title="管理公告"
             @dropdown-open="(open) => isDropdownOpen = open"
             @delete="emit('delete', announcement)"
-            @edit="emit('edit', announcement)"
           />
         </div>
       </div>
@@ -128,7 +127,6 @@
           title="管理公告"
           @dropdown-open="(open) => isDropdownOpen = open"
           @delete="emit('delete', announcement)"
-          @edit="emit('edit', announcement)"
         />
       </div>
     </div>
@@ -151,7 +149,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   delete: [announcement: AnnouncementRecord];
-  edit: [announcement: AnnouncementRecord];
   open: [announcement: AnnouncementRecord];
   openComments: [announcement: AnnouncementRecord];
   toggleLike: [announcement: AnnouncementRecord];

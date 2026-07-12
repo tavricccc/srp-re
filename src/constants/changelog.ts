@@ -2,13 +2,15 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    title: "修正內容刪除異常",
+    title: "完善內容發布與刪除",
     version: "v2.0.167",
     date: "2026-07-12",
     time: "10:41",
     items: [
       { title: "修正含有留言的提案或公告可能無法刪除的問題。" },
-      { title: "強化內容新增、更新與刪除操作的穩定性。" }
+      { title: "強化內容新增、更新與刪除操作的穩定性。" },
+      { title: "修正提案刪除時的支援同步與統計異常。" },
+      { title: "調整公告為發布後不可編輯，並保留刪除後重新發布的管理方式。" }
     ]
   },
   {

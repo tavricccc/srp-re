@@ -5,7 +5,6 @@ import { requireAdmin } from "./auth.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import {
   validateMarkdownUploadsBeforeCreate,
-  validateMarkdownUploadsBeforeUpdate,
 } from "./uploads.ts";
 import { asBoolean, asUuid, utcHourWindow } from "./utils.ts";
 import { INPUT_LIMITS, requiredText } from "./validation.ts";
@@ -23,24 +22,6 @@ async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
   });
   if (error) throw error;
   const announcement = asRecord(data);
-  return { announcement };
-}
-
-async function updateAnnouncement(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
-  requireAdmin(auth);
-  const announcementId = asUuid(payload.announcementId);
-  if (!announcementId) throw new Error("not-found");
-  const content = requiredText(payload.content, "content", INPUT_LIMITS.content);
-  await validateMarkdownUploadsBeforeUpdate(supabase, auth.uid, content, "announcement", announcementId);
-  const { data, error } = await supabase.schema("app_api").rpc("backend_update_announcement", {
-    announcement_id: announcementId,
-    actor_uid: auth.uid,
-    announcement_title: requiredText(payload.title, "title", INPUT_LIMITS.title),
-    announcement_content: content,
-  });
-  if (error) throw error;
-  const result = asRecord(data);
-  const announcement = asRecord(result.announcement);
   return { announcement };
 }
 
@@ -71,7 +52,6 @@ async function setAnnouncementLike(payload: JsonRecord, auth: AuthContext, supab
 
 export function isAnnouncementWriteAction(action: string) {
   return action === "createAnnouncement"
-    || action === "updateAnnouncement"
     || action === "deleteAnnouncement"
     || action === "setAnnouncementLike";
 }
@@ -83,7 +63,6 @@ export async function handleAnnouncementWriteAction(
   supabase: BackendSupabase,
 ) {
   if (action === "createAnnouncement") return createAnnouncement(payload, auth, supabase);
-  if (action === "updateAnnouncement") return updateAnnouncement(payload, auth, supabase);
   if (action === "deleteAnnouncement") return deleteAnnouncement(payload, auth, supabase);
   if (action === "setAnnouncementLike") return setAnnouncementLike(payload, auth, supabase);
   throw new Error("unsupported-action");

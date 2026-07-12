@@ -142,15 +142,6 @@ export async function createAnnouncement(input: AnnouncementInput): Promise<Anno
   return normalizeAnnouncementRecord(result.announcement);
 }
 
-export async function updateAnnouncement(announcementId: string, input: AnnouncementInput) {
-  const fn = invokeBackendAction<
-    AnnouncementInput & { announcementId: string; requestId: string },
-    { announcement: Record<string, unknown> }
-  >('updateAnnouncement');
-  const result = await fn({ announcementId, ...input, requestId: createRequestId() });
-  return normalizeAnnouncementRecord(result.announcement);
-}
-
 export async function deleteAnnouncement(announcementId: string) {
   const fn = invokeBackendAction<{ announcementId: string; requestId: string }, { success: boolean }>('deleteAnnouncement');
   const result = await fn({ announcementId, requestId: createRequestId() });

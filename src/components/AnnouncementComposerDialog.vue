@@ -6,10 +6,10 @@
       data-dialog-root
       tabindex="-1"
     >
-      <!-- Header -->
+      <!-- Composer header -->
       <div class="flex items-center justify-between border-b border-ink-200 dark:border-ink-800 pb-4 shrink-0">
         <div class="min-w-0">
-          <span class="text-xs font-semibold tracking-wide text-ink-500 dark:text-ink-400">{{ announcement ? '修改公告內容' : '發布新的校內公告' }}</span>
+          <span class="text-xs font-semibold tracking-wide text-ink-500 dark:text-ink-400">發布新的校內公告</span>
           <h2 class="mt-1 text-xl font-bold tracking-tight text-ink-950 dark:text-ink-50">公告內容</h2>
         </div>
         <button
@@ -100,8 +100,8 @@
             >
               <BusyButtonContent
                 :busy="submitting"
-                :label="announcement ? '更新公告' : '發布公告'"
-                :busy-label="announcement ? '更新中...' : '發布中...'"
+                label="發布公告"
+                busy-label="發布中..."
               />
             </button>
           </div>
@@ -116,17 +116,13 @@ import { computed, ref, watch } from 'vue';
 import DialogOverlay from '@/components/ui/DialogOverlay.vue';
 import BusyButtonContent from '@/components/ui/BusyButtonContent.vue';
 import MarkdownImageEditor from '@/components/ui/MarkdownImageEditor.vue';
-import type { AnnouncementRecord, MarkdownImageRecord } from '@/types';
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock';
 import { useDialogFocus } from '@/composables/useDialogFocus';
 import { useMarkdownImageUpload } from '@/composables/useMarkdownImageUpload';
-import { useResolvedMarkdown } from '@/composables/useResolvedMarkdown';
-import { extractMarkdownImages, stripMarkdownImages } from '@/lib/markdown-images';
 import type { UploadedImage } from '@/composables/useImageUpload';
 import { RATE_LIMITS } from '@/generated/rate-limits';
 
 const props = defineProps<{
-  announcement: AnnouncementRecord | null;
   error: string;
   open: boolean;
   submitting: boolean;
@@ -137,17 +133,10 @@ const emit = defineEmits<{
   save: [payload: { title: string; content: string; uploadedImages: UploadedImage[] }];
 }>();
 
-type ExistingEditorImage = MarkdownImageRecord & {
-  markdownSrc: string;
-};
-
 const title = ref('');
 const content = ref('');
-const existingImages = ref<ExistingEditorImage[]>([]);
 const maxImages = RATE_LIMITS.imageUploads.announcementMaxImages;
 const isOpen = computed(() => props.open);
-const sourceContent = computed(() => props.open ? props.announcement?.content ?? '' : '');
-const { images: resolvedExistingImages } = useResolvedMarkdown(sourceContent);
 const {
   handleImagePicked,
   imageUrls,
@@ -164,16 +153,6 @@ const showPreview = ref(false);
 const titleCount = computed(() => title.value.length);
 
 const editorImages = computed(() => [
-  ...existingImages.value.map((image, index) => ({
-    alt: image.alt || '公告附加圖片',
-    height: image.height,
-    index,
-    key: `existing:${image.src}:${index}`,
-    markdownSrc: image.markdownSrc,
-    src: image.src,
-    type: 'existing' as const,
-    width: image.width,
-  })),
   ...imageUrls.value.map((src, index) => ({
     alt: '公告附加圖片預覽',
     index,
@@ -199,71 +178,32 @@ useBodyScrollLock(isOpen);
 const { dialogRef } = useDialogFocus(isOpen, { onClose: handleClose });
 
 watch(
-  () => [props.open, props.announcement] as const,
-  ([open, announcement]) => {
+  () => props.open,
+  (open) => {
     if (!open) {
       resetImages();
       return;
     }
-    title.value = announcement?.title ?? '';
-    existingImages.value = announcement
-      ? extractMarkdownImages(announcement.content).map((image) => ({
-          ...image,
-          markdownSrc: image.src,
-        }))
-      : [];
-    content.value = announcement ? stripMarkdownImages(announcement.content) : '';
+    title.value = '';
+    content.value = '';
     resetImages();
     showPreview.value = false;
   },
   { immediate: true },
 );
 
-watch(resolvedExistingImages, (images) => {
-  if (!props.open) return;
-
-  existingImages.value = existingImages.value.map((image) => {
-    const resolvedImage = images.find((candidate) =>
-      image.uploadId
-        ? candidate.uploadId === image.uploadId
-        : candidate.src === image.markdownSrc
-    );
-
-    if (!resolvedImage?.src) {
-      return image;
-    }
-
-    return {
-      ...image,
-      src: resolvedImage.src,
-    };
-  });
-});
-
-function buildMarkdownImage(image: Pick<MarkdownImageRecord, 'src' | 'alt' | 'width' | 'height'>, src = image.src) {
+function buildMarkdownImage(image: { url: string; width?: number; height?: number }) {
   const size = image.width && image.height ? `|${image.width}x${image.height}` : '';
-  return `![${image.alt || 'image'}${size}](${src})`;
+  return `![image${size}](${image.url})`;
 }
 
-function buildDisplayMarkdownImage(image: Pick<MarkdownImageRecord, 'src' | 'alt' | 'width' | 'height'>) {
-  return buildMarkdownImage(image, image.src);
-}
-
-function buildPersistedMarkdownImage(image: ExistingEditorImage) {
-  return buildMarkdownImage(image, image.markdownSrc);
+function buildDisplayMarkdownImage(image: { src: string; width?: number; height?: number }) {
+  return buildMarkdownImage({ url: image.src, width: image.width, height: image.height });
 }
 
 function buildAnnouncementContent(uploadedImages: UploadedImage[]) {
   const text = content.value.trimEnd();
-  const images = [
-    ...existingImages.value.map(buildPersistedMarkdownImage),
-    ...uploadedImages.map((image) => buildMarkdownImage({
-      alt: 'image',
-      height: image.height,
-      src: image.url,
-      width: image.width,
-    })),
-  ].join('\n');
+  const images = uploadedImages.map(buildMarkdownImage).join('\n');
 
   if (!images) {
     return text;
@@ -275,11 +215,6 @@ function buildAnnouncementContent(uploadedImages: UploadedImage[]) {
 function removeEditorImage(key: string) {
   const image = editorImages.value.find((candidate) => candidate.key === key);
   if (!image) return;
-
-  if (image.type === 'existing') {
-    existingImages.value = existingImages.value.filter((_, index) => index !== image.index);
-    return;
-  }
 
   void removeImage(image.index);
 }

@@ -36,7 +36,6 @@ export const BACKEND_ACTION_NAMES = [
   'setAnnouncementLike',
   'toggleSupport',
   'unregisterPushToken',
-  'updateAnnouncement',
   'updateIssueResult',
   'updatePushNotificationPreferences',
 ] as const;

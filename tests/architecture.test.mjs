@@ -481,10 +481,6 @@ test('content writes validate markdown uploads before database writes', async ()
     'announcement creation must validate upload attachments before creating the announcement',
   );
   assert.ok(
-    announcementWrite.indexOf('validateMarkdownUploadsBeforeUpdate') < announcementWrite.indexOf('rpc("backend_update_announcement"'),
-    'announcement updates must validate upload attachments before updating the announcement',
-  );
-  assert.ok(
     announcementComments.indexOf('validateMarkdownUploadsBeforeCreate') < announcementComments.indexOf('rpc("backend_create_announcement_comment"'),
     'announcement comment creation must validate upload attachments before creating the comment',
   );
@@ -506,6 +502,33 @@ test('comment realtime triggers pass an explicit operation to the emitter', asyn
   assert.match(migration, /create function app_private\.emit_content_realtime_event/u);
   assert.match(migration, /comment_count integer,\s*op text\s*\)/u);
   assert.doesNotMatch(migration, /op text default/u);
+});
+
+test('issue cascade deletion keeps dependent triggers parent-safe', async () => {
+  const migration = await read('supabase/migrations/202607120002_harden_cascade_delete_triggers.sql');
+
+  assert.match(migration, /mark_notion_support_dirty[\s\S]*tg_op = 'DELETE'[\s\S]*not exists/u);
+  assert.match(migration, /track_issue_category_counter[\s\S]*-related_comments/u);
+  assert.match(migration, /if tg_op = 'DELETE' then\s*return old;[\s\S]*return new;/u);
+  assert.match(migration, /track_comment_category_counter[\s\S]*old_category is not null/u);
+  assert.match(
+    migration,
+    /create trigger track_issue_category_counter\s*before insert or delete or update of category/u,
+  );
+});
+
+test('announcement editing is removed across frontend, backend, and database', async () => {
+  const actionContract = await read('src/services/backend-action-contract.ts');
+  const announcementService = await read('src/services/announcements.ts');
+  const announcementWrite = await read('supabase/functions/backendAction/announcement-write.ts');
+  const actionRegistry = await read('supabase/functions/backendAction/action-registry.ts');
+  const removalMigration = await read('supabase/migrations/202607120003_remove_announcement_editing.sql');
+
+  assert.doesNotMatch(actionContract, /updateAnnouncement/u);
+  assert.doesNotMatch(announcementService, /updateAnnouncement/u);
+  assert.doesNotMatch(announcementWrite, /updateAnnouncement|backend_update_announcement/u);
+  assert.doesNotMatch(actionRegistry, /updateAnnouncement/u);
+  assert.match(removalMigration, /drop function if exists app_api\.backend_update_announcement/u);
 });
 
 test('personal notification writes and pushes are scoped to the recipient', async () => {

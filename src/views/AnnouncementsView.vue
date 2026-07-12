@@ -9,7 +9,7 @@
           :can-create-announcement="isAdmin"
           :default-category="DEFAULT_ISSUE_CATEGORY"
           default-kind="announcement"
-          @create-announcement="openEditor(null)"
+          @create-announcement="openComposer"
           @create-issue="handleCreateIssue"
         >
           <template #trigger="{ open }">
@@ -70,7 +70,6 @@
               :can-manage="isAdmin"
               :liking-announcement-id="likingAnnouncementId"
               @delete="handleListDelete"
-              @edit="openEditor"
               @open="openAnnouncementDetails"
               @open-comments="(announcement) => openAnnouncementDetails(announcement, 'comments')"
               @toggle-like="handleToggleLike"
@@ -86,13 +85,12 @@
       </Transition>
     </div>
 
-    <AnnouncementEditorDialog
-      :announcement="editingAnnouncement"
-      :error="editorError"
-      :open="editorOpen"
+    <AnnouncementComposerDialog
+      :error="composerError"
+      :open="composerOpen"
       :submitting="saving"
-      @close="closeEditor"
-      @save="handleSave"
+      @close="closeComposer"
+      @save="publishAnnouncement"
     />
 
     <ConfirmDialog
@@ -112,7 +110,7 @@
 import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AnnouncementControls from '@/components/AnnouncementControls.vue';
-import AnnouncementEditorDialog from '@/components/AnnouncementEditorDialog.vue';
+import AnnouncementComposerDialog from '@/components/AnnouncementComposerDialog.vue';
 import AnnouncementTable from '@/components/AnnouncementTable.vue';
 import CreateActionMenu from '@/components/CreateActionMenu.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -143,9 +141,8 @@ const {
   hasMore,
   loadMoreAnnouncements,
   refreshAnnouncements,
-  editingAnnouncement,
-  editorError,
-  editorOpen,
+  composerError,
+  composerOpen,
   likingAnnouncementId,
   saving,
   deleting,
@@ -154,9 +151,9 @@ const {
   isAdmin,
   isAllowedUser,
   openAnnouncementDetails,
-  openEditor,
-  closeEditor,
-  handleSave,
+  openComposer,
+  closeComposer,
+  publishAnnouncement,
   handleListDelete,
   closeDeleteDialog,
   confirmDelete,
@@ -191,13 +188,13 @@ async function clearCreateQuery() {
   await router.replace({ query });
 }
 
-registerCreateAnnouncementHandler(() => openEditor(null));
+registerCreateAnnouncementHandler(openComposer);
 
 watch(
   () => route.query[CREATE_ENTRY_QUERY_KEY],
   (createType) => {
     if (createType !== CREATE_ANNOUNCEMENT_QUERY_VALUE) return;
-    openEditor(null);
+    openComposer();
     void clearCreateQuery();
   },
   { immediate: true },

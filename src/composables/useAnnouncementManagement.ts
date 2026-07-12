@@ -10,7 +10,6 @@ import {
   deleteAnnouncement,
   fetchAnnouncementRecordById,
   setAnnouncementLike,
-  updateAnnouncement,
 } from '@/services/announcements';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import { deleteUploadedImages } from '@/services/uploads';
@@ -51,9 +50,8 @@ export function useAnnouncementManagement() {
     refreshAnnouncements,
     resetAnnouncements,
   } = useAnnouncements({ cacheScope: announcementCacheScope, sortOption });
-  const editingAnnouncement = ref<AnnouncementRecord | null>(null);
-  const editorError = ref('');
-  const editorOpen = ref(false);
+  const composerError = ref('');
+  const composerOpen = ref(false);
   const liking = ref(false);
   const likingAnnouncementId = ref('');
   const saving = ref(false);
@@ -75,35 +73,29 @@ export function useAnnouncementManagement() {
     });
   }
 
-  function openEditor(announcement: AnnouncementRecord | null) {
-    editingAnnouncement.value = announcement;
-    editorError.value = '';
-    editorOpen.value = true;
+  function openComposer() {
+    composerError.value = '';
+    composerOpen.value = true;
   }
 
-  function closeEditor() {
+  function closeComposer() {
     if (saving.value) return;
-    editorOpen.value = false;
+    composerOpen.value = false;
   }
 
-  async function handleSave(payload: { title: string; content: string; uploadedImages: UploadedImage[] }) {
-    const isEditing = Boolean(editingAnnouncement.value);
+  async function publishAnnouncement(payload: { title: string; content: string; uploadedImages: UploadedImage[] }) {
     saving.value = true;
-    editorError.value = '';
-    const progressToast = showProgressToast(isEditing ? '正在更新公告...' : '正在發布公告...');
+    composerError.value = '';
+    const progressToast = showProgressToast('正在發布公告...');
     try {
-      if (editingAnnouncement.value) {
-        await updateAnnouncement(editingAnnouncement.value.id, payload);
-      } else {
-        await createAnnouncement(payload);
-      }
+      await createAnnouncement(payload);
       await refreshAnnouncementList();
-      editorOpen.value = false;
-      progressToast.succeed(isEditing ? '公告已更新。' : '公告已發布。');
+      composerOpen.value = false;
+      progressToast.succeed('公告已發布。');
     } catch (caught) {
       await deleteUploadedImages(payload.uploadedImages.map((image) => image.storagePath)).catch(() => undefined);
-      editorError.value = caught instanceof Error ? caught.message : isEditing ? '公告更新失敗。' : '公告發布失敗。';
-      progressToast.fail(editorError.value);
+      composerError.value = caught instanceof Error ? caught.message : '公告發布失敗。';
+      progressToast.fail(composerError.value);
     } finally {
       saving.value = false;
     }
@@ -261,9 +253,8 @@ export function useAnnouncementManagement() {
     hasMore,
     loadMoreAnnouncements,
     refreshAnnouncements: () => refreshAnnouncementList({ force: true }),
-    editingAnnouncement,
-    editorError,
-    editorOpen,
+    composerError,
+    composerOpen,
     liking,
     likingAnnouncementId,
     saving,
@@ -273,9 +264,9 @@ export function useAnnouncementManagement() {
     isAdmin,
     isAllowedUser,
     openAnnouncementDetails,
-    openEditor,
-    closeEditor,
-    handleSave,
+    openComposer,
+    closeComposer,
+    publishAnnouncement,
     handleListDelete,
     closeDeleteDialog,
     confirmDelete,

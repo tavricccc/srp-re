@@ -24,17 +24,6 @@
 
     <DetailActionButton
       v-if="canManage"
-      label="編輯"
-      :compact="compact"
-      title="編輯公告"
-      aria-label="編輯公告"
-      @click="emit('edit')"
-    >
-      <AppIcon name="edit" />
-    </DetailActionButton>
-
-    <DetailActionButton
-      v-if="canManage"
       danger
       label="刪除"
       :compact="compact"
@@ -61,7 +50,6 @@ defineProps<{
 
 const emit = defineEmits<{
   delete: [];
-  edit: [];
   share: [];
   toggleLike: [];
 }>();

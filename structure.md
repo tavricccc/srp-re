@@ -71,7 +71,7 @@
 
 - Shell：`AppShell.vue`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ToastViewport.vue`
 - 設定／通知：`SettingsPanel.vue`、`SettingsPanelContent.vue`、`NotificationBell.vue`
-- Dialog：`ConfirmDialog`、`CreateActionMenu`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`IssueComposer`、`AnnouncementEditorDialog`、`IssueReviewDialog`、`IssueStatusDialog`
+- Dialog：`ConfirmDialog`、`CreateActionMenu`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`IssueComposer`、`AnnouncementComposerDialog`、`IssueReviewDialog`、`IssueStatusDialog`
 - 留言：`CommentThreadPanel`、`CommentItem`、`CommentComposer`、`IssueComments`、`AnnouncementComments`
 - 內容：`MarkdownRenderer`、`MarkdownMediaContent`、`AuthorAvatar`、`VoteButtons`
 - 看板：`IssueBoard`、`BoardControls`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailContent`、`IssueDetailSupportFooter`

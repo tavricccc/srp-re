@@ -463,12 +463,6 @@ interface AppApiFunctions {
     announcement_id: string;
     liked: boolean;
   }, Json>;
-  backend_update_announcement: AppFunction<{
-    actor_uid: string;
-    announcement_content: string;
-    announcement_id: string;
-    announcement_title: string;
-  }, Json>;
   backend_update_issue_result: AppFunction<{
     actor_is_admin: boolean;
     actor_uid: string;
