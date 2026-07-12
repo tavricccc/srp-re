@@ -2,6 +2,15 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "修正系統字型套用",
+    version: "v2.0.173",
+    date: "2026-07-12",
+    time: "21:46",
+    items: [
+      { title: "修正系統字型與離線更新載入，確保 HarmonyOS Sans 正確顯示並降低更新所需空間。" }
+    ]
+  },
+  {
     title: "提升維護穩定性",
     version: "v2.0.172",
     date: "2026-07-12",
