@@ -2,16 +2,6 @@
   /* ─── Issue Table Layout ─────────────────────────────── */
   .issue-table {
     @apply overflow-hidden rounded-[var(--radius-outer)] border border-ink-200/80 bg-white dark:border-ink-800/80 dark:bg-ink-900;
-    container-name: adaptive-table;
-    container-type: inline-size;
-  }
-
-  .issue-table-mobile-row {
-    display: flex;
-  }
-
-  .issue-table-desktop-row {
-    display: none;
   }
 
   @media (min-width: 768px) {
@@ -19,23 +9,6 @@
       min-height: 26rem;
     }
 
-    .issue-table-mobile-row {
-      display: none;
-    }
-
-    .issue-table-desktop-row {
-      display: grid;
-    }
-  }
-
-  @container adaptive-table (max-width: 74rem) {
-    .issue-table-mobile-row {
-      display: flex;
-    }
-
-    .issue-table-desktop-row {
-      display: none;
-    }
   }
 
   .issue-table-header {

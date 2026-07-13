@@ -1,12 +1,14 @@
 <template>
   <div
+    ref="tableRef"
     class="issue-table overflow-visible"
     role="table"
     aria-label="公告列表"
   >
     <!-- Sticky column header row (hidden on mobile) -->
     <div
-      class="issue-table-header issue-table-desktop-row"
+      v-if="!isCompactLayout"
+      class="issue-table-header grid"
       :style="{ 'grid-template-columns': tableCols }"
       role="row"
     >
@@ -32,6 +34,7 @@
           v-for="announcement in announcements"
           :key="announcement.id"
           :announcement="announcement"
+          :compact-layout="isCompactLayout"
           :can-manage="canManage"
           :liking="likingAnnouncementId === announcement.id"
           @delete="emit('delete', $event)"
@@ -47,6 +50,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AnnouncementTableRow from './AnnouncementTableRow.vue';
+import { useCompactTableLayout } from '@/composables/useCompactTableLayout';
 import type { AnnouncementRecord } from '@/types';
 
 const props = defineProps<{
@@ -61,6 +65,8 @@ const emit = defineEmits<{
   openComments: [announcement: AnnouncementRecord];
   toggleLike: [announcement: AnnouncementRecord];
 }>();
+
+const { isCompactLayout, tableRef } = useCompactTableLayout();
 
 const tableCols = computed(() => {
   const cols = ['6rem', '1fr', '8rem', '7rem'];

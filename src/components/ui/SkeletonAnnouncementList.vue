@@ -1,8 +1,9 @@
 <template>
-  <div class="issue-table overflow-visible" aria-label="公告載入中" aria-busy="true">
+  <div ref="tableRef" class="issue-table overflow-visible" aria-label="公告載入中" aria-busy="true">
     <!-- Sticky column header row (hidden on mobile) -->
     <div
-      class="issue-table-header issue-table-desktop-row"
+      v-if="!isCompactLayout"
+      class="issue-table-header grid"
       :style="{ 'grid-template-columns': tableCols }"
       role="row"
     >
@@ -15,72 +16,77 @@
     </div>
 
     <!-- Mobile view (condensed card/row format, hidden on md) -->
-    <div
-      v-for="i in count"
-      :key="`mobile-${i}`"
-      class="issue-row-mobile issue-table-mobile-row"
-    >
-      <div class="flex min-w-0 items-center gap-2 w-full">
-        <span class="tag-sm shrink-0 border-ink-200 bg-ink-100/50 text-ink-700 dark:border-ink-800 dark:bg-ink-950/50">
-          公告
-        </span>
-        <span class="h-7 w-7 shrink-0 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-        <div class="-my-1 flex min-h-8 flex-1 items-center">
-          <span class="h-4 w-3/4 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+    <template v-if="isCompactLayout">
+      <div
+        v-for="i in count"
+        :key="`mobile-${i}`"
+        class="issue-row-mobile"
+      >
+        <div class="flex min-w-0 items-center gap-2 w-full">
+          <span class="tag-sm shrink-0 border-ink-200 bg-ink-100/50 text-ink-700 dark:border-ink-800 dark:bg-ink-950/50">
+            公告
+          </span>
+          <span class="h-7 w-7 shrink-0 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+          <div class="-my-1 flex min-h-8 flex-1 items-center">
+            <span class="h-4 w-3/4 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+          </div>
+        </div>
+        <div class="mt-1 flex w-full items-center gap-2">
+          <div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+            <span class="h-3 w-16 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+          </div>
+          <div class="flex shrink-0 items-center justify-end gap-1.5">
+            <span class="h-8 w-8 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+            <span class="h-8 w-8 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+            <span v-if="canManage" class="h-8 w-8 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+          </div>
         </div>
       </div>
-      <div class="mt-1 flex w-full items-center gap-2">
-        <div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <span class="h-3 w-16 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-        </div>
-        <div class="flex shrink-0 items-center justify-end gap-1.5">
-          <span class="h-8 w-8 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-          <span class="h-8 w-8 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-          <span v-if="canManage" class="h-8 w-8 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-        </div>
-      </div>
-    </div>
+    </template>
 
     <!-- Desktop view (md:grid, hidden on mobile) -->
-    <div
-      v-for="i in count"
-      :key="`desktop-${i}`"
-      class="issue-table-row issue-table-desktop-row"
-      :style="{ 'grid-template-columns': tableCols }"
-    >
-      <div class="flex items-center w-24 shrink-0">
-        <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">
-          公告
-        </span>
-      </div>
+    <template v-else>
+      <div
+        v-for="i in count"
+        :key="`desktop-${i}`"
+        class="issue-table-row"
+        :style="{ 'grid-template-columns': tableCols }"
+      >
+        <div class="flex items-center w-24 shrink-0">
+          <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">
+            公告
+          </span>
+        </div>
 
-      <div class="flex items-center gap-2 w-32 shrink-0 pr-2">
-        <span class="h-7 w-7 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton shrink-0" />
-        <span class="h-4 w-16 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-      </div>
+        <div class="flex items-center gap-2 w-32 shrink-0 pr-2">
+          <span class="h-7 w-7 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton shrink-0" />
+          <span class="h-4 w-16 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+        </div>
 
-      <div class="flex items-center gap-2 flex-1 min-w-0 pr-3">
-        <span class="h-4 w-2/3 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-      </div>
+        <div class="flex items-center gap-2 flex-1 min-w-0 pr-3">
+          <span class="h-4 w-2/3 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+        </div>
 
-      <div class="flex items-center w-32 shrink-0">
-        <span class="h-4 w-16 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-      </div>
+        <div class="flex items-center w-32 shrink-0">
+          <span class="h-4 w-16 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+        </div>
 
-      <div class="flex items-center gap-1 w-36 shrink-0 pr-2">
-        <span class="h-7 w-12 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-        <span class="h-7 w-12 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
-      </div>
+        <div class="flex items-center gap-1 w-36 shrink-0 pr-2">
+          <span class="h-7 w-12 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+          <span class="h-7 w-12 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+        </div>
 
-      <div v-if="canManage" class="flex items-center w-10 shrink-0">
-        <span class="h-7 w-7 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+        <div v-if="canManage" class="flex items-center w-10 shrink-0">
+          <span class="h-7 w-7 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton" />
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useCompactTableLayout } from '@/composables/useCompactTableLayout';
 
 const props = withDefaults(defineProps<{
   count?: number;
@@ -89,6 +95,8 @@ const props = withDefaults(defineProps<{
   count: 4,
   canManage: false,
 });
+
+const { isCompactLayout, tableRef } = useCompactTableLayout();
 
 const tableCols = computed(() => {
   const cols = ['6rem', '8rem', '1fr', '8rem', '9rem'];

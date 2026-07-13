@@ -1,12 +1,14 @@
 <template>
   <div
+    ref="tableRef"
     class="issue-table overflow-visible"
     role="table"
     aria-label="提案列表"
   >
     <!-- Sticky column header row (hidden on mobile) -->
     <div
-      class="issue-table-header issue-table-desktop-row"
+      v-if="!isCompactLayout"
+      class="issue-table-header grid"
       :style="{ 'grid-template-columns': tableCols }"
       role="row"
     >
@@ -23,6 +25,7 @@
       v-if="loading && issues.length === 0"
       :show-author="showAuthor"
       :is-admin="isAdmin"
+      :compact-layout="isCompactLayout"
     />
 
     <!-- Error state -->
@@ -48,6 +51,7 @@
           v-for="issue in issues"
           :key="issue.id"
           :issue="issue"
+          :compact-layout="isCompactLayout"
           :highlight-query="highlightQuery"
           @open-details="emit('open-details', $event)"
           @support-changed="emit('support-changed', $event)"
@@ -63,6 +67,7 @@
 import { computed } from 'vue';
 import IssueTableRow from './IssueTableRow.vue';
 import SkeletonTable from '@/components/ui/SkeletonTable.vue';
+import { useCompactTableLayout } from '@/composables/useCompactTableLayout';
 import { useSession } from '@/composables/useSession';
 import type { IssueRecord } from '@/types';
 
@@ -85,6 +90,7 @@ const emit = defineEmits<{
 }>();
 
 const { isAdmin } = useSession();
+const { isCompactLayout, tableRef } = useCompactTableLayout();
 
 const tableCols = computed(() => {
   const cols = ['6rem'];
