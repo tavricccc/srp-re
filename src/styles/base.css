@@ -38,7 +38,7 @@
     --tap-target: 2.75rem;
     --app-header-height: 4rem;
     --app-sidebar-collapsed-width: 5rem;
-    --app-sidebar-expanded-width: 13.5rem;
+    --app-sidebar-expanded-width: 17.25rem;
     --app-sidebar-width: var(--app-sidebar-collapsed-width);
     --app-sidebar-panel-width: var(--app-sidebar-width);
     --dialog-page-background: 245 245 243;
@@ -255,9 +255,12 @@
   }
 
   .app-main-content {
+    margin-left: 0;
+    margin-right: 0;
     min-height: 0;
     padding-bottom: 1rem;
     padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 0.75rem);
+    width: 100%;
   }
 
   .page-bottom-safe {
