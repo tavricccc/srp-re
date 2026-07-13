@@ -206,18 +206,6 @@ export interface AnnouncementInput {
   content: string;
 }
 
-interface ChangelogBullet {
-  title: string;
-}
-
-export interface ChangelogEntry {
-  title: string;
-  version: string;
-  date: string;
-  time: string;
-  items: ChangelogBullet[];
-}
-
 export interface MarkdownImageRecord {
   src: string;
   alt: string;

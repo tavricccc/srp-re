@@ -121,8 +121,10 @@
             </span>
             <AppIcon name="chevron-right" :size="4" class="shrink-0 text-ink-400" :stroke-width="2.2" />
           </RouterLink>
-          <RouterLink
-            to="/changelog"
+          <a
+            :href="PROJECT_CHANGELOG_URL"
+            target="_blank"
+            rel="noreferrer"
             class="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50 dark:hover:bg-ink-800/50 dark:focus-visible:bg-ink-800/50"
             @click="emit('close')"
           >
@@ -136,7 +138,7 @@
               </span>
             </span>
             <AppIcon name="chevron-right" :size="4" class="shrink-0 text-ink-400" :stroke-width="2.2" />
-          </RouterLink>
+          </a>
           <a
             :href="PROJECT_WEBSITE_URL"
             target="_blank"
@@ -230,6 +232,7 @@ import { RouterLink } from 'vue-router';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
 import {
+  PROJECT_CHANGELOG_URL,
   PROJECT_DOCS_URL,
   PROJECT_GITHUB_URL,
   PROJECT_WEBSITE_URL,

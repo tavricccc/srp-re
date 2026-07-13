@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { adminRoutes } from '@/router/adminRoutes';
 import { announcementRoutes } from '@/router/announcementRoutes';
 import { authRoutes } from '@/router/authRoutes';
-import { changelogRoutes } from '@/router/changelogRoutes';
 import { issueRoutes } from '@/router/issueRoutes';
 import { notificationRoutes } from '@/router/notificationRoutes';
 import { settingsRoutes } from '@/router/settingsRoutes';
@@ -27,7 +26,6 @@ const router = createRouter({
     ...authRoutes,
     ...issueRoutes,
     ...announcementRoutes,
-    ...changelogRoutes,
     ...adminRoutes,
     ...notificationRoutes,
     ...settingsRoutes,

@@ -7,7 +7,7 @@
 3. 不做 in-app browser preview；以 typecheck / lint / build 驗證。
 4. 不覆蓋、不回復無關的工作樹變更。
 5. Staging 用 `git add .`，不要逐檔 add。
-6. `changelog.ts` 只讀最前 20 行（檔案很大）。
+6. `website/content/changelog.md` 只讀最前 20 行；禁止整份載入 context（檔案很大）。
 7. 資料流細節見 `docs/architecture.md`。
 
 ## 架構邊界
@@ -38,15 +38,16 @@
 
 ## Changelog
 
-1. 每次有程式／文案／樣式／設定／後端行為變更都要新增 `CHANGELOG_ENTRIES`。
+1. 每次有程式／文案／樣式／設定／後端行為變更，都要在 `website/content/changelog.md` 最前方新增一筆並更新累計次數。
 2. 只寫使用者能感受到的結果；不寫過程、決策、工程細節。
 3. 不暴露檔名、元件、service、action、排程、測試或部署細節。
-4. 標題短而產品向；`items` 一項一改善點。
+4. 格式固定為 `## v版本｜產品向短標題`、空行、`YYYY-MM-DD HH:mm`、空行、改善項目清單；一項一改善點。
 5. 允許動詞：新增、支援、改善、最佳化、調整、修正、提升、強化、統一、簡化、完善。
 6. 禁用工程詞（重構、API、cache、service、composable…）與口語主觀詞（更順、更好用…）。
 7. 台灣用語：最佳化、資訊、顯示、使用者、設定、登入、通知、權限、維護。
 8. 維護性／內部變更用「提升維護穩定性」等包裝。
-9. `version` 遞增；`date`/`time` 用本地時間；不要手動建 `id`。
+9. 版本遞增；日期與時間使用本地時間；不要手動建立 `id`。
+10. 新增紀錄只用局部 patch 插入檔案開頭，不為了改一筆而讀取、重寫或格式化整份檔案。
 
 ## 命名與 TypeScript
 

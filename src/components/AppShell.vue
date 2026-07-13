@@ -140,7 +140,7 @@
           :ref="el => setMobileNavElement('settings', el)"
           to="/settings"
           class="app-bottom-nav__item overflow-visible"
-          :class="{ 'app-bottom-nav__item--active': isMyProposalsRouteActive || ['settings', 'changelog', 'dashboard'].includes(route.name as string) }"
+          :class="{ 'app-bottom-nav__item--active': isMyProposalsRouteActive || ['settings', 'dashboard'].includes(route.name as string) }"
         >
           <span class="app-bottom-nav__icon overflow-hidden rounded-full" aria-hidden="true">
             <UserAvatar :photo-url="displayPhotoUrl" :name="user?.displayName || 'U'" size="sm" alt-text="使用者頭像" class="!h-5 !w-5 rounded-full" />
@@ -228,7 +228,6 @@ const mobileHeaderTitle = computed(() => {
   if (route.name === 'issue-detail') return isMyProposalsRouteActive.value ? '我的提案' : '提案內容';
   if (route.name === 'announcement-detail') return '公告內容';
   if (route.name === 'dashboard') return '統計';
-  if (route.name === 'changelog') return '更新紀錄';
   if (route.name === 'notifications') return '通知';
   if (route.name === 'settings') return '我的';
   if (isAnnouncementRouteActive.value) return '公告';
@@ -238,12 +237,11 @@ const mobileHeaderTitle = computed(() => {
 const showMobileBackButton = computed(() =>
   route.name === 'issue-detail'
   || route.name === 'announcement-detail'
-  || route.name === 'changelog'
   || route.name === 'dashboard'
   || isMyProposalsRouteActive.value
 );
 const mobileBackLabel = computed(() => {
-  if (route.name === 'changelog' || route.name === 'dashboard') return '返回我的';
+  if (route.name === 'dashboard') return '返回我的';
   if (route.name === 'issue-detail' && isMyProposalsRouteActive.value) return '返回我的提案';
   if (isMyProposalsRouteActive.value) return '返回我的';
   if (route.name === 'announcement-detail') return '返回公告列表';
@@ -309,7 +307,7 @@ function activeMobileNavKey() {
   if (isAnnouncementRouteActive.value) return 'announcements';
   if (isMyProposalsRouteActive.value) return 'settings';
   if (route.name === 'notifications') return 'notifications';
-  if (['settings', 'changelog', 'dashboard'].includes(route.name as string)) return 'settings';
+  if (['settings', 'dashboard'].includes(route.name as string)) return 'settings';
   if (isIssueRouteActive.value) return 'issues';
   return '';
 }
@@ -346,7 +344,7 @@ async function handleMobileBack() {
     await router.push({ name: 'settings' });
     return;
   }
-  if (route.name === 'changelog' || route.name === 'dashboard') {
+  if (route.name === 'dashboard') {
     await router.push({ name: 'settings' });
   }
 }

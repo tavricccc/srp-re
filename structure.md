@@ -11,7 +11,8 @@
 - `docs/*.md` — 繁中開源文件（總覽、快速開始、使用、架構、設定、部署、維運、故障排除、安全、成本、貢獻）
 - `docs/deployment/*.md` — 繁中零基礎部署教材（GitHub、Firebase、Supabase、Cloudinary、Notion、Upstash、Vercel）
 - `docs/en/*.md`、`docs/en/deployment/*.md` — 與繁中對照的英文文件及部署教材
-- `website/` — 雙語單頁產品介紹與文件網站；首頁以浮動分段導覽串接產品亮點、彈性自訂、跨裝置與校園導入，建置時直接使用根目錄 `docs/`，由 GitHub Pages 部署
+- `website/` — 雙語單頁產品介紹、文件與靜態更新紀錄網站；首頁以浮動分段導覽串接產品亮點、彈性自訂、跨裝置與校園導入，建置時直接使用根目錄 `docs/`，由 GitHub Pages 部署
+- `website/content/changelog.md` — 更新紀錄的單一靜態內容來源，由 website 的 Markdown 建置流程發布
 - `config/issue-categories.config.json` — 提案分類設定入口
 - `config/rate-limits.config.json` — 限流與圖片壓縮設定入口
 - `structure.md` / `AGENTS.md` / `design-qa.md` — 結構地圖 / 代理人規則 / 最近一次視覺比對紀錄
@@ -43,7 +44,7 @@
 - `style.css` — 全域 design tokens、button/panel/menu/popover/dialog 轉場
 - `assets/fonts/` — JetBrains Mono 與 Material Symbols 子集
 - `router/index.ts` — 組合 modules、abort 上一頁、session guard
-- `router/authRoutes.ts` / `issueRoutes.ts` / `announcementRoutes.ts` / `changelogRoutes.ts` / `adminRoutes.ts` / `notificationRoutes.ts` / `settingsRoutes.ts`
+- `router/authRoutes.ts` / `issueRoutes.ts` / `announcementRoutes.ts` / `adminRoutes.ts` / `notificationRoutes.ts` / `settingsRoutes.ts`
 - `views/LoginView.vue` — 登入
 - `views/IssueBoardView.vue` — 提案看板
 - `views/IssueDetailView.vue` — 提案詳情
@@ -52,7 +53,6 @@
 - `views/NotificationsView.vue` — 通知頁
 - `views/SettingsView.vue` — 設定頁（手機）
 - `views/DashboardView.vue` — 管理員統計
-- `views/ChangelogView.vue` — 更新紀錄
 
 ---
 
@@ -99,7 +99,7 @@
 
 - `generated/issue-categories.ts` — 分類 codegen
 - `constants/app.ts` — Novae 品牌名稱與學校顯示設定
-- `constants/categories.ts` / `statuses.ts` / `changelog.ts`
+- `constants/categories.ts` / `statuses.ts`
 - `lib/` — `firebase`、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-sort`、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
 - `types/index.ts` / `types/pwa.d.ts`
 
