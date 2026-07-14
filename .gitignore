@@ -10,4 +10,3 @@ vite.config.d.ts
 temp.jsonl
 .vercel
 .env*
-website/docs-site/

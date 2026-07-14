@@ -25,13 +25,15 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
-完整環境與驗證步驟見[快速開始](docs/quick-start.md)。平台操作方式分為[使用者操作](docs/user-guide.md)與[管理員操作](docs/admin-guide.md)，正式上線請從[部署指南](docs/deployment-guide.md)開始。
+完整環境與驗證步驟見[快速開始](https://tavricccc.github.io/novae-website/docs/quick-start.html)。平台操作方式分為[使用者操作](https://tavricccc.github.io/novae-website/docs/user-guide.html)與[管理員操作](https://tavricccc.github.io/novae-website/docs/admin-guide.html)，正式上線請從[部署指南](https://tavricccc.github.io/novae-website/docs/deployment-guide.html)開始。
 
 ### 文件與社群
 
-- [完整文件索引](docs/README.md)
-- [產品規則設定](docs/configuration.md)與[環境憑證參考](docs/environment-configuration.md)
-- [系統架構](docs/architecture.md)
+- [Novae 官方網站](https://tavricccc.github.io/novae-website/)
+- [完整文件索引](https://tavricccc.github.io/novae-website/docs/)
+- [產品規則設定](https://tavricccc.github.io/novae-website/docs/configuration.html)與[環境憑證參考](https://tavricccc.github.io/novae-website/docs/environment-configuration.html)
+- [分類設定產生器](https://tavricccc.github.io/novae-website/category-builder.html)
+- [系統架構](https://tavricccc.github.io/novae-website/docs/architecture.html)
 - [安全政策](SECURITY.md)
 - [貢獻指南](CONTRIBUTING.md)
 - [社群行為準則](CODE_OF_CONDUCT.md)
@@ -59,13 +61,15 @@ cp .env.example .env
 npm run dev
 ```
 
-Follow the [quick start](docs/en/quick-start.md) for setup and verification, the [user guide](docs/en/user-guide.md) and [administrator guide](docs/en/admin-guide.md) for product workflows, and the [deployment guide](docs/en/deployment-guide.md) for production.
+Follow the [quick start](https://tavricccc.github.io/novae-website/docs/en/quick-start.html) for setup and verification, the [user guide](https://tavricccc.github.io/novae-website/docs/en/user-guide.html) and [administrator guide](https://tavricccc.github.io/novae-website/docs/en/admin-guide.html) for product workflows, and the [deployment guide](https://tavricccc.github.io/novae-website/docs/en/deployment-guide.html) for production.
 
 ### Documentation and community
 
-- [Documentation index](docs/README.md#english)
-- [Product rules](docs/en/configuration.md) and [environment credentials](docs/en/environment-configuration.md)
-- [Architecture](docs/en/architecture.md)
+- [Novae official website](https://tavricccc.github.io/novae-website/)
+- [Documentation index](https://tavricccc.github.io/novae-website/docs/en/)
+- [Product rules](https://tavricccc.github.io/novae-website/docs/en/configuration.html) and [environment credentials](https://tavricccc.github.io/novae-website/docs/en/environment-configuration.html)
+- [Category configuration builder](https://tavricccc.github.io/novae-website/category-builder.html)
+- [Architecture](https://tavricccc.github.io/novae-website/docs/en/architecture.html)
 - [Security policy](SECURITY.md#english)
 - [Contributing](CONTRIBUTING.md#english)
 - [Code of conduct](CODE_OF_CONDUCT.md#english)

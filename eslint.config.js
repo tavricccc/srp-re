@@ -24,7 +24,6 @@ export default [
     ignores: [
       'dist/**',
       'node_modules/**',
-      'website/**',
       '*.d.ts',
       'vite.config.js',
     ],
