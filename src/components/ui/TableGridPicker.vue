@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute top-1.5 left-1/2 -translate-x-1/2 md:left-[180px] md:translate-x-0 z-[120] rounded-xl border border-ink-200 bg-white p-3 shadow-lg dark:border-ink-800 dark:bg-ink-900 w-44 shrink-0 select-none">
+  <div class="absolute top-1.5 left-1/2 -translate-x-1/2 md:left-[180px] md:translate-x-0 z-[120] rounded-xl border border-ink-200 bg-white p-3 shadow-floating dark:border-ink-800 dark:bg-ink-900 w-44 shrink-0 select-none">
     <p class="text-[10px] font-bold text-ink-400 dark:text-ink-500 mb-2 text-center whitespace-nowrap">
       {{ hoveredRow >= 0 ? `建立 ${hoveredRow + 1} x ${hoveredCol + 1} 表格` : '選取表格大小' }}
     </p>

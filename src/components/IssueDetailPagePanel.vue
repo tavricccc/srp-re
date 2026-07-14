@@ -10,12 +10,12 @@
       <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">
         {{ categoryLabel }}
       </span>
-      <span class="tag font-semibold shadow-sm" :class="statusClass">
+      <span class="tag font-semibold shadow-note" :class="statusClass">
         {{ statusLabel }}
       </span>
       <span
         v-if="issue.support_enabled && issue.support_met_at"
-        class="tag bg-success-container font-semibold text-on-success-container shadow-sm"
+        class="tag bg-success-container font-semibold text-on-success-container shadow-note"
       >
         <span class="hidden md:inline">已達附議門檻</span>
         <span class="md:hidden">已達門檻</span>

@@ -42,7 +42,7 @@
           v-for="option in issueCategoryOptions"
           :key="option.value"
           type="button"
-          class="content-trigger flex w-full items-center justify-between gap-3 border-0 bg-ink-50/60 px-3 py-3 text-left shadow-sm dark:bg-ink-800/40"
+          class="content-trigger flex w-full items-center justify-between gap-3 border-0 bg-ink-50/60 px-3 py-3 text-left shadow-note dark:bg-ink-800/40"
           :class="{ 'button-toolbar--active': selectedAction.kind === 'issue' && option.value === selectedAction.category }"
           @click="selectIssueCategory(option.value)"
         >
@@ -63,7 +63,7 @@
         <button
           v-if="canCreateAnnouncement"
           type="button"
-          class="content-trigger flex w-full items-center justify-between gap-3 border-0 bg-ink-50/60 px-3 py-3 text-left shadow-sm dark:bg-ink-800/40"
+          class="content-trigger flex w-full items-center justify-between gap-3 border-0 bg-ink-50/60 px-3 py-3 text-left shadow-note dark:bg-ink-800/40"
           :class="{ 'button-toolbar--active': selectedAction.kind === 'announcement' }"
           @click="selectAnnouncement"
         >

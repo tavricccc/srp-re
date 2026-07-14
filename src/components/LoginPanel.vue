@@ -3,7 +3,7 @@
     <DecorativeGlow size="md" />
 
     <div class="relative z-10 flex max-w-md flex-col items-center space-y-6">
-      <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-ink-950 text-white shadow-lg dark:bg-ink-50 dark:text-ink-950" aria-hidden="true">
+      <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-ink-950 text-white shadow-elevated dark:bg-ink-50 dark:text-ink-950" aria-hidden="true">
         <AppIcon name="shield-check" :size="8" :stroke-width="1.5" />
       </span>
 

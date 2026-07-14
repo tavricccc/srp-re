@@ -1,13 +1,13 @@
 <template>
-  <section class="page-bottom-safe min-h-0 flex-1">
+  <section class="page-bottom-safe min-h-0 flex-1 px-2 py-2">
     <div class="min-h-0 flex-1">
       <Transition name="panel-switch" mode="out-in">
         <div :key="notificationPanelKey">
-          <div v-if="loading" class="space-y-4 py-2" aria-label="通知載入中">
+          <div v-if="loading" class="notification-group-card" aria-label="通知載入中">
             <div
               v-for="index in 4"
               :key="index"
-              class="flex items-start gap-3 rounded-[var(--radius-outer)] bg-surface p-4 shadow-elevated dark:bg-surface"
+              class="flex min-h-[88px] items-start gap-3 bg-white p-4 dark:bg-surface"
             >
               <div class="h-10 w-10 shrink-0 rounded-2xl bg-ink-100 dark:bg-ink-800 animate-skeleton"></div>
               <div class="min-w-0 flex-1 space-y-2 pt-1">
@@ -18,7 +18,7 @@
             </div>
           </div>
 
-          <div v-else-if="error" class="flex flex-col items-center justify-center py-10 text-center">
+          <div v-else-if="error" class="notification-group-card flex flex-col items-center justify-center px-6 py-10 text-center">
             <AppIcon name="circle-alert" :size="8" class="text-error" />
             <p class="mt-3 text-sm font-semibold text-ink-900 dark:text-ink-100">通知暫時無法載入</p>
             <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">{{ error }}</p>
@@ -27,7 +27,7 @@
             </button>
           </div>
 
-          <div v-else-if="notifications.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
+          <div v-else-if="notifications.length === 0" class="notification-group-card flex flex-col items-center justify-center px-6 py-12 text-center">
             <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-100 text-ink-400 dark:bg-ink-800 dark:text-ink-500" aria-hidden="true">
               <AppIcon name="bell" :size="6" />
             </span>
@@ -35,12 +35,12 @@
             <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">新的提案進度與互動會顯示在這裡</p>
           </div>
 
-          <div v-else class="space-y-3">
+          <div v-else class="notification-group-card">
             <button
               v-for="notification in notifications"
               :key="notification.id"
               type="button"
-              class="relative flex min-h-[92px] w-full items-start gap-3 rounded-[var(--radius-outer)] bg-surface p-4 text-left shadow-elevated transition duration-300 hover:-translate-y-0.5 hover:shadow-floating focus-visible:bg-ink-50 dark:bg-surface dark:focus-visible:bg-ink-800/50"
+              class="notification-group-row"
               @click.stop="openNotification(notification)"
             >
               <AuthorAvatar
@@ -66,7 +66,7 @@
                   <span class="line-clamp-2 text-sm font-semibold leading-5 text-ink-950 dark:text-ink-50">
                     {{ notificationTitle(notification) }}
                   </span>
-                  <span v-if="!notification.is_read" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-info shadow-sm" aria-label="未讀"></span>
+                  <span v-if="!notification.is_read" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-info" aria-label="未讀"></span>
                 </span>
                 <span class="mt-0.5 line-clamp-2 text-xs leading-5 text-ink-600 dark:text-ink-300">
                   {{ notificationBody(notification) }}
@@ -79,7 +79,7 @@
               <AppIcon name="chevron-right" :size="4" class="mt-7 shrink-0 text-ink-300 dark:text-ink-600" />
             </button>
 
-            <div v-if="hasMore" class="pt-4 pb-2">
+            <div v-if="hasMore" class="bg-white p-3 dark:bg-surface">
               <button
                 type="button"
                 class="button-secondary h-10 w-full text-xs font-semibold"

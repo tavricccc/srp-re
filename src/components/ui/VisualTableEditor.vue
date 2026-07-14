@@ -37,7 +37,7 @@
       <div
         v-for="(table, tableIdx) in visibleTables"
         :key="table.id"
-        class="border border-ink-200 dark:border-ink-800 rounded-xl overflow-hidden bg-white dark:bg-ink-900 shadow-sm"
+        class="border border-ink-200 dark:border-ink-800 rounded-xl overflow-hidden bg-white dark:bg-ink-900 shadow-note"
       >
         <!-- Table header bar -->
         <div class="flex justify-between items-center bg-ink-50/50 dark:bg-ink-950/20 px-3 py-2 border-b border-ink-150 dark:border-ink-850">

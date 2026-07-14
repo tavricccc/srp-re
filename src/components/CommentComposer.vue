@@ -1,6 +1,6 @@
 <template>
   <form
-    class="absolute inset-x-0 bottom-0 z-20 space-y-3 rounded-[1.25rem] border border-ink-200 bg-white/95 p-3 shadow-2xl shadow-ink-900/10 backdrop-blur-md dark:border-ink-700/80 dark:bg-ink-900/95 dark:shadow-black/30"
+    class="absolute inset-x-0 bottom-0 z-20 space-y-3 rounded-[1.25rem] border border-ink-200 bg-white/95 p-3 shadow-floating backdrop-blur-md dark:border-ink-700/80 dark:bg-ink-900/95"
     autocomplete="off"
     @submit.prevent="submit"
   >
@@ -21,7 +21,7 @@
           v-if="myPhotoUrl"
           :src="myPhotoUrl"
           alt="當前頭像"
-          class="h-7 w-7 rounded-full border border-ink-200 object-cover shadow-sm dark:border-ink-800"
+          class="h-7 w-7 rounded-full border border-ink-200 object-cover shadow-note dark:border-ink-800"
         />
         <span class="text-sm font-semibold text-ink-600 dark:text-ink-300">{{ parentCommentId ? '新增回覆' : '新增留言' }}</span>
       </div>
@@ -74,7 +74,7 @@
             v-if="myPhotoUrl"
             :src="myPhotoUrl"
             alt="當前頭像"
-            class="h-6 w-6 rounded-full border border-ink-200 object-cover shadow-sm dark:border-ink-800"
+            class="h-6 w-6 rounded-full border border-ink-200 object-cover shadow-note dark:border-ink-800"
           />
           <span class="min-w-0 truncate text-xs font-medium text-ink-500 dark:text-ink-400">
             {{ parentCommentId ? '回覆' : '留言' }}

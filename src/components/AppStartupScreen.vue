@@ -47,10 +47,10 @@ const schoolName = SCHOOL_NAME;
 
 <style scoped>
 .startup-screen {
-  --startup-accent: 139 128 114;
-  --startup-accent-bright: 190 180 168;
-  --startup-accent-soft: 233 226 215;
-  --startup-wash: 255 252 246;
+  --startup-accent: 64 64 64;
+  --startup-accent-bright: 156 156 156;
+  --startup-accent-soft: 238 238 238;
+  --startup-wash: 255 255 255;
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -64,19 +64,14 @@ const schoolName = SCHOOL_NAME;
     max(1.25rem, env(safe-area-inset-right))
     max(1.5rem, env(safe-area-inset-bottom))
     max(1.25rem, env(safe-area-inset-left));
-  background:
-    radial-gradient(circle at 50% 34%, rgb(var(--startup-accent-soft) / 0.24), transparent 24rem),
-    radial-gradient(circle at 50% 78%, rgb(var(--startup-wash) / 0.42), transparent 22rem),
-    linear-gradient(180deg, rgb(var(--color-page-background)) 0%, rgb(var(--color-page-background)) 100%);
+  background: rgb(var(--color-page-background));
   color: rgb(var(--color-on-surface));
 }
 
 .startup-screen::before {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgb(var(--color-surface) / 0.28), transparent 32%),
-    radial-gradient(circle at 50% 44%, rgb(var(--startup-accent) / 0.08), transparent 21rem);
+  background: transparent;
   content: '';
   opacity: 0.82;
   pointer-events: none;
