@@ -37,11 +37,12 @@ test('frontend keeps Firebase limited to Auth, App Check, and FCM', async () => 
 test('runtime fonts are local compressed subsets', async () => {
   const main = await read('src/main.ts');
   const style = await read('src/style.css');
+  const baseStyle = await read('src/styles/base.css');
   const tailwindConfig = await read('tailwind.config.cjs');
   const viteConfig = await read('vite.config.ts');
 
   assert.match(main, /harmonyos-sans-webfont-splitted/u);
-  assert.match(style, /jetbrains-mono-latin-400-600\.woff2/u);
+  assert.match(baseStyle, /jetbrains-mono-latin-400-600\.woff2/u);
   assert.match(tailwindConfig, /sans: \['HarmonyOS Sans TC', 'HarmonyOS Sans SC'/u);
   assert.doesNotMatch(tailwindConfig, /Inter/u);
   assert.doesNotMatch(viteConfig, /globPatterns:[\s\S]*woff2/u);
@@ -559,6 +560,10 @@ test('realtime-backed lists revalidate cached content after inactive periods', a
   const realtimeEvents = await read('src/services/realtime-events.ts');
   const boardControls = await read('src/components/BoardControls.vue');
   const appShell = await read('src/components/AppShell.vue');
+  const appShellNavigation = [
+    await read('src/components/app-shell/AppDesktopSidebar.vue'),
+    await read('src/components/app-shell/AppMobileBottomNav.vue'),
+  ].join('\n');
   const activeNavigationRefresh = await read('src/composables/useActiveNavigationRefresh.ts');
   const announcements = await read('src/services/announcements.ts');
   const issueWrites = await read('src/services/issues-write.ts');
@@ -574,7 +579,8 @@ test('realtime-backed lists revalidate cached content after inactive periods', a
   assert.match(realtimeEvents, /status !== 'CHANNEL_ERROR'.*status !== 'TIMED_OUT'.*status !== 'CLOSED'/u);
   assert.doesNotMatch(boardControls, /aria-label="重新整理提案"/u);
   await assert.rejects(read('src/components/AnnouncementControls.vue'));
-  assert.match(appShell, /handleNavigationClick\(item\.isActive\)/u);
+  assert.match(appShell, /@navigate="handleNavigationClick"/u);
+  assert.match(appShellNavigation, /\$emit\('navigate', item\.isActive\)/u);
   assert.match(activeNavigationRefresh, /refreshFromActiveNavigation/u);
   assert.match(announcements, /ANNOUNCEMENT_COMMENTS_CACHE_PREFIX/u);
   assert.match(issueWrites, /markContentCachePrefixStale\('issue-comments-page\|'\)/u);
@@ -721,7 +727,6 @@ test('push notification registration recovers without overriding an explicit opt
 
 test('notification navigation verifies target access before routing', async () => {
   const navigation = await read('src/composables/useNotificationNavigation.ts');
-  const notificationBell = await read('src/components/NotificationBell.vue');
   const notificationsView = await read('src/views/NotificationsView.vue');
   const issueRead = await read('supabase/functions/backendAction/issue-read.ts');
   const issueReadMigration = await read('supabase/migrations/202607080002_backend_issue_read_rpc.sql');
@@ -729,8 +734,7 @@ test('notification navigation verifies target access before routing', async () =
   assert.match(navigation, /await fetchIssueRecordById\(notification\.target_id\)/u);
   assert.match(navigation, /filter: issue\.category/u);
   assert.match(navigation, /notification\.type === 'issue_deleted'/u);
-  assert.match(notificationBell, /return notification\.title/u);
-  assert.match(notificationBell, /return notification\.body_preview \|\| ''/u);
+  await assert.rejects(read('src/components/NotificationBell.vue'));
   assert.match(notificationsView, /return notification\.title/u);
   assert.match(notificationsView, /return notification\.body_preview \|\| ''/u);
   assert.match(issueRead, /review_required_categories: REVIEW_REQUIRED_CATEGORIES/u);

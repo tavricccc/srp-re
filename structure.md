@@ -70,7 +70,7 @@
 
 ## components（應用）
 
-- Shell：`AppShell.vue`（桌面可展開圖示側欄／手機底部導覽）、`AppStartupScreen.vue`、`LoginPanel.vue`、`ToastViewport.vue`
+- Shell：`AppShell.vue`（共用導覽狀態、返回與捲動記憶）、`app-shell/AppDesktopSidebar.vue`、`app-shell/AppMobileHeader.vue`、`app-shell/AppMobileBottomNav.vue`、`app-shell/types.ts`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ToastViewport.vue`
 - 設定／通知：`SettingsPanelContent.vue`；通知與設定使用獨立路由頁
 - Dialog：`ConfirmDialog`、`CreateActionMenu`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`IssueComposer`、`AnnouncementComposerDialog`、`IssueReviewDialog`、`IssueStatusDialog`
 - 留言：`CommentThreadPanel`、`CommentItem`、`CommentComposer`、`IssueComments`、`AnnouncementComments`
