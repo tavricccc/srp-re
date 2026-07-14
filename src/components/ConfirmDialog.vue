@@ -37,7 +37,7 @@
         </button>
         <button
           type="button"
-          class="button-secondary border-error/30 text-error hover:text-error"
+          :class="danger ? 'button-danger' : 'button-primary'"
           :disabled="busy"
           @click="emit('confirm')"
         >
@@ -63,12 +63,14 @@ const props = withDefaults(defineProps<{
   cancelLabel?: string;
   confirmLabel?: string;
   busy?: boolean;
+  danger?: boolean;
 }>(), {
   title: '',
   eyebrow: '',
   cancelLabel: '取消',
   confirmLabel: '確認',
   busy: false,
+  danger: true,
 });
 
 useBodyScrollLock(toRef(props, 'open'));

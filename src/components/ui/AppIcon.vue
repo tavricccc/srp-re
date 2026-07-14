@@ -15,6 +15,7 @@ import {
   ArrowLeftRight,
   BarChart3,
   Bell,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -58,7 +59,7 @@ import {
 } from '@lucide/vue';
 
 export type AppIconName =
-  | 'bell' | 'chart' | 'changelog' | 'check-circle' | 'chevron-down'
+  | 'bell' | 'chart' | 'changelog' | 'check' | 'check-circle' | 'chevron-down'
   | 'chevron-left' | 'chevron-right' | 'circle-alert' | 'circle-help' | 'close'
   | 'comment' | 'edit' | 'heart' | 'image' | 'inbox' | 'info' | 'download'
   | 'link' | 'lock' | 'megaphone' | 'more-horizontal' | 'refresh' | 'restart'
@@ -84,6 +85,7 @@ const iconComponents: Record<AppIconName, Component> = {
   bell: Bell,
   chart: BarChart3,
   changelog: FileClock,
+  check: Check,
   'check-circle': CheckCircle2,
   'chevron-down': ChevronDown,
   'chevron-left': ChevronLeft,

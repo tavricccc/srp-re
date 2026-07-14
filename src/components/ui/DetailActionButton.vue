@@ -1,10 +1,10 @@
 <template>
   <button
     type="button"
-    class="button-secondary button-action"
+    class="button-action"
     :class="[
+      danger ? 'button-danger' : 'button-secondary',
       active ? 'button-action--active' : '',
-      danger ? 'text-error dark:text-error' : '',
       compact ? '!h-8 !min-h-0 !gap-1 !px-2.5 text-xs' : '',
     ]"
     :disabled="disabled"

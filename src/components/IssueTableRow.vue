@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" :class="{ 'z-50': isDropdownOpen }" role="listitem">
+  <div class="relative" role="listitem">
     <article
       class="issue-card list-row-trigger relative overflow-hidden"
       data-list-row-trigger
@@ -17,7 +17,6 @@
             :issue="issue"
             :compact="true"
             class="!space-y-0"
-            @dropdown-open="(open) => isDropdownOpen = open"
             @message="(msg) => showActionFeedback(msg, 'success')"
             @error="(err) => showActionFeedback(err, 'error')"
             @status-changed="emit('issue-updated', $event)"
@@ -131,7 +130,6 @@ const {
   isAdmin,
   currentUserSupported,
   supportCount,
-  isDropdownOpen,
   statusClass,
   supportClosed,
   supportProgressStyle,

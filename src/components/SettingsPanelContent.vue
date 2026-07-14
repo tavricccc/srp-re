@@ -215,18 +215,29 @@
       <div class="settings-group p-2">
         <button
           type="button"
-          class="button-secondary w-full border-error/20 text-error hover:bg-error-container/50"
-          @click="emit('logout')"
+          class="button-danger w-full"
+          @click="logoutDialogOpen = true"
         >
           登出目前帳號
         </button>
       </div>
     </div>
   </div>
+
+  <ConfirmDialog
+    :open="logoutDialogOpen"
+    title="確定要登出嗎？"
+    message="登出後需要重新驗證帳號才能繼續使用。"
+    confirm-label="確認登出"
+    @cancel="logoutDialogOpen = false"
+    @confirm="confirmLogout"
+  />
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
 import {
@@ -271,4 +282,11 @@ const emit = defineEmits<{
   switchAccount: [];
   togglePush: [];
 }>();
+
+const logoutDialogOpen = ref(false);
+
+function confirmLogout() {
+  logoutDialogOpen.value = false;
+  emit('logout');
+}
 </script>

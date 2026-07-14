@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
+  <div class="flex min-h-0 flex-col">
     <div class="shrink-0 pb-1" :class="compact ? 'space-y-2' : 'space-y-4'">
       <h2
         class="break-words font-semibold tracking-[0.015em] text-ink-900 dark:text-ink-50"

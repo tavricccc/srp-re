@@ -61,7 +61,7 @@
 - `LoadingSpinner.vue` / `BusyButtonContent.vue` — spinner、busy 按鈕內容
 - `AppIcon.vue` / `BrandMark.vue` / `UserAvatar.vue` / `DecorativeGlow.vue`
 - `EmptyStatePanel.vue` / `PageLoadFailure.vue` / `SearchHighlight.vue`
-- `PillSegmentedControl.vue` / `DetailActionButton.vue` / `DetailPageShell.vue`
+- `PillSegmentedControl.vue` / `SelectionMark.vue` / `DetailActionButton.vue` / `DetailPageShell.vue`
 - `DialogOverlay.vue` / `GoogleLoginButton.vue`
 - Markdown：`MarkdownImageEditor.vue`、`MarkdownToolbar.vue`、`MarkdownImagePreviews.vue`、`MarkdownImageToolbarStatus.vue`、`MarkdownTableBlockCard.vue`、`TableGridPicker.vue`、`VisualTableEditor.vue`
 - Skeleton：`SkeletonTable`、`SkeletonAnnouncementList`、`SkeletonCommentList`、`SkeletonDashboard`

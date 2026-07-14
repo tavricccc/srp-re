@@ -38,15 +38,7 @@
                 <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ option.label }}</span>
                 <span class="mt-0.5 block text-xs leading-5 text-ink-500 dark:text-ink-400">{{ option.description }}</span>
               </span>
-              <span
-                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-inner"
-                :class="reviewDecision === option.value
-                  ? 'bg-ink-800 text-white dark:bg-ink-100 dark:text-ink-950'
-                  : 'bg-ink-100 text-transparent dark:bg-ink-800'"
-                aria-hidden="true"
-              >
-                <AppIcon name="check-circle" :size="3" />
-              </span>
+              <SelectionMark :selected="reviewDecision === option.value" />
             </button>
           </div>
         </div>
@@ -93,7 +85,7 @@
 import { computed, ref, toRef, watch } from 'vue';
 import DialogOverlay from '@/components/ui/DialogOverlay.vue';
 import BusyButtonContent from '@/components/ui/BusyButtonContent.vue';
-import AppIcon from '@/components/ui/AppIcon.vue';
+import SelectionMark from '@/components/ui/SelectionMark.vue';
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock';
 import { useDialogFocus } from '@/composables/useDialogFocus';
 import { useActionFeedback } from '@/composables/useActionFeedback';

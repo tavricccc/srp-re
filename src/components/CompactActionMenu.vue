@@ -1,5 +1,5 @@
 <template>
-  <div class="relative z-30 inline-block text-left">
+  <div class="relative inline-block text-left">
     <button
       ref="triggerRef"
       type="button"
@@ -17,7 +17,7 @@
         <div
           v-if="isOpen"
           ref="dropdownRef"
-          class="popover-panel popover-panel--compact fixed z-[100] w-44 origin-top-right"
+          class="popover-panel popover-panel--compact fixed z-[120] w-44 origin-top-right"
           :style="dropdownStyle"
         >
           <div>
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import { useClickOutside } from '@/composables/useClickOutside';
 import { useDropdownPosition } from '@/composables/useDropdownPosition';
@@ -55,7 +55,6 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
   delete: [];
-  'dropdown-open': [open: boolean];
 }>();
 
 const isOpen = ref(false);
@@ -77,7 +76,4 @@ function select(action: 'delete') {
   emit('delete');
 }
 
-watch(isOpen, (open) => {
-  emit('dropdown-open', open);
-});
 </script>

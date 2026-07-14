@@ -39,7 +39,7 @@
                   @click="handleCategoryChangeInPopover(option.value)"
                 >
                   <span>{{ option.label }}</span>
-                  <AppIcon v-if="option.value === activeFilter" name="check-circle" :size="3.5" />
+                  <SelectionMark :selected="option.value === activeFilter" />
                 </button>
               </div>
             </div>
@@ -83,7 +83,7 @@
                   @click="handleCategoryChangeInPopover(option.value)"
                 >
                   <span>{{ option.label }}</span>
-                  <AppIcon v-if="option.value === activeFilter" name="check-circle" :size="3.5" />
+                  <SelectionMark :selected="option.value === activeFilter" />
                 </button>
               </div>
             </div>
@@ -126,7 +126,7 @@
                   @click="selectSort(option.value)"
                 >
                   <span>{{ option.label }}</span>
-                  <AppIcon v-if="option.value === sortOption" name="check-circle" :size="3.5" />
+                  <SelectionMark :selected="option.value === sortOption" />
                 </button>
               </div>
             </div>
@@ -193,6 +193,7 @@ import { computed, nextTick, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import PillSegmentedControl from '@/components/ui/PillSegmentedControl.vue';
+import SelectionMark from '@/components/ui/SelectionMark.vue';
 import { ISSUE_FILTER_OPTIONS } from '@/constants/categories';
 import { useClickOutside } from '@/composables/useClickOutside';
 import type { IssueSortOption } from '@/types';

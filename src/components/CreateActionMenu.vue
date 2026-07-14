@@ -49,15 +49,7 @@
           <span class="min-w-0">
             <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ option.label }}</span>
           </span>
-          <span
-            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-inner"
-            :class="selectedAction.kind === 'issue' && option.value === selectedAction.category
-              ? 'bg-ink-800 text-white dark:bg-ink-100 dark:text-ink-950'
-              : 'bg-ink-100 text-transparent dark:bg-ink-800'"
-            aria-hidden="true"
-          >
-            <AppIcon name="check-circle" :size="3" />
-          </span>
+          <SelectionMark :selected="selectedAction.kind === 'issue' && option.value === selectedAction.category" />
         </button>
 
         <button
@@ -70,15 +62,7 @@
           <span class="min-w-0">
             <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">公告</span>
           </span>
-          <span
-            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-inner"
-            :class="selectedAction.kind === 'announcement'
-              ? 'bg-ink-800 text-white dark:bg-ink-100 dark:text-ink-950'
-              : 'bg-ink-100 text-transparent dark:bg-ink-800'"
-            aria-hidden="true"
-          >
-            <AppIcon name="check-circle" :size="3" />
-          </span>
+          <SelectionMark :selected="selectedAction.kind === 'announcement'" />
         </button>
       </div>
 
@@ -94,6 +78,7 @@
 import { ref, watch } from 'vue';
 import DialogOverlay from '@/components/ui/DialogOverlay.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
+import SelectionMark from '@/components/ui/SelectionMark.vue';
 import { useDialogFocus } from '@/composables/useDialogFocus';
 import { ISSUE_FILTER_OPTIONS } from '@/constants/categories';
 import type { IssueCategory } from '@/types';

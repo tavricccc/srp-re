@@ -1,82 +1,43 @@
 <template>
-  <section class="min-h-0">
-    <header class="flex shrink-0 items-start gap-3 pb-3 md:hidden">
-      <button
-        v-if="showMobileBackButton"
-        type="button"
-        class="button-icon shrink-0"
-        :aria-label="backLabel"
-        :title="backLabel"
-        @click="emit('back')"
-      >
-        <AppIcon name="chevron-left" :size="5" />
-      </button>
-      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 pt-1.5">
-        <slot name="header" />
-      </div>
-      <PillSegmentedControl
-        v-model="activeTab"
-        :options="tabOptions"
-        class="ml-auto self-center"
-      />
-    </header>
-
-    <div v-if="isDesktopViewport" class="hidden min-h-0 items-stretch gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] xl:grid-cols-[minmax(0,1fr)_32rem]">
-      <div class="panel panel-pad flex h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-2.5rem)] min-w-0 flex-col overflow-y-auto">
-        <header class="hidden md:flex shrink-0 items-start gap-3 pb-3">
-          <button
-            type="button"
-            class="button-icon shrink-0"
-            :aria-label="backLabel"
-            :title="backLabel"
-            @click="emit('back')"
-          >
-            <AppIcon name="chevron-left" :size="5" />
-          </button>
-          <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 pt-1.5">
-            <slot name="header" />
-          </div>
-        </header>
-        <div class="min-h-0 flex-1 overflow-y-auto pr-1">
-          <slot name="details" :compact="false" :scroll-content="false" />
+  <section class="min-h-0 px-1 pb-3 sm:px-2 sm:pb-5">
+    <article class="panel overflow-visible" :aria-label="detailsLabel">
+      <header class="flex items-start gap-3 px-4 py-4 sm:px-5">
+        <button
+          type="button"
+          class="button-icon shrink-0"
+          :class="{ 'max-md:hidden': !showMobileBackButton }"
+          :aria-label="backLabel"
+          :title="backLabel"
+          @click="emit('back')"
+        >
+          <AppIcon name="chevron-left" :size="5" />
+        </button>
+        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 pt-1.5">
+          <slot name="header" />
         </div>
-        <slot name="actions" :compact="false" />
-      </div>
-      <div class="panel panel-pad flex h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-2.5rem)] min-w-0 flex-col">
-        <slot name="comments" :compact-header="false" />
-      </div>
-    </div>
+      </header>
 
-    <div v-else class="min-h-0 md:hidden">
-      <div class="min-h-0 px-1">
-        <Transition name="panel-switch" mode="out-in">
-          <div
-            v-if="activeTab === 'details'"
-            key="details"
-            class="flex h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-3.5rem)] flex-col pb-3"
-          >
-            <div class="panel panel-pad min-h-0 flex-1 overflow-y-auto">
-              <slot name="details" :compact="true" :scroll-content="false" />
-            </div>
-            <slot name="actions" :compact="true" />
-          </div>
-          <div
-            v-else
-            key="comments"
-            class="panel panel-pad h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-3.5rem)] min-h-[24rem]"
-          >
-            <slot name="comments" :compact-header="true" />
-          </div>
-        </Transition>
+      <div class="grid min-w-0 border-t border-ink-100/70 dark:border-ink-800/70 md:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)]">
+        <div class="min-w-0 px-4 py-4 sm:px-5 sm:py-5 md:pr-6">
+          <slot name="details" :compact="!isDesktopViewport" :scroll-content="false" />
+          <slot name="actions" :compact="!isDesktopViewport" />
+        </div>
+
+        <aside
+          ref="commentsSectionRef"
+          class="min-w-0 border-t border-ink-100/70 px-4 py-4 dark:border-ink-800/70 sm:px-5 sm:py-5 md:border-l md:border-t-0"
+          :aria-label="commentsLabel"
+        >
+          <slot name="comments" :compact-header="false" />
+        </aside>
       </div>
-    </div>
+    </article>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
-import PillSegmentedControl from '@/components/ui/PillSegmentedControl.vue';
 
 type DetailPageTab = 'details' | 'comments';
 
@@ -104,32 +65,32 @@ defineSlots<{
   header(): unknown;
 }>();
 
-const activeTab = ref<DetailPageTab>(props.initialTab);
+const commentsSectionRef = ref<HTMLElement | null>(null);
 const isDesktopViewport = ref(
   typeof window === 'undefined' ? false : window.matchMedia('(min-width: 768px)').matches,
 );
 let desktopMediaQuery: MediaQueryList | null = null;
 
-const tabOptions = computed(() => [
-  { value: 'details' as const, label: props.detailsLabel, icon: 'list' as const, title: `查看${props.detailsLabel}` },
-  { value: 'comments' as const, label: props.commentsLabel, icon: 'comment' as const, title: `查看${props.commentsLabel}` },
-]);
-
-watch(
-  () => props.initialTab,
-  (tab) => {
-    activeTab.value = tab;
-  },
-);
-
 function syncDesktopViewport(event?: MediaQueryListEvent) {
   isDesktopViewport.value = event?.matches ?? desktopMediaQuery?.matches ?? window.innerWidth >= 768;
 }
+
+async function revealInitialSection(tab: DetailPageTab) {
+  if (tab !== 'comments' || isDesktopViewport.value) return;
+  await nextTick();
+  commentsSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+watch(
+  () => props.initialTab,
+  (tab) => void revealInitialSection(tab),
+);
 
 onMounted(() => {
   desktopMediaQuery = window.matchMedia('(min-width: 768px)');
   syncDesktopViewport();
   desktopMediaQuery.addEventListener('change', syncDesktopViewport);
+  void revealInitialSection(props.initialTab);
 });
 
 onBeforeUnmount(() => {

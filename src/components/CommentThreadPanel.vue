@@ -1,5 +1,5 @@
 <template>
-  <section class="relative flex h-full min-h-0 flex-col">
+  <section class="relative flex min-h-0 flex-col">
     <div
       class="flex shrink-0 items-center justify-between gap-3 border-b border-ink-100 pb-2 dark:border-ink-800"
       :class="{ 'max-md:hidden': compactHeader }"
@@ -26,11 +26,12 @@
       </span>
     </div>
 
-    <div ref="scrollContainerRef" class="min-h-0 flex-1 overflow-y-auto py-2 pr-1">
+    <div ref="scrollContainerRef" class="min-h-0 max-h-[32rem] overflow-y-auto py-2 pr-1">
       <SkeletonCommentList v-if="visibleLoading" />
 
       <EmptyStatePanel
         v-else-if="error"
+        class="!px-3 !py-7"
         title="留言載入失敗"
         :description="error"
         icon="warning"
@@ -41,6 +42,7 @@
 
       <EmptyStatePanel
         v-else-if="loaded && comments.length === 0"
+        class="!px-3 !py-7"
         title="目前尚無留言"
         description="第一則留言會出現在這裡。"
         icon="comment"

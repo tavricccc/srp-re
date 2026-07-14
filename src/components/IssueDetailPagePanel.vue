@@ -64,10 +64,9 @@
         :compact-header="compactHeader"
         :focus-comment-id="focusCommentId"
         :issue-id="issue.id"
-        class="h-full"
         @content-unavailable="emit('contentUnavailable', $event)"
       />
-      <section v-else class="flex h-full min-h-0 flex-col">
+      <section v-else class="flex min-h-0 flex-col">
         <div
           class="flex shrink-0 items-center justify-between gap-3 border-b border-ink-100 pb-2 dark:border-ink-800"
           :class="{ 'max-md:hidden': compactHeader }"
@@ -79,8 +78,9 @@
             </h4>
           </div>
         </div>
-        <div class="flex min-h-0 flex-1 items-center py-4 pr-1">
+        <div class="flex min-h-0 items-center py-2 pr-1">
           <EmptyStatePanel
+            class="!px-3 !py-7"
             title="目前不開放留言"
             description="提案完成審核後才會開放留言討論。"
             icon="comment"

@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-auto flex shrink-0 flex-wrap items-center gap-2 border-t border-ink-100 pt-3 dark:border-ink-800" :class="compact ? 'px-1' : ''">
+  <div class="mt-4 flex shrink-0 flex-wrap items-center gap-2 border-t border-ink-100 pt-3 dark:border-ink-800" :class="compact ? 'px-1' : ''">
     <DetailActionButton
       :active="announcement.currentUserLiked"
       :disabled="liking"

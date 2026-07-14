@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isAdmin"
-    :class="compact ? 'relative inline-block text-left z-30' : 'space-y-3 relative z-30'"
+    :class="compact ? 'relative inline-block text-left' : 'space-y-3 relative'"
   >
     <p v-if="!compact" class="field-label">管理員狀態調整</p>
     <div :class="compact ? '' : 'relative inline-block w-full sm:w-60 text-left'">
@@ -46,54 +46,56 @@
       </button>
 
       <!-- Dropdown Menu -->
-      <transition name="popover">
-        <div
-          v-if="isDropdownOpen"
-          ref="dropdownRef"
-          class="popover-panel popover-panel--compact fixed z-[100] origin-top-right"
-          :class="compact ? 'w-44' : 'w-60'"
-          :style="dropdownStyle"
-          @click.stop
-          @pointerdown.stop
-        >
-          <!-- Under-review state: Show "審核提案" -->
-          <button
-            v-if="isUnderReview"
-            type="button"
-            class="menu-item justify-between"
-            @click.stop="openReviewDialog"
+      <Teleport to="body">
+        <transition name="popover">
+          <div
+            v-if="isDropdownOpen"
+            ref="dropdownRef"
+            class="popover-panel popover-panel--compact fixed z-[120] origin-top-right"
+            :class="compact ? 'w-44' : 'w-60'"
+            :style="dropdownStyle"
+            @click.stop
+            @pointerdown.stop
           >
-            <span class="font-semibold text-ink-900 dark:text-ink-100">
-              審核提案
-            </span>
-          </button>
-
-          <!-- Approved state (pending / processing): Update status/result in one dialog -->
-          <template v-if="isProcessingOrPending">
+            <!-- Under-review state: Show "審核提案" -->
             <button
+              v-if="isUnderReview"
               type="button"
               class="menu-item justify-between"
-              @click.stop="openStatusDialog"
+              @click.stop="openReviewDialog"
             >
               <span class="font-semibold text-ink-900 dark:text-ink-100">
-                變更提案狀態/結果
+                審核提案
               </span>
             </button>
-          </template>
 
-          <!-- Danger zone: Delete (compact only) -->
-          <div v-if="compact" class="mt-1 border-t border-error/20 pt-1">
-            <button
-              type="button"
-              class="menu-item menu-item-danger"
-              @click.stop="onDeleteClick"
-            >
-              <AppIcon name="trash" :size="3" />
-              <span>刪除提案</span>
-            </button>
+            <!-- Approved state (pending / processing): Update status/result in one dialog -->
+            <template v-if="isProcessingOrPending">
+              <button
+                type="button"
+                class="menu-item justify-between"
+                @click.stop="openStatusDialog"
+              >
+                <span class="font-semibold text-ink-900 dark:text-ink-100">
+                  變更提案狀態/結果
+                </span>
+              </button>
+            </template>
+
+            <!-- Danger zone: Delete (compact only) -->
+            <div v-if="compact" class="mt-1 border-t border-error/20 pt-1">
+              <button
+                type="button"
+                class="menu-item menu-item-danger"
+                @click.stop="onDeleteClick"
+              >
+                <AppIcon name="trash" :size="3" />
+                <span>刪除提案</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </transition>
+        </transition>
+      </Teleport>
     </div>
   </div>
 
@@ -117,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useSession } from '@/composables/useSession';
 import { ISSUE_STATUS_LABELS } from '@/constants/statuses';
 import { useStatusStyling } from '@/composables/useStatusStyling';
@@ -139,7 +141,6 @@ const emit = defineEmits<{
   'status-changed': [issue: IssueRecord];
   'message': [message: string];
   'error': [error: string];
-  'dropdown-open': [isOpen: boolean];
   'delete': [];
 }>();
 
@@ -169,10 +170,6 @@ const isDropdownOpen = ref(false);
 
 useClickOutside(isDropdownOpen, [triggerRef, dropdownRef], () => {
   isDropdownOpen.value = false;
-});
-
-watch(isDropdownOpen, (open) => {
-  emit('dropdown-open', open);
 });
 
 const { dropdownStyle } = useDropdownPosition(

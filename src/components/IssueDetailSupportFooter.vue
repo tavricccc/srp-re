@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-auto shrink-0 border-t border-ink-100 pb-1 dark:border-ink-800" :class="compact ? 'space-y-3 px-1 pt-3' : 'space-y-3 pt-3'">
+  <div class="mt-4 shrink-0 border-t border-ink-100 pb-1 dark:border-ink-800" :class="compact ? 'space-y-3 px-1 pt-3' : 'space-y-3 pt-3'">
     <div v-if="issue.support_enabled" class="space-y-3">
       <div class="space-y-2">
         <div class="flex min-w-0 flex-wrap items-center gap-2 text-sm text-ink-600 dark:text-ink-300">

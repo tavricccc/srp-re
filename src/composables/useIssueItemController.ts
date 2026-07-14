@@ -20,7 +20,6 @@ export function useIssueItemController(
   const display = useIssueDisplay(issue);
   const currentUserSupported = ref(Boolean(issue.value.currentUserSupported));
   const supportCount = ref(issue.value.support_count);
-  const isDropdownOpen = ref(false);
   const {
     isDeleteDialogOpen,
     isDeleting,
@@ -85,7 +84,6 @@ export function useIssueItemController(
     isAdmin,
     currentUserSupported,
     supportCount,
-    isDropdownOpen,
     statusClass,
     supportClosed,
     supportProgressStyle,

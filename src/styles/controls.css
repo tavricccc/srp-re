@@ -37,6 +37,19 @@
     padding: 0.625rem 1rem;
   }
 
+  .button-danger {
+    @apply inline-flex items-center justify-center whitespace-nowrap border-0 text-sm font-semibold tracking-[0.01em] shadow-note disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
+    min-height: var(--control-height);
+    border-radius: 9999px;
+    padding: 0.625rem 1rem;
+    background-color: rgb(var(--color-danger));
+    color: rgb(var(--color-on-danger));
+  }
+
+  .button-danger:hover:not(:disabled) {
+    background-color: rgb(var(--color-danger-hover));
+  }
+
   .button-toolbar {
     @apply inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-xs font-semibold text-ink-500 hover:bg-ink-100 hover:text-ink-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100;
     min-height: 2rem;
@@ -101,7 +114,7 @@
     box-shadow: inset 0 1px 3px rgb(var(--color-shadow) / 0.05);
     opacity: 0.97;
     transform: translateY(0.5px) scale(0.997) !important;
-    transition-duration: 90ms;
+    transition-duration: var(--motion-duration-press);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -125,7 +138,8 @@
   }
 
   .menu-item-danger {
-    @apply text-error hover:bg-error-container/40 dark:text-error;
+    @apply hover:bg-error-container/40;
+    color: rgb(var(--color-danger));
   }
 
   .field {
@@ -186,6 +200,7 @@
 
   @media (hover: hover) and (pointer: fine) {
     .button-primary:hover:not(:disabled),
+    .button-danger:hover:not(:disabled),
     .button-icon-filled:hover:not(:disabled),
     .button-icon-pill-filled:hover:not(:disabled) {
       box-shadow: var(--shadow-card);

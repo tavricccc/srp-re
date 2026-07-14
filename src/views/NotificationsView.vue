@@ -1,5 +1,5 @@
 <template>
-  <section class="page-bottom-safe min-h-0 flex-1 px-2 py-2">
+  <section class="page-bottom-safe min-h-0 flex-1 px-0.5 py-2 sm:px-1">
     <div class="min-h-0 flex-1">
       <Transition name="panel-switch" mode="out-in">
         <div :key="notificationPanelKey">
@@ -7,7 +7,7 @@
             <div
               v-for="index in 4"
               :key="index"
-              class="flex min-h-[88px] items-start gap-3 bg-white p-4 dark:bg-surface"
+              class="flex min-h-[88px] items-start gap-3 bg-white px-3 py-4 dark:bg-surface sm:px-4"
             >
               <div class="h-10 w-10 shrink-0 rounded-2xl bg-ink-100 dark:bg-ink-800 animate-skeleton"></div>
               <div class="min-w-0 flex-1 space-y-2 pt-1">

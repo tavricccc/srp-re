@@ -111,6 +111,7 @@
     </section>
 
     <ConfirmDialog
+      :danger="false"
       :open="isSkipConfirmOpen"
       title="確定要先跳過嗎？"
       message="你確定要跳過這個步驟嗎？之後仍然可以再開啟安裝提示。"

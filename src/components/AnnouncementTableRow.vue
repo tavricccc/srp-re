@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" :class="{ 'z-50': isDropdownOpen }" role="listitem">
+  <div class="relative" role="listitem">
     <article
       class="issue-card list-row-trigger relative overflow-hidden"
       data-list-row-trigger
@@ -13,7 +13,6 @@
         <div v-if="canManage" class="shrink-0" @click.stop="stopCardActionClick">
           <CompactActionMenu
             title="管理公告"
-            @dropdown-open="(open) => isDropdownOpen = open"
             @delete="emit('delete', announcement)"
           />
         </div>
@@ -68,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import type { AnnouncementRecord } from '@/types';
 import AuthorAvatar from '@/components/AuthorAvatar.vue';
 import CompactActionMenu from '@/components/CompactActionMenu.vue';
@@ -88,7 +87,6 @@ const emit = defineEmits<{
   toggleLike: [announcement: AnnouncementRecord];
 }>();
 
-const isDropdownOpen = ref(false);
 const dateLabel = computed(() => formatDateOnly(props.announcement.published_at));
 const stopCardActionClick = () => undefined;
 </script>
