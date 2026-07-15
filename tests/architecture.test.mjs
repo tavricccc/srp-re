@@ -395,6 +395,7 @@ test('cost-sensitive ingress and provider operations are bounded before work', a
   assert.match(hardening, /pg_advisory_xact_lock/u);
   assert.match(hardening, /max_devices constant integer := 10/u);
   assert.match(hardening, /revoke select on app_private\.realtime_events from authenticated/u);
+  assert.doesNotMatch(hardening, /revoke select on app_api\.(?:notifications|notification_states)/u);
 });
 
 test('removed issue categories are cleaned and Notion backups are marked deleted', async () => {

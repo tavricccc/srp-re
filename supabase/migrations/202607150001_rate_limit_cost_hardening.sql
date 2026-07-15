@@ -1,8 +1,6 @@
 -- Move client invalidations to authorized Broadcast topics so authenticated
 -- clients no longer need direct Data API SELECT privileges on private tables.
 
-revoke select on app_api.notifications from authenticated;
-revoke select on app_api.notification_states from authenticated;
 revoke select on app_private.notifications from authenticated;
 revoke select on app_private.notification_states from authenticated;
 revoke select on app_private.realtime_events from authenticated;
