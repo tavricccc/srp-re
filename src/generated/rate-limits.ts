@@ -6,6 +6,18 @@ export const RATE_LIMITS = {
     "limit": 30,
     "message": "達到上限，明天才能再發。"
   },
+  "facilityCreateDaily": {
+    "limit": 30,
+    "message": "今天建立的設備案件已達上限。"
+  },
+  "facilityAffectedToggleHourly": {
+    "limit": 600,
+    "message": "設備操作太頻繁，請稍後再試。"
+  },
+  "facilityStatusUpdateHourly": {
+    "limit": 180,
+    "message": "設備狀態更新太頻繁，請稍後再試。"
+  },
   "commentCreateHourly": {
     "limit": 200,
     "message": "留言達到上限，稍後再試。"
@@ -116,6 +128,7 @@ export const RATE_LIMITS = {
   },
   "imageUploads": {
     "issueMaxImages": 5,
+    "facilityMaxImages": 5,
     "announcementMaxImages": 5,
     "commentMaxImages": 1
   },

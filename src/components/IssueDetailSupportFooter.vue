@@ -27,6 +27,7 @@
           :support-closed="supportClosed"
           :status-label="statusLabel"
           :compact="compact"
+          :author-fixed="issue.isOwnIssue"
           @content-unavailable="emit('contentUnavailable', $event)"
           @supported="emit('supported', $event)"
         />

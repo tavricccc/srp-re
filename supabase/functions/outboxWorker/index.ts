@@ -13,6 +13,8 @@ import {
   syncIssueResultUpdatedToNotion,
   syncIssueSupportToNotion,
   syncIssueStatusChangedToNotion,
+  syncFacilityCreatedToNotion,
+  syncFacilityStatusToNotion,
 } from "../_shared/notion.ts";
 import { requireBearerSecret } from "../_shared/webhook.ts";
 
@@ -36,6 +38,7 @@ const ISSUE_STATUS_LABELS: Record<string, string> = {
   "processing": "處理中",
   "review-rejected": "審核未通過",
   "under-review": "待審核",
+  "unable-to-handle": "無法處理",
 };
 type AppSupabase = SupabaseClient<Database>;
 
@@ -57,8 +60,8 @@ function isCommentNotificationType(type: string) {
 }
 
 function isIssueUpdateNotificationType(type: string) {
-  return type === "issue_created"
-    || type === "issue_status_changed"
+  return type === "issue_status_changed"
+    || type === "facility_status_changed"
     || type === "issue_deleted"
     || type === "support_goal_met";
 }
@@ -72,28 +75,14 @@ function commentIdForEvent(event: OutboxEvent) {
 
 function notificationForEvent(event: OutboxEvent): Record<string, unknown> | null {
   const title = asString(event.payload.title, event.event_type);
-  if (event.event_type === "issue.created") {
-    if (asString(event.payload.status) === "under-review") {
-      return {
-      source: "admin",
-      type: "issue_created",
-      target_type: "issue",
-      target_id: event.target_id,
-      title: "新提案待審核",
-      actor_uid: event.actor_uid,
-      body_preview: title,
-      issue_category: asString(event.payload.category),
-    };
-  }
-  return {
-      source: "admin",
-      type: "issue_created",
-      target_type: "issue",
-      target_id: event.target_id,
-      title: "新提案待處理",
-      actor_uid: event.actor_uid,
-      body_preview: title,
-      issue_category: asString(event.payload.category),
+  if (event.event_type === "issue.created") return null;
+  if (event.event_type === "facility.status_changed") {
+    const newStatus = asString(event.payload.new_status);
+    return {
+      source: "user", type: "facility_status_changed", target_type: "facility", target_id: event.target_id,
+      title: "設備狀態已變更", actor_uid: event.actor_uid,
+      body_preview: `${title} 現在狀態為 ${issueStatusLabel(newStatus)}`,
+      old_status: asString(event.payload.old_status), new_status: newStatus,
     };
   }
   if (event.event_type === "issue.comment_created") {
@@ -316,6 +305,12 @@ async function syncNotionForEvent(
     case "issue.created":
       await syncIssueCreatedToNotion(supabase, event.target_id, event.payload);
       break;
+    case "facility.created":
+      await syncFacilityCreatedToNotion(supabase, event.target_id, event.payload);
+      break;
+    case "facility.status_changed":
+      await syncFacilityStatusToNotion(supabase, event.target_id, event.payload);
+      break;
     case "issue.status_changed":
       await syncIssueStatusChangedToNotion(supabase, event.target_id, event.payload);
       break;
@@ -329,7 +324,8 @@ async function syncNotionForEvent(
       await syncIssueSupportToNotion(supabase, event.target_id);
       break;
     case "issue.deleted":
-    case "announcement.deleted": {
+    case "announcement.deleted":
+    case "facility.deleted": {
       await markMappedNotionPageDeleted(supabase, event.target_type, event.target_id);
       break;
     }
@@ -351,30 +347,14 @@ async function sendPushes(
   const notificationType = asString(notification.type);
   const topic = !recipientUid && source === "broadcast" && notificationType === "announcement_created"
     ? "srp-broadcast"
-    : !recipientUid && source === "admin" && notificationType === "issue_created"
-      ? "srp-admin"
-      : "";
-  let adminUids: string[] = [];
-  if (!recipientUid && source === "admin") {
-    const { data: roles, error: roleError } = await supabase
-      .schema("app_private")
-      .from("user_roles")
-      .select("uid")
-      .eq("role", "admin")
-      .limit(200);
-    if (roleError) throw roleError;
-    adminUids = (roles ?? []).map((role) => asString(role.uid)).filter(Boolean);
-    if (adminUids.length === 0) return;
-  }
+    : "";
   const tokens: Array<{ token: string; uid: string }> = [];
   const seenTokens = new Set<string>();
   for (let offset = 0; ; offset += 200) {
     let query = supabase.schema("app_private").from("push_tokens")
-      .select("uid,token,topic_admin,topic_broadcast").order("uid", { ascending: true }).order("device_id", { ascending: true })
+      .select("uid,token,topic_broadcast").order("uid", { ascending: true }).order("device_id", { ascending: true })
       .range(offset, offset + 199);
     if (recipientUid) query = query.eq("uid", recipientUid);
-    else if (adminUids.length > 0) query = query.in("uid", adminUids);
-    if (topic === "srp-admin") query = query.eq("topic_admin", false);
     if (topic === "srp-broadcast") query = query.eq("topic_broadcast", false);
     const { data, error } = await query;
     if (error) throw error;
@@ -397,6 +377,8 @@ async function sendPushes(
     ? "/notifications"
     : targetType === "announcement"
     ? `/announcements/${encodeURIComponent(targetId)}${isComment ? `?tab=comments${commentQuery}` : ""}`
+    : targetType === "facility"
+    ? `/facilities/${encodeURIComponent(targetId)}`
     : `/issues/${encodeURIComponent(category || "public-issues")}/${encodeURIComponent(targetId)}${isComment ? `?tab=comments${commentQuery}` : ""}`;
   const topicData = {
     body: asString(notification.body_preview), comment_id: commentId, issue_category: category, link,
@@ -411,26 +393,26 @@ async function sendPushes(
       // Topic subscribers must be included in the token fallback when fanout fails.
       tokens.length = 0;
       let fallbackQuery = supabase.schema("app_private").from("push_tokens").select("uid,token").limit(1000);
-      if (adminUids.length > 0) fallbackQuery = fallbackQuery.in("uid", adminUids);
-      else if (recipientUid) fallbackQuery = fallbackQuery.eq("uid", recipientUid);
+      if (recipientUid) fallbackQuery = fallbackQuery.eq("uid", recipientUid);
       const { data: fallbackTokens, error: fallbackError } = await fallbackQuery;
       if (fallbackError) throw fallbackError;
       for (const row of fallbackTokens ?? []) tokens.push({ token: row.token, uid: row.uid });
     }
   }
   const recipientUids = [...new Set(tokens.map((row) => asString(row.uid)).filter(Boolean))];
-  const preferences = new Map<string, { comments: boolean; issueUpdates: boolean }>();
+  const preferences = new Map<string, { comments: boolean; facilityUpdates: boolean; issueUpdates: boolean }>();
   let pushFailureTraceCode = "";
   if (recipientUids.length > 0) {
     const { data: states, error: stateError } = await supabase
       .schema("app_private")
       .from("notification_states")
-      .select("uid,push_comments_enabled,push_issue_updates_enabled")
+      .select("uid,push_comments_enabled,push_facility_updates_enabled,push_issue_updates_enabled")
       .in("uid", recipientUids);
     if (stateError) throw stateError;
     for (const state of states ?? []) {
       preferences.set(String(state.uid), {
         comments: state.push_comments_enabled !== false,
+        facilityUpdates: state.push_facility_updates_enabled !== false,
         issueUpdates: state.push_issue_updates_enabled !== false,
       });
     }
@@ -438,10 +420,11 @@ async function sendPushes(
 
   const sendToken = async (row: { token: string; uid: string }) => {
     const uid = asString(row.uid);
-    const preference = preferences.get(uid) ?? { comments: true, issueUpdates: true };
+    const preference = preferences.get(uid) ?? { comments: true, facilityUpdates: true, issueUpdates: true };
     const isComment = isCommentNotificationType(notificationType);
     const isIssueUpdate = isIssueUpdateNotificationType(notificationType);
-    if ((isComment && !preference.comments) || (isIssueUpdate && !preference.issueUpdates)) return;
+    const isFacilityUpdate = notificationType === "facility_status_changed";
+    if ((isComment && !preference.comments) || (isFacilityUpdate && !preference.facilityUpdates) || (isIssueUpdate && !isFacilityUpdate && !preference.issueUpdates)) return;
 
     const title = asString(notification.title);
     const body = asString(notification.body_preview);
@@ -534,6 +517,21 @@ async function createNotificationsForEvent(
   supabase: AppSupabase,
   event: OutboxEvent,
 ) {
+  if (event.event_type === "facility.status_changed") {
+    const base = notificationForEvent(event);
+    if (!base) return { hasNotification: false };
+    const authorUid = asString(event.payload.author_uid);
+    const { data, error } = await supabase.schema("app_private").from("facility_report_affected_users")
+      .select("uid").eq("facility_id", event.target_id);
+    if (error) throw error;
+    const recipients = [...new Set([authorUid, ...(data ?? []).map((row) => asString(row.uid))].filter(Boolean))];
+    for (const recipientUid of recipients) {
+      const notification = { ...base, recipient_uid: recipientUid, id: await deterministicNotificationId(event.id, recipientUid) };
+      const inserted = await insertNotification(supabase, notification);
+      if (inserted) await sendPushesWithoutBlockingOutbox(supabase, notification);
+    }
+    return { hasNotification: recipients.length > 0 };
+  }
   const notification = await resolveNotification(supabase, event);
   if (notification) {
     const notificationWithId = {
@@ -582,6 +580,9 @@ async function processEvent(supabase: AppSupabase, event: OutboxEvent) {
     || event.event_type === "issue.deleted"
     || event.event_type === "announcement.created"
     || event.event_type === "announcement.comment_created"
+    || event.event_type === "facility.created"
+    || event.event_type === "facility.status_changed"
+    || event.event_type === "facility.deleted"
   ) {
     return;
   }

@@ -1,4 +1,5 @@
 import type { User } from 'firebase/auth';
+import type { PermissionCode, RoleCode } from '@/services/session-role';
 
 export interface SessionState {
   initialized: boolean;
@@ -10,6 +11,8 @@ export interface SessionState {
   roleLoading: boolean;
   user: User | null;
   userRole: 'admin' | 'user';
+  roles: RoleCode[];
+  permissions: PermissionCode[];
   error: string;
 }
 

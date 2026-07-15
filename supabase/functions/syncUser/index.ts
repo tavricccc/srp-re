@@ -56,7 +56,6 @@ Deno.serve(async (request) => {
     ]);
     const user = await requireEligibleFirebaseUser(request);
     await claimFixedWindowRateLimit(user.uid, "auth.sync", utcHourWindow(), RATE_LIMITS.loginSyncHourly);
-    const appRole = isAdminEmail(user.email) ? "admin" : "user";
 
     const accessToken = await getGoogleAccessToken([
       "https://www.googleapis.com/auth/identitytoolkit",
@@ -89,13 +88,17 @@ Deno.serve(async (request) => {
       requireEnv("APP_SUPABASE_SERVICE_ROLE_KEY"),
       { auth: { persistSession: false } },
     );
-    const { error } = await supabase
-      .schema("app_private")
-      .from("user_roles")
-      .upsert({ role: appRole, uid: user.uid, updated_at: new Date().toISOString() }, { onConflict: "uid" });
-    if (error) throw error;
+    const { count, error: countError } = await supabase.schema("app_private")
+      .from("user_role_assignments").select("uid", { count: "exact", head: true }).eq("role_code", "platform-admin");
+    if (countError) throw countError;
+    if ((count ?? 0) === 0 && isAdminEmail(user.email)) {
+      const { error } = await supabase.schema("app_private").from("user_role_assignments").upsert({
+        uid: user.uid, role_code: "platform-admin", granted_by: user.uid,
+      }, { onConflict: "uid,role_code" });
+      if (error) throw error;
+    }
 
-    return jsonResponse({ ok: true, role: "authenticated", userRole: appRole });
+    return jsonResponse({ ok: true, role: "authenticated" });
   } catch (error) {
     console.error(errorMessage(error));
     return jsonResponse({ ok: false, error: publicError(error) }, { status: errorStatus(error) });

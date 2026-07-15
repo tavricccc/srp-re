@@ -29,6 +29,7 @@ import {
   Heading1,
   Heading2,
   Heart,
+  Hand,
   Image,
   Inbox,
   Info,
@@ -49,6 +50,7 @@ import {
   Search,
   Send,
   Settings,
+  Wrench,
   Share2,
   ShieldCheck,
   SlidersHorizontal,
@@ -63,6 +65,7 @@ export type AppIconName =
   | 'bell' | 'chart' | 'changelog' | 'check' | 'check-circle' | 'chevron-down'
   | 'chevron-left' | 'chevron-right' | 'circle-alert' | 'circle-help' | 'close'
   | 'comment' | 'edit' | 'heart' | 'image' | 'inbox' | 'info' | 'download' | 'preview'
+  | 'hand' | 'wrench'
   | 'link' | 'lock' | 'megaphone' | 'more-horizontal' | 'refresh' | 'restart'
   | 'reply' | 'search' | 'send' | 'settings' | 'share' | 'shield-check' | 'sort'
   | 'switch-horizontal' | 'thumbs-up' | 'trash' | 'user' | 'warning'
@@ -97,6 +100,7 @@ const iconComponents: Record<AppIconName, Component> = {
   comment: MessageCircle,
   edit: Pencil,
   heart: Heart,
+  hand: Hand,
   image: Image,
   inbox: Inbox,
   info: Info,
@@ -112,6 +116,7 @@ const iconComponents: Record<AppIconName, Component> = {
   search: Search,
   send: Send,
   settings: Settings,
+  wrench: Wrench,
   share: Share2,
   'shield-check': ShieldCheck,
   sort: SlidersHorizontal,

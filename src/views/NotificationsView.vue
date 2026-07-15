@@ -148,7 +148,7 @@ function notificationBody(notification: NotificationRecord) {
 
 function notificationIcon(notification: NotificationRecord): AppIconName {
   if (notification.type === 'announcement_created') return 'megaphone';
-  if (notification.type === 'issue_created') return 'plus';
+  if (notification.type === 'facility_status_changed') return 'wrench';
   if (notification.type === 'support_goal_met') return 'check-circle';
   if (notification.type === 'issue_deleted') return 'trash';
   return 'switch-horizontal';

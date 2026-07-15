@@ -32,6 +32,9 @@ async function readRateLimitsConfig(projectRoot) {
   const raw = JSON.parse(await readFile(configPath, 'utf8'));
 
   const issueCreateDaily = raw.issueCreateDaily || {};
+  const facilityCreateDaily = raw.facilityCreateDaily || {};
+  const facilityAffectedToggleHourly = raw.facilityAffectedToggleHourly || {};
+  const facilityStatusUpdateHourly = raw.facilityStatusUpdateHourly || {};
   const commentCreateHourly = raw.commentCreateHourly || {};
   const imageUploadDaily = raw.imageUploadDaily || {};
   const imageUploadWriteSecond = raw.imageUploadWriteSecond || {};
@@ -71,6 +74,9 @@ async function readRateLimitsConfig(projectRoot) {
 
   const limits = {
     issueCreateDaily: readLimitConfig('issueCreateDaily', issueCreateDaily),
+    facilityCreateDaily: readLimitConfig('facilityCreateDaily', facilityCreateDaily),
+    facilityAffectedToggleHourly: readLimitConfig('facilityAffectedToggleHourly', facilityAffectedToggleHourly),
+    facilityStatusUpdateHourly: readLimitConfig('facilityStatusUpdateHourly', facilityStatusUpdateHourly),
     commentCreateHourly: readLimitConfig('commentCreateHourly', commentCreateHourly),
     imageUploadDaily: readLimitConfig('imageUploadDaily', imageUploadDaily),
     imageUploadWriteSecond: readLimitConfig('imageUploadWriteSecond', imageUploadWriteSecond),
@@ -100,6 +106,7 @@ async function readRateLimitsConfig(projectRoot) {
     workerRunSecond: readLimitConfig('workerRunSecond', workerRunSecond),
     imageUploads: {
       issueMaxImages: assertPositiveInteger(imageUploads.issueMaxImages, 'imageUploads.issueMaxImages 必須是正整數。'),
+      facilityMaxImages: assertPositiveInteger(imageUploads.facilityMaxImages, 'imageUploads.facilityMaxImages 必須是正整數。'),
       announcementMaxImages: assertPositiveInteger(imageUploads.announcementMaxImages, 'imageUploads.announcementMaxImages 必須是正整數。'),
       commentMaxImages: assertPositiveInteger(imageUploads.commentMaxImages, 'imageUploads.commentMaxImages 必須是正整數。'),
     },

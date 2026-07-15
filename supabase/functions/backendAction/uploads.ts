@@ -42,12 +42,14 @@ async function assertMarkdownUploadsAttachable(
   supabase: BackendSupabase,
   ownerUid: string,
   uploadIds: string[],
-  targetType: "announcement" | "announcement_comment" | "comment" | "issue",
+  targetType: "announcement" | "announcement_comment" | "comment" | "facility" | "issue",
   targetId: string | null,
 ) {
   if (uploadIds.length === 0) return;
   const maxImages = targetType === "issue"
     ? RATE_LIMITS.imageUploads.issueMaxImages
+    : targetType === "facility"
+      ? RATE_LIMITS.imageUploads.facilityMaxImages
     : targetType === "announcement"
       ? RATE_LIMITS.imageUploads.announcementMaxImages
       : RATE_LIMITS.imageUploads.commentMaxImages;
@@ -107,6 +109,14 @@ async function resolveUploadAccessBatch(
     }
   }
   const issues = new Map<string, JsonRecord>();
+  const facilityIds = uploads.filter((upload) => asString(upload.attached_target_type) === "facility")
+    .map((upload) => asString(upload.attached_target_id)).filter(Boolean);
+  const availableFacilities = new Set<string>();
+  if (facilityIds.length > 0) {
+    const { data, error } = await supabase.schema("app_private").from("facility_reports").select("id").in("id", facilityIds);
+    if (error) throw error;
+    for (const facility of data ?? []) availableFacilities.add(String(facility.id));
+  }
   if (issueIds.size > 0) {
     const { data, error } = await supabase.schema("app_private").from("issues")
       .select("id,category,status,author_uid").in("id", [...issueIds]);
@@ -128,6 +138,9 @@ async function resolveUploadAccessBatch(
     if (targetType === "announcement" || targetType === "announcement_comment") {
       return [asString(upload.id), { allowed: true, privateDelivery: false }];
     }
+    if (targetType === "facility") {
+      return [asString(upload.id), { allowed: availableFacilities.has(targetId), privateDelivery: false }];
+    }
     return [asString(upload.id), { allowed: false, privateDelivery: true }];
   }));
 }
@@ -143,7 +156,7 @@ export async function validateMarkdownUploadsBeforeCreate(
   supabase: BackendSupabase,
   ownerUid: string,
   content: string,
-  targetType: "announcement" | "announcement_comment" | "comment" | "issue",
+  targetType: "announcement" | "announcement_comment" | "comment" | "facility" | "issue",
 ) {
   assertOnlyManagedMarkdownImages(content);
   await assertMarkdownUploadsAttachable(
@@ -159,7 +172,7 @@ export async function validateMarkdownUploadsBeforeUpdate(
   supabase: BackendSupabase,
   ownerUid: string,
   content: string,
-  targetType: "announcement" | "announcement_comment" | "comment" | "issue",
+  targetType: "announcement" | "announcement_comment" | "comment" | "facility" | "issue",
   targetId: string,
 ) {
   assertOnlyManagedMarkdownImages(content);

@@ -82,6 +82,8 @@ function getCategoryDefaults(category: IssueRecord['category'], createdAt = new 
 export function normalizeIssueRecord(id: string, data: Record<string, unknown>): IssueRecord {
   const category = normalizeCategory(data.category);
   const defaults = getCategoryDefaults(category);
+  const isOwnIssue = data.isOwnIssue === true;
+  const supportEnabled = Boolean(data.support_enabled ?? defaults.support_enabled);
 
   const record: IssueRecord = {
     id,
@@ -92,7 +94,7 @@ export function normalizeIssueRecord(id: string, data: Record<string, unknown>):
     support_count: typeof data.support_count === 'number' ? data.support_count : 0,
     status: normalizeStatus(data.status),
     category,
-    support_enabled: Boolean(data.support_enabled ?? defaults.support_enabled),
+    support_enabled: supportEnabled,
     support_goal: typeof data.support_goal === 'number' ? data.support_goal : defaults.support_goal,
     support_deadline_at: normalizeDate(
       data.support_deadline_at
@@ -110,8 +112,8 @@ export function normalizeIssueRecord(id: string, data: Record<string, unknown>):
     review_rejection_reason: typeof data.review_rejection_reason === 'string'
       ? data.review_rejection_reason
       : undefined,
-    currentUserSupported: data.currentUserSupported === true,
-    isOwnIssue: data.isOwnIssue === true,
+    currentUserSupported: data.currentUserSupported === true || (isOwnIssue && supportEnabled),
+    isOwnIssue,
     canManageIssue: data.canManageIssue === true,
     canViewAuthor: data.canViewAuthor === true,
     deleting: data.deleting === true,

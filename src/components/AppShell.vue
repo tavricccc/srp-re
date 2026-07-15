@@ -15,6 +15,8 @@
       :back-label="mobileBackLabel"
       :show-back-button="showMobileBackButton"
       :title="mobileHeaderTitle"
+      :has-unread="hasUnread"
+      :notifications-active="route.name === 'notifications'"
       @back="handleMobileBack"
     />
 
@@ -25,7 +27,7 @@
       :expanded="isSidebarExpanded"
       :has-unread="hasUnread"
       :home-route="homeRoute"
-      :is-admin="isAdmin"
+      :is-admin="canCreateAnnouncement"
       :items="primaryRouteNavItems"
       :notifications-active="route.name === 'notifications'"
       :photo-url="displayPhotoUrl"
@@ -33,6 +35,7 @@
       :school-label="schoolLabel"
       :user-name="userName"
       @create-announcement="handleCreateAnnouncement"
+      @create-facility="handleCreateFacility"
       @create-issue="handleCreateIssue"
       @navigate="handleNavigationClick"
       @navigate-link="closeSidebarDrawerIfNeeded"
@@ -57,14 +60,13 @@
       :bottom-gap="bottomGap"
       :default-category="defaultCreateCategory"
       :default-kind="defaultCreateKind"
-      :has-unread="hasUnread"
-      :is-admin="isAdmin"
+      :is-admin="canCreateAnnouncement"
       :items="primaryRouteNavItems"
-      :notifications-active="route.name === 'notifications'"
       :photo-url="displayPhotoUrl"
       :profile-active="isProfileRouteActive"
       :user-name="userName"
       @create-announcement="handleCreateAnnouncement"
+      @create-facility="handleCreateFacility"
       @create-issue="handleCreateIssue"
       @navigate="handleNavigationClick"
     />
@@ -80,7 +82,7 @@ import AppMobileHeader from '@/components/app-shell/AppMobileHeader.vue';
 import { SCHOOL_NAME } from '@/constants/app';
 import { DEFAULT_ISSUE_CATEGORY, DEFAULT_ISSUE_ROUTE_FILTER, isIssueCategory } from '@/constants/categories';
 import { refreshFromActiveNavigation } from '@/composables/useActiveNavigationRefresh';
-import { requestCreateAnnouncement, requestCreateIssue } from '@/composables/useCreateEntryActions';
+import { requestCreateAnnouncement, requestCreateFacility, requestCreateIssue } from '@/composables/useCreateEntryActions';
 import { useIssueRouteFilter } from '@/composables/useIssueRouteFilter';
 import { useNotificationBadge } from '@/composables/useNotificationBadge';
 import { useSession } from '@/composables/useSession';
@@ -91,7 +93,7 @@ const SIDEBAR_EXPANDED_STORAGE_KEY = 'novae:desktop-sidebar-expanded';
 const MOBILE_NAV_HEIGHT = 60;
 const SCROLL_POSITION_LIMIT = 30;
 
-const { customPhotoUrl, isAdmin, isAllowedUser, user } = useSession();
+const { can, customPhotoUrl, isAllowedUser, user } = useSession();
 const { activeFilter } = useIssueRouteFilter();
 const { hasUnread } = useNotificationBadge();
 const route = useRoute();
@@ -103,8 +105,9 @@ const mainScrollPositions = new Map<string, number>();
 
 const isIssueRouteActive = computed(() => route.name === 'issues' || route.name === 'issue-detail');
 const isAnnouncementRouteActive = computed(() => route.name === 'announcements' || route.name === 'announcement-detail');
+const isFacilityRouteActive = computed(() => route.name === 'facilities' || route.name === 'facility-detail');
 const isMyProposalsRouteActive = computed(() => isIssueRouteActive.value && activeFilter.value === 'my-proposals');
-const isProfileRouteActive = computed(() => isMyProposalsRouteActive.value || ['settings', 'dashboard'].includes(route.name as string));
+const isProfileRouteActive = computed(() => isMyProposalsRouteActive.value || ['settings', 'dashboard', 'access-management'].includes(route.name as string));
 const homeRoute = { name: 'issues', params: { filter: DEFAULT_ISSUE_ROUTE_FILTER } } as const;
 const primaryRouteNavItems = computed(() => [
   {
@@ -113,6 +116,13 @@ const primaryRouteNavItems = computed(() => [
     key: 'issues',
     label: '提案',
     to: homeRoute,
+  },
+  {
+    icon: 'wrench' as const,
+    isActive: isFacilityRouteActive.value,
+    key: 'facilities',
+    label: '設備',
+    to: { name: 'facilities' },
   },
   {
     icon: 'megaphone' as const,
@@ -125,14 +135,16 @@ const primaryRouteNavItems = computed(() => [
 const displayPhotoUrl = computed(() => customPhotoUrl.value || user.value?.photoURL || null);
 const userName = computed(() => user.value?.displayName || '使用者');
 const schoolLabel = computed(() => SCHOOL_NAME || '學校未設定');
+const canCreateAnnouncement = computed(() => can('announcement.manage'));
 const defaultCreateCategory = computed<IssueCategory>(() => isIssueCategory(activeFilter.value) ? activeFilter.value : DEFAULT_ISSUE_CATEGORY);
-const defaultCreateKind = computed(() => isAnnouncementRouteActive.value ? 'announcement' as const : 'issue' as const);
+const defaultCreateKind = computed(() => isFacilityRouteActive.value ? 'facility' as const : isAnnouncementRouteActive.value ? 'announcement' as const : 'issue' as const);
 const bottomGap = computed(() => hasSafeIndicator.value ? 22 : 12);
 const rootStyle = computed(() => isAllowedUser.value
   ? { '--app-bottom-nav-height': `${bottomGap.value + MOBILE_NAV_HEIGHT + 6}px` }
   : {});
 const activeMobileNavKey = computed(() => {
   if (isAnnouncementRouteActive.value) return 'announcements';
+  if (isFacilityRouteActive.value) return 'facilities';
   if (isProfileRouteActive.value) return 'settings';
   if (route.name === 'notifications') return 'notifications';
   if (isIssueRouteActive.value) return 'issues';
@@ -140,20 +152,25 @@ const activeMobileNavKey = computed(() => {
 });
 const mobileHeaderTitle = computed(() => {
   if (route.name === 'issue-detail') return isMyProposalsRouteActive.value ? '我的提案' : '提案內容';
+  if (route.name === 'facility-detail') return '設備';
   if (route.name === 'announcement-detail') return '公告內容';
   if (route.name === 'dashboard') return '統計';
+  if (route.name === 'access-management') return '角色管理';
   if (route.name === 'notifications') return '通知';
   if (route.name === 'settings') return '我的';
   if (isAnnouncementRouteActive.value) return '公告';
+  if (isFacilityRouteActive.value) return '設備';
   if (isMyProposalsRouteActive.value) return '我的提案';
   return '提案';
 });
-const showMobileBackButton = computed(() => ['issue-detail', 'announcement-detail', 'dashboard'].includes(route.name as string) || isMyProposalsRouteActive.value);
+const showMobileBackButton = computed(() => ['issue-detail', 'facility-detail', 'announcement-detail', 'dashboard', 'access-management'].includes(route.name as string) || isMyProposalsRouteActive.value);
 const mobileBackLabel = computed(() => {
   if (route.name === 'dashboard') return '返回我的';
+  if (route.name === 'access-management') return '返回我的';
   if (route.name === 'issue-detail' && isMyProposalsRouteActive.value) return '返回我的提案';
   if (isMyProposalsRouteActive.value) return '返回我的';
   if (route.name === 'announcement-detail') return '返回公告列表';
+  if (route.name === 'facility-detail') return '返回設備列表';
   return '返回提案列表';
 });
 
@@ -167,6 +184,10 @@ async function handleCreateAnnouncement() {
 
 function handleNavigationClick(isActive: boolean) {
   if (isActive) void refreshFromActiveNavigation();
+}
+
+async function handleCreateFacility() {
+  await requestCreateFacility(router);
 }
 
 function handleNavigationIntent(event: Event) {
@@ -202,13 +223,14 @@ function handleSidebarKeydown(event: KeyboardEvent) {
 
 async function handleMobileBack() {
   if (route.name === 'announcement-detail') return void await router.push({ name: 'announcements' });
+  if (route.name === 'facility-detail') return void await router.push({ name: 'facilities' });
   if (route.name === 'issue-detail') {
     const query = { ...route.query };
     delete query.tab;
     delete query.comment;
     return void await router.push({ name: 'issues', params: { filter: activeFilter.value }, query });
   }
-  if (isMyProposalsRouteActive.value || route.name === 'dashboard') await router.push({ name: 'settings' });
+  if (isMyProposalsRouteActive.value || route.name === 'dashboard' || route.name === 'access-management') await router.push({ name: 'settings' });
 }
 
 watch(() => route.fullPath, (newPath, oldPath) => {

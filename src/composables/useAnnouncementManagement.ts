@@ -25,7 +25,8 @@ import {
 
 export function useAnnouncementManagement() {
   const router = useRouter();
-  const { initialized, isAdmin, isAllowedUser, loading: authLoading, roleLoading, user } = useSession();
+  const { can, initialized, isAllowedUser, loading: authLoading, roleLoading, user } = useSession();
+  const isAdmin = computed(() => can('announcement.manage'));
   const { show, start } = useActionFeedback();
   const { isOnline } = useNetworkStatus();
   const announcementCacheScope = computed(() => [

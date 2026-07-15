@@ -30,6 +30,7 @@ const initialized = ref(false);
 const personalPreferences = ref<PersonalPushPreferences>({
   comments: true,
   issueUpdates: true,
+  facilityUpdates: true,
 });
 let currentToken = '';
 let foregroundUnsubscribe: (() => void) | null = null;
@@ -309,7 +310,7 @@ export function usePushNotifications() {
     explicitlyDisabled.value = readExplicitlyDisabled(nextUser?.uid ?? '');
     error.value = '';
     initialized.value = false;
-    personalPreferences.value = { comments: true, issueUpdates: true };
+    personalPreferences.value = { comments: true, facilityUpdates: true, issueUpdates: true };
     permission.value = typeof window === 'undefined' ? 'default' : browserPermission();
   });
 

@@ -74,6 +74,7 @@
         </button>
         <VoteButtons
           v-if="issue.support_enabled"
+          :author-fixed="issue.isOwnIssue"
           :issue-id="issue.id"
           :current-user-supported="currentUserSupported"
           :support-count="supportCount"

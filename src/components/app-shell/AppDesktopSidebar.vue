@@ -45,6 +45,7 @@
         :default-category="defaultCategory"
         :default-kind="defaultKind"
         @create-announcement="$emit('create-announcement')"
+        @create-facility="$emit('create-facility')"
         @create-issue="category => $emit('create-issue', category)"
       >
         <template #trigger="{ open }">
@@ -97,7 +98,7 @@ import type { AppNavigationItem } from './types';
 
 defineProps<{
   defaultCategory: IssueCategory;
-  defaultKind: 'announcement' | 'issue';
+  defaultKind: 'announcement' | 'facility' | 'issue';
   expanded: boolean;
   hasUnread: boolean;
   homeRoute: RouteLocationRaw;
@@ -112,6 +113,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'create-announcement': [];
+  'create-facility': [];
   'create-issue': [category: IssueCategory];
   navigate: [isActive: boolean];
   'navigate-link': [];

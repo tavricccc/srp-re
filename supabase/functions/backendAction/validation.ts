@@ -7,6 +7,8 @@ export const INPUT_LIMITS = {
   comment: 70,
   commentStorage: 2_000,
   issueResult: 2_000,
+  facilityLocation: 120,
+  facilityResult: 2_000,
   rejectionReason: 500,
   search: 120,
 } as const;

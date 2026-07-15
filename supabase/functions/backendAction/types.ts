@@ -3,10 +3,18 @@ import type { Database } from "../_shared/database.ts";
 
 export type BackendSupabase = SupabaseClient<Database>;
 export type JsonRecord = Record<string, unknown>;
+export type PermissionCode =
+  | "announcement.manage"
+  | "dashboard.view"
+  | "facility.manage"
+  | "proposal.manage"
+  | "role.manage";
 
 export interface AuthContext {
   email: string;
   isAdmin: boolean;
+  permissions: PermissionCode[];
+  roles: string[];
   name: string;
   photoUrl: string | null;
   uid: string;

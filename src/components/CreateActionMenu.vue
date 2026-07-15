@@ -39,6 +39,15 @@
 
       <div class="grid gap-2">
         <button
+          type="button"
+          class="content-trigger flex w-full items-center justify-between gap-3 border-0 bg-ink-50/60 px-3 py-3 text-left shadow-note dark:bg-ink-800/40"
+          :class="{ 'button-toolbar--active': selectedAction.kind === 'facility' }"
+          @click="selectedAction = { kind: 'facility' }"
+        >
+          <span class="text-sm font-semibold text-ink-900 dark:text-ink-100">設備</span>
+          <SelectionMark :selected="selectedAction.kind === 'facility'" />
+        </button>
+        <button
           v-for="option in issueCategoryOptions"
           :key="option.value"
           type="button"
@@ -85,6 +94,7 @@ import type { IssueCategory } from '@/types';
 
 type CreateActionSelection =
   | { kind: 'issue'; category: IssueCategory }
+  | { kind: 'facility' }
   | { kind: 'announcement' };
 
 const props = defineProps<{
@@ -95,6 +105,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   createAnnouncement: [];
+  createFacility: [];
   createIssue: [category: IssueCategory];
 }>();
 
@@ -129,6 +140,7 @@ function selectAnnouncement() {
 }
 
 function getDefaultAction(): CreateActionSelection {
+  if (props.defaultKind === 'facility') return { kind: 'facility' };
   if (props.defaultKind === 'announcement' && props.canCreateAnnouncement) {
     return { kind: 'announcement' };
   }
@@ -144,6 +156,10 @@ function confirmSelection() {
   menuOpen.value = false;
   if (action.kind === 'announcement') {
     emit('createAnnouncement');
+    return;
+  }
+  if (action.kind === 'facility') {
+    emit('createFacility');
     return;
   }
   emit('createIssue', action.category);

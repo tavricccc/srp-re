@@ -12,7 +12,7 @@ export interface FcmMessage {
   webpush?: Record<string, unknown>;
 }
 
-const FCM_TOPICS = new Set(["srp-admin", "srp-broadcast"]);
+const FCM_TOPICS = new Set(["srp-broadcast"]);
 
 function assertTopic(topic: string) {
   if (!FCM_TOPICS.has(topic)) throw new Error("invalid-fcm-topic");

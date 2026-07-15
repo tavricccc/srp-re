@@ -18,14 +18,26 @@ const STATUS_LABELS: Record<string, string> = {
   "completed": "已完成",
   "已刪除": "已刪除",
   "發布": "發布",
+  "unable-to-handle": "無法處理",
+};
+const FACILITY_STATUS_LABELS: Record<string, string> = {
+  pending: "待受理",
+  processing: "處理中",
+  completed: "已完成",
+  "unable-to-handle": "無法處理",
 };
 
 type AppSupabase = SupabaseClient<Database>;
 const knownSelectOptions = new Set<string>();
 const knownDateProperties = new Set<string>();
+const knownRichTextProperties = new Set<string>();
 
 function translateStatus(status: string): string {
   return STATUS_LABELS[status] ?? status;
+}
+
+function translateFacilityStatus(status: string): string {
+  return FACILITY_STATUS_LABELS[status] ?? status;
 }
 
 function translateCategory(category: string): string {
@@ -122,6 +134,21 @@ async function ensureDateProperty(propertyName: string): Promise<void> {
     },
   });
   knownDateProperties.add(propertyName);
+}
+
+async function ensureRichTextProperty(propertyName: string): Promise<void> {
+  if (!propertyName || knownRichTextProperties.has(propertyName)) return;
+  const database = await callNotionAPI(`/databases/${requireEnv("NOTION_DATABASE_ID")}`, "GET");
+  if (!isRecord(database) || !isRecord(database.properties)) return;
+  const property = database.properties[propertyName];
+  if (isRecord(property) && property.type === "rich_text") {
+    knownRichTextProperties.add(propertyName);
+    return;
+  }
+  await callNotionAPI(`/databases/${requireEnv("NOTION_DATABASE_ID")}`, "PATCH", {
+    properties: { [propertyName]: { rich_text: {} } },
+  });
+  knownRichTextProperties.add(propertyName);
 }
 
 function dateProperty(value: unknown) {
@@ -281,6 +308,7 @@ async function getOrCreateNotionPage(
   authorName: string,
   supportCount?: unknown,
   supportGoal?: unknown,
+  countProperty = "附議數",
 ): Promise<string | null> {
   const { data, error } = await supabase
     .schema("app_private")
@@ -297,6 +325,7 @@ async function getOrCreateNotionPage(
   await Promise.all([
     ensureSelectOption("分類", categoryLabel),
     ensureSelectOption("狀態", statusLabel),
+    ensureRichTextProperty(countProperty),
   ]);
 
   const result = await callNotionAPI("/pages", "POST", {
@@ -306,7 +335,7 @@ async function getOrCreateNotionPage(
       "分類": { select: { name: categoryLabel } },
       "狀態": { select: { name: statusLabel } },
       "作者": { rich_text: [{ text: { content: authorName } }] },
-      "附議數": { rich_text: [{ text: { content: supportLabel(supportCount, supportGoal) } }] },
+      [countProperty]: { rich_text: [{ text: { content: supportLabel(supportCount, supportGoal) } }] },
     },
   }) as { id?: string };
 
@@ -391,6 +420,63 @@ export async function syncIssueCreatedToNotion(
   }
 }
 
+export async function syncFacilityCreatedToNotion(
+  supabase: AppSupabase,
+  targetId: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  if (!notionEnabled()) return;
+  const { data: facility, error } = await supabase.schema("app_private").from("facility_reports")
+    .select("title,content,location,status,author_name,affected_count,created_at,started_at,closed_at,result_content")
+    .eq("id", targetId).maybeSingle();
+  if (error) throw error;
+  if (!facility) return;
+  const pageId = await getOrCreateNotionPage(
+    supabase, "facility", targetId, String(facility.title ?? payload.title ?? "設備"),
+    "設備", translateFacilityStatus(String(facility.status)), String(facility.author_name), facility.affected_count, null, "遇到人數",
+  );
+  if (!pageId) return;
+  await Promise.all([ensureRichTextProperty("地點"), ...["建立時間", "開始處理時間", "結案時間"].map(ensureDateProperty)]);
+  await callNotionAPI(`/pages/${pageId}`, "PATCH", { properties: {
+    "地點": { rich_text: [{ text: { content: String(facility.location) } }] },
+    "建立時間": dateProperty(facility.created_at),
+    "開始處理時間": dateProperty(facility.started_at),
+    "結案時間": dateProperty(facility.closed_at),
+  } });
+  await replaceManagedContent(supabase, "facility", targetId, pageId, String(facility.content));
+}
+
+export async function syncFacilityStatusToNotion(
+  supabase: AppSupabase,
+  targetId: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  if (!notionEnabled()) return;
+  const { data: facility, error } = await supabase.schema("app_private").from("facility_reports")
+    .select("title,status,author_name,affected_count,created_at,started_at,closed_at,result_content")
+    .eq("id", targetId).maybeSingle();
+  if (error) throw error;
+  if (!facility) return;
+  const terminal = ["completed", "unable-to-handle"].includes(String(facility.status));
+  if (!terminal) return;
+  const pageId = await getOrCreateNotionPage(supabase, "facility", targetId, String(facility.title), "設備",
+    translateFacilityStatus(String(facility.status)), String(facility.author_name), 1, null, "遇到人數");
+  if (!pageId) return;
+  const statusLabel = translateFacilityStatus(String(facility.status));
+  await Promise.all([
+    ensureSelectOption("狀態", statusLabel), ensureRichTextProperty("處理結果"), ensureRichTextProperty("遇到人數"),
+    ...["建立時間", "開始處理時間", "結案時間"].map(ensureDateProperty),
+  ]);
+  await callNotionAPI(`/pages/${pageId}`, "PATCH", { properties: {
+    "狀態": { select: { name: statusLabel } },
+    "建立時間": dateProperty(facility.created_at),
+    "開始處理時間": dateProperty(facility.started_at),
+    "結案時間": dateProperty(facility.closed_at),
+    "遇到人數": { rich_text: [{ text: { content: String(facility.affected_count) } }] },
+    "處理結果": { rich_text: [{ text: { content: String(facility.result_content ?? payload.result_content ?? "") } }] },
+  } });
+}
+
 /**
  * Update the 狀態 property on the Notion page and append a timeline entry
  * when an admin changes the issue status.
@@ -432,7 +518,9 @@ export async function syncIssueStatusChangedToNotion(
   await callNotionAPI(`/pages/${pageId}`, "PATCH", {
     properties: {
       "狀態": { select: { name: newStatusLabel } },
-      "附議數": { rich_text: [{ text: { content: supportLabel(issue?.support_count ?? payload.support_count, issue?.support_goal ?? payload.support_goal) } }] },
+      ...(["completed", "infeasible"].includes(newStatus) ? {
+        "附議數": { rich_text: [{ text: { content: supportLabel(issue?.support_count ?? payload.support_count, issue?.support_goal ?? payload.support_goal) } }] },
+      } : {}),
       ...issueTimeProperties(issue ?? {}),
     },
   });

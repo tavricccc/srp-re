@@ -74,7 +74,7 @@ interface NotificationRow {
   source: "admin" | "broadcast" | "user";
   recipient_uid: string | null;
   type: string;
-  target_type: "announcement" | "issue";
+  target_type: "announcement" | "facility" | "issue";
   target_id: string;
   comment_id: string | null;
   title: string;
@@ -96,6 +96,7 @@ interface NotificationStateRow {
   user_opened_at: string | null;
   push_comments_enabled: boolean;
   push_issue_updates_enabled: boolean;
+  push_facility_updates_enabled: boolean;
   updated_at: string;
 }
 
@@ -172,7 +173,6 @@ interface PushTokenRow {
   user_agent: string;
   created_at: string;
   updated_at: string;
-  topic_admin: boolean;
   topic_broadcast: boolean;
 }
 
@@ -191,6 +191,25 @@ interface UserProfileRow {
 interface UserRoleRow {
   uid: string;
   role: string;
+  updated_at: string;
+}
+
+interface FacilityRow {
+  id: string;
+  author_uid: string;
+  author_name: string;
+  author_photo_url: string | null;
+  title: string;
+  title_search: string;
+  location: string;
+  content: string;
+  status: string;
+  affected_count: number;
+  result_content: string | null;
+  last_actor_uid: string | null;
+  created_at: string;
+  started_at: string | null;
+  closed_at: string | null;
   updated_at: string;
 }
 
@@ -221,6 +240,8 @@ interface AppPrivateTables {
   announcements: Table<AnnouncementRow>;
   comments: Table<CommentRow>;
   deletion_jobs: Table<DeletionJobRow>;
+  facility_reports: Table<FacilityRow>;
+  facility_report_affected_users: Table<{ facility_id: string; uid: string; created_at: string }>;
   idempotency_keys: Table<IdempotencyKeyRow>;
   issues: Table<IssueRow>;
   maintenance_runs: Table<MaintenanceRunRow>;
@@ -253,12 +274,30 @@ interface AppPrivateTables {
   uploads: Table<UploadRow>;
   user_profiles: Table<UserProfileRow>;
   user_roles: Table<UserRoleRow>;
+  roles: Table<{ code: string; label: string; created_at: string }>;
+  permissions: Table<{ code: string; label: string }>;
+  role_permissions: Table<{ role_code: string; permission_code: string }>;
+  user_role_assignments: Table<{ uid: string; role_code: string; granted_by: string; granted_at: string }>;
+  role_assignment_audit: Table<{ id: number; uid: string; role_code: string; operation: string; actor_uid: string; created_at: string }>;
 }
 
 interface AppApiFunctions {
   backend_get_notification_unread_hint: AppFunction<{ actor_is_admin: boolean; actor_uid: string }, Json>;
-  claim_notion_support_dirty: AppFunction<{ batch_size?: number }, Array<{ issue_id: string; updated_at: string }>>;
-  complete_notion_support_dirty: AppFunction<{ claimed_updated_at: string; issue_id: string }, void>;
+  backend_create_facility: AppFunction<{
+    actor_uid: string; actor_name: string; actor_photo_url: string | null;
+    facility_title: string; facility_location: string; facility_content: string;
+  }, Json>;
+  backend_get_facility: AppFunction<{ facility_id: string; actor_uid: string; actor_can_manage: boolean }, Json>;
+  backend_list_facilities: AppFunction<{
+    actor_uid: string; actor_can_manage: boolean; bucket: string; status_filter: string;
+    search_query: string; sort_name: string; cursor_created_at: string | null;
+    cursor_number: number | null; cursor_id: string | null; page_size: number;
+  }, Json>;
+  backend_toggle_facility_affected: AppFunction<{ facility_id: string; actor_uid: string }, Json>;
+  backend_update_facility_status: AppFunction<{
+    facility_id: string; actor_uid: string; actor_can_manage: boolean; next_status: string; result_content: string | null;
+  }, Json>;
+  backend_delete_facility: AppFunction<{ facility_id: string; actor_uid: string; actor_can_manage: boolean }, Json>;
   backend_announcement_to_json: AppFunction<{
     actor_uid: string;
     announcement_record: AnnouncementRow;
@@ -437,6 +476,7 @@ interface AppApiFunctions {
   backend_push_notification_preference: AppFunction<{
     actor_uid: string;
     device_id: string;
+    facility_updates_enabled: boolean;
     permission: string;
   }, Json>;
   backend_register_push_token: AppFunction<{
@@ -456,6 +496,7 @@ interface AppApiFunctions {
     actor_uid: string;
     comments_enabled: boolean;
     device_id: string;
+    facility_updates_enabled: boolean;
     issue_updates_enabled: boolean;
     permission: string;
   }, Json>;
@@ -494,7 +535,6 @@ interface AppApiFunctions {
   get_platform_dashboard_snapshot: AppFunction<Record<string, never>, Json>;
   backend_delete_issue: AppFunction<{ actor_is_admin: boolean; actor_uid: string; issue_id: string }, void>;
   release_idempotency_key: AppFunction<{ action_name: string; actor_uid: string; request_id: string }, void>;
-  release_notion_support_dirty: AppFunction<{ issue_id: string }, void>;
   resignal_background_worker: AppFunction<{ worker_name: string }, void>;
   run_maintenance_cleanup: AppFunction<{ valid_issue_categories?: string[] | null }, Json>;
 }

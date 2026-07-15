@@ -17,12 +17,12 @@ export type IssueSortOption = 'latest' | 'most-supported' | 'ending-soon';
 export type NotificationType =
   | 'announcement_created'
   | 'announcement_comment_created'
-  | 'issue_created'
+  | 'facility_status_changed'
   | 'issue_comment_created'
   | 'issue_status_changed'
   | 'support_goal_met'
   | 'issue_deleted';
-export type NotificationTargetType = 'announcement' | 'issue';
+export type NotificationTargetType = 'announcement' | 'facility' | 'issue';
 export type NotificationSource = 'broadcast' | 'admin' | 'user';
 
 
@@ -92,6 +92,50 @@ export interface ComposerInput {
   title: string;
   content: string;
   category: WritableIssueCategory;
+}
+
+export type FacilityStatus = 'pending' | 'processing' | 'completed' | 'unable-to-handle';
+export type FacilitySortOption = 'latest' | 'most-affected';
+
+export interface FacilitySummary {
+  id: string;
+  title: string;
+  location: string;
+  status: FacilityStatus;
+  affected_count: number;
+  created_at: Date | null;
+  updated_at: Date | null;
+  author_uid: string;
+  author_name: string;
+  author_photo_url: string | null;
+  isOwnFacility: boolean;
+  currentUserAffected: boolean;
+  canManageFacility: boolean;
+}
+
+export interface FacilityRecord extends FacilitySummary {
+  content: string;
+  result_content: string | null;
+  started_at: Date | null;
+  closed_at: Date | null;
+}
+
+export interface FacilityInput {
+  title: string;
+  location: string;
+  content: string;
+}
+
+export interface FacilityCursor {
+  id: string;
+  createdAt: string;
+  affectedCount: number;
+}
+
+export interface FacilityPageResult {
+  facilities: FacilitySummary[];
+  cursor: FacilityCursor | null;
+  hasMore: boolean;
 }
 
 export interface CommentInput {
@@ -177,8 +221,8 @@ export interface NotificationRecord {
   actor_photo_url: string | null;
   body_preview: string | null;
   issue_category: IssueCategory | null;
-  old_status?: IssueStatus;
-  new_status?: IssueStatus;
+  old_status?: IssueStatus | FacilityStatus;
+  new_status?: IssueStatus | FacilityStatus;
   is_read: boolean;
   created_at: Date | null;
 }

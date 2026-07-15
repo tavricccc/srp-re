@@ -2,6 +2,7 @@ import { asRecord, asString } from "../_shared/http.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
+import { hasPermission } from "./auth.ts";
 import { validateMarkdownUploadsBeforeCreate } from "./uploads.ts";
 import { asNumber, asUuid, readCursor, readCursorDate, utcHourWindow } from "./utils.ts";
 import { INPUT_LIMITS, requiredMediaContent } from "./validation.ts";
@@ -52,7 +53,7 @@ async function deleteAnnouncementComment(payload: JsonRecord, auth: AuthContext,
   const { data, error } = await supabase.schema("app_api").rpc("backend_delete_announcement_comment", {
     comment_id: commentId,
     actor_uid: auth.uid,
-    actor_is_admin: auth.isAdmin,
+    actor_is_admin: hasPermission(auth, "announcement.manage"),
   });
   if (error) throw error;
   const result = asRecord(data);

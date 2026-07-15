@@ -80,11 +80,12 @@ export interface NotificationReadState {
 }
 
 export type PushNotificationPermission = NotificationPermission | 'unsupported';
-export type PersonalPushPreferenceKey = 'comments' | 'issueUpdates';
+export type PersonalPushPreferenceKey = 'comments' | 'facilityUpdates' | 'issueUpdates';
 
 export interface PersonalPushPreferences {
   comments: boolean;
   issueUpdates: boolean;
+  facilityUpdates: boolean;
 }
 
 interface PushNotificationPreference {
@@ -126,7 +127,7 @@ function normalizeNotificationType(value: unknown): NotificationType {
   if (
     value === 'announcement_created'
     || value === 'announcement_comment_created'
-    || value === 'issue_created'
+    || value === 'facility_status_changed'
     || value === 'issue_comment_created'
     || value === 'issue_status_changed'
     || value === 'support_goal_met'
@@ -146,14 +147,15 @@ function normalizeNotificationCursor(data: unknown): NotificationCursor {
 }
 
 function normalizeTargetType(value: unknown): NotificationTargetType {
-  return value === 'announcement' ? 'announcement' : 'issue';
+  return value === 'announcement' || value === 'facility' ? value : 'issue';
 }
 
 function normalizeNullableString(value: unknown) {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function normalizeOptionalStatus(value: unknown): IssueStatus | undefined {
+function normalizeOptionalStatus(value: unknown): IssueStatus | import('@/types').FacilityStatus | undefined {
+  if (value === 'unable-to-handle') return value;
   return typeof value === 'string' ? normalizeStatus(value) : undefined;
 }
 
@@ -303,13 +305,12 @@ export async function fetchNotificationUnreadHint() {
 
 export function subscribeNotificationBadge(
   uid: string,
-  isAdmin: boolean,
+  _isAdmin: boolean,
   onNotification: () => void,
   onStateChanged: () => void,
   onError?: (error: Error) => void,
 ) {
   const topics = ['notifications:broadcast', `notifications:user:${uid}`, `notification-state:${uid}`];
-  if (isAdmin) topics.push('notifications:admin');
   const unsubscribers = topics.map((topic) => subscribeNotificationBroadcast(
     topic,
     topic.startsWith('notification-state:') ? 'notification_state_changed' : 'notification_insert',
@@ -326,6 +327,7 @@ function normalizeNotificationReadState(data: Record<string, unknown>): Notifica
     personalPreferences: {
       comments: data.push_comments_enabled !== false,
       issueUpdates: data.push_issue_updates_enabled !== false,
+      facilityUpdates: data.push_facility_updates_enabled !== false,
     },
     user: normalizeDate(data.user_opened_at_ms ?? data.user_opened_at),
   };

@@ -33,6 +33,8 @@ const state = reactive<SessionState>({
   roleLoading: false,
   user: null,
   userRole: 'user',
+  roles: [],
+  permissions: [],
   error: '',
 });
 
@@ -162,6 +164,8 @@ async function rejectCurrentUser(reason: string) {
   verificationSerial += 1;
   state.user = null;
   state.userRole = 'user';
+  state.roles = [];
+  state.permissions = [];
   state.roleLoading = false;
   state.error = reason;
   try {
@@ -182,6 +186,8 @@ function acceptCurrentUser(user: NonNullable<SessionState['user']>) {
   const verificationId = ++verificationSerial;
   state.user = user;
   state.userRole = 'user';
+  state.roles = [];
+  state.permissions = [];
   state.roleLoading = true;
   void refreshVerifiedSession(user, verificationId);
 
@@ -214,13 +220,17 @@ async function refreshVerifiedSession(user: NonNullable<SessionState['user']>, v
       return;
     }
 
-    const role = await fetchCurrentUserRole();
+    const access = await fetchCurrentUserRole();
     if (!isCurrentVerification(user, verificationId)) return;
-    state.userRole = role;
+    state.userRole = access.role;
+    state.roles = access.roles;
+    state.permissions = access.permissions;
   } catch (error) {
     if (!isCurrentVerification(user, verificationId)) return;
     debugLog('background session verification failed', error);
     state.userRole = 'user';
+    state.roles = [];
+    state.permissions = [];
   } finally {
     if (isCurrentVerification(user, verificationId)) {
       state.roleLoading = false;
@@ -294,12 +304,16 @@ export function waitForRoleReady(): Promise<boolean> {
 export function useSession() {
   const userEmail = computed(() => String(state.user?.email ?? '').toLowerCase());
   const userRole = computed(() => state.userRole);
+  const permissions = computed(() => state.permissions);
 
   return {
     user: computed(() => state.user),
     userEmail,
     userRole,
-    isAdmin: computed(() => userRole.value === 'admin'),
+    roles: computed(() => state.roles),
+    permissions,
+    can: (permission: import('@/services/session-role').PermissionCode) => permissions.value.includes(permission),
+    isAdmin: computed(() => permissions.value.includes('proposal.manage')),
     loading: computed(() => state.loading),
     roleLoading: computed(() => state.roleLoading),
     authChecking: computed(() => state.authChecking),

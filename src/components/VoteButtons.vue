@@ -3,9 +3,9 @@
     <button
       type="button"
       :class="[supportClass, compact ? '!h-8 !px-2.5 !gap-1 text-xs' : '']"
-      :disabled="busy || supportClosed"
-      :title="supportClosed ? (statusLabel ? `此提案目前為「${statusLabel}」狀態，不開放附議` : '附議已截止') : optimisticSupported ? '取消附議' : '進行附議'"
-      :aria-label="optimisticSupported ? '取消附議' : '進行附議'"
+      :disabled="busy || supportClosed || authorFixed"
+      :title="authorFixed ? '作者已自動附議' : supportClosed ? (statusLabel ? `此提案目前為「${statusLabel}」狀態，不開放附議` : '附議已截止') : optimisticSupported ? '取消附議' : '進行附議'"
+      :aria-label="authorFixed ? '作者已自動附議' : optimisticSupported ? '取消附議' : '進行附議'"
       @click="toggle"
     >
       <AppIcon name="thumbs-up" :size="compact ? 4 : 5" />
@@ -30,6 +30,7 @@ const props = defineProps<{
   supportClosed: boolean;
   statusLabel?: string;
   compact?: boolean;
+  authorFixed?: boolean;
 }>();
 
 const emit = defineEmits<{

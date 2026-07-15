@@ -44,6 +44,7 @@
       :display-photo-url="displayPhotoUrl"
       :email="user.email || ''"
       :is-admin="isAdmin"
+      :can-manage-roles="can('role.manage')"
       :personal-notification-options="personalNotificationOptions"
       :personal-preferences="personalPreferences"
       :push-action-label="pushActionLabel"
@@ -78,7 +79,8 @@ import { useActionFeedback } from '@/composables/useActionFeedback';
 import type { PersonalPushPreferenceKey } from '@/services/notifications';
 
 const router = useRouter();
-const { user, customPhotoUrl, loading, login, logout, isAdmin } = useSession();
+const { user, customPhotoUrl, loading, login, logout, can } = useSession();
+const isAdmin = computed(() => can('dashboard.view'));
 const { reloadApp } = useAppUpdate();
 const {
   enabled: pushEnabled,
@@ -112,6 +114,11 @@ const personalNotificationOptions: Array<{
     key: 'issueUpdates',
     label: '提案更新',
     description: '你參與的提案狀態變更、達標或刪除時，在站內與推播通知提醒。',
+  },
+  {
+    key: 'facilityUpdates',
+    label: '設備更新',
+    description: '你建立或標記遇到的設備狀態變更時，在站內與推播通知提醒。',
   },
 ];
 

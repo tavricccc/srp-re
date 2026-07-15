@@ -14,6 +14,7 @@ import { getBackendActionDefinition, type BackendActionDefinition } from "./acti
 import { claimBackendActionRateLimit, claimBackendHealthcheckRateLimit } from "./rate-limit.ts";
 import { errorResponse, successResponse } from "./response.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
+import { hasPermission } from "./auth.ts";
 
 async function runWithIdempotency(
   definition: BackendActionDefinition,
@@ -104,7 +105,7 @@ Deno.serve(async (request) => {
     if (!definition) throw new Error(`Unsupported action: ${action}`);
     const auth = await requireAuth(supabase, request);
     await claimBackendActionRateLimit(auth.uid, definition);
-    if (definition.requiresAdmin && !auth.isAdmin) throw new Error("permission-denied");
+    if (definition.requiredPermission && !hasPermission(auth, definition.requiredPermission)) throw new Error("permission-denied");
     const data = await runWithIdempotency(
       definition,
       payload,

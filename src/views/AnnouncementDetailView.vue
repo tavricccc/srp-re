@@ -75,7 +75,8 @@ import {
 
 const route = useRoute();
 const router = useRouter();
-const { initialized, isAdmin, isAllowedUser, loading, roleLoading, user } = useSession();
+const { can, initialized, isAllowedUser, loading, roleLoading, user } = useSession();
+const isAdmin = computed(() => can('announcement.manage'));
 const { copyShareUrl } = useShareUrl();
 const { show, start } = useActionFeedback();
 const { isOnline } = useNetworkStatus();

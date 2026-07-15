@@ -1,6 +1,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { fetchAnnouncementRecordById } from '@/services/announcements';
 import { fetchIssueRecordById } from '@/services/issues';
+import { getFacility } from '@/services/facilities';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import type { NotificationRecord } from '@/types';
 
@@ -38,6 +39,12 @@ export function useNotificationNavigation() {
           params: { announcementId: announcement.id },
           query: commentQuery(notification),
         });
+        return true;
+      }
+      if (notification.target_type === 'facility') {
+        const facility = await getFacility(notification.target_id);
+        if (currentVersion !== navigationVersion) return false;
+        await router.push({ name: 'facility-detail', params: { facilityId: facility.id } });
         return true;
       }
 

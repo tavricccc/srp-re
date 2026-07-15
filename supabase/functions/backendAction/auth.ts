@@ -3,32 +3,43 @@ import { ensureCloudinaryImageUploadPreset } from "../_shared/cloudinary.ts";
 import { requireVerifiedFirebaseUser } from "../_shared/firebase-auth.ts";
 import { getIssueCategoryIdsByReadAccess } from "../_shared/issue-categories.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
-import type { AuthContext, BackendSupabase } from "./types.ts";
-
-function isAdminEmail(email: string) {
-  const adminEmails = (Deno.env.get("ADMIN_EMAILS") ?? "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-  return adminEmails.includes(email.toLowerCase());
-}
+import type { AuthContext, BackendSupabase, PermissionCode } from "./types.ts";
 
 export async function requireAuth(supabase: BackendSupabase, request: Request): Promise<AuthContext> {
-  void supabase;
   const firebaseUser = await requireVerifiedFirebaseUser(request);
-  const isAdminFromEmail = isAdminEmail(firebaseUser.email);
+  const { data: assignments, error: assignmentError } = await supabase.schema("app_private")
+    .from("user_role_assignments").select("role_code").eq("uid", firebaseUser.uid);
+  if (assignmentError) throw assignmentError;
+  const roles = (assignments ?? []).map((row) => row.role_code);
+  let permissions: PermissionCode[] = [];
+  if (roles.length > 0) {
+    const { data: grants, error: grantError } = await supabase.schema("app_private")
+      .from("role_permissions").select("permission_code").in("role_code", roles);
+    if (grantError) throw grantError;
+    permissions = [...new Set((grants ?? []).map((row) => row.permission_code as PermissionCode))];
+  }
 
   return {
     email: firebaseUser.email,
-    isAdmin: isAdminFromEmail,
+    isAdmin: permissions.includes("proposal.manage"),
     name: firebaseUser.name,
     photoUrl: firebaseUser.photoUrl,
+    permissions,
+    roles,
     uid: firebaseUser.uid,
   };
 }
 
 export function requireAdmin(auth: AuthContext) {
-  if (!auth.isAdmin) throw new Error("permission-denied");
+  requirePermission(auth, "proposal.manage");
+}
+
+export function hasPermission(auth: AuthContext, permission: PermissionCode) {
+  return auth.permissions.includes(permission);
+}
+
+export function requirePermission(auth: AuthContext, permission: PermissionCode) {
+  if (!hasPermission(auth, permission)) throw new Error("permission-denied");
 }
 
 export async function handleHealthcheck(request: Request, supabase: BackendSupabase) {
@@ -51,8 +62,8 @@ export async function handleHealthcheck(request: Request, supabase: BackendSupab
 
   const { error } = await supabase
     .schema("app_private")
-    .from("user_roles")
-    .select("uid")
+    .from("roles")
+    .select("code")
     .limit(1);
   if (error) throw error;
 

@@ -157,19 +157,14 @@ export async function handleNotificationAction(
     try {
       const topicUpdates: Array<Promise<unknown>> = [
         subscribeTokensToTopic([token], "srp-broadcast"),
-        auth.isAdmin
-          ? subscribeTokensToTopic([token], "srp-admin")
-          : unsubscribeTokensFromTopic([token], "srp-admin"),
       ];
       if (previousDevice?.token && previousDevice.token !== token) {
         topicUpdates.push(
           unsubscribeTokensFromTopic([previousDevice.token], "srp-broadcast"),
-          unsubscribeTokensFromTopic([previousDevice.token], "srp-admin"),
         );
       }
       await Promise.all(topicUpdates);
       const { error: topicStateError } = await supabase.schema("app_private").from("push_tokens").update({
-        topic_admin: auth.isAdmin,
         topic_broadcast: true,
       }).eq("uid", auth.uid).eq("device_id", deviceId);
       if (topicStateError) throw topicStateError;
@@ -192,10 +187,7 @@ export async function handleNotificationAction(
     if (error) throw error;
     if (existingToken?.token) {
       try {
-        await Promise.all([
-          unsubscribeTokensFromTopic([existingToken.token], "srp-broadcast"),
-          unsubscribeTokensFromTopic([existingToken.token], "srp-admin"),
-        ]);
+        await unsubscribeTokensFromTopic([existingToken.token], "srp-broadcast");
       } catch (topicError) {
         console.error(JSON.stringify({ error: String(topicError), operation: "push-topic-unsubscribe", uid: auth.uid }));
       }
@@ -209,6 +201,7 @@ export async function handleNotificationAction(
       actor_uid: auth.uid,
       comments_enabled: preferences.comments !== false,
       issue_updates_enabled: preferences.issueUpdates !== false,
+      facility_updates_enabled: preferences.facilityUpdates !== false,
       device_id: readDeviceId(payload),
       permission: readPermission(payload),
     });

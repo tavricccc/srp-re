@@ -193,6 +193,9 @@
             </span>
             <AppIcon name="chevron-right" :size="4" class="shrink-0 text-ink-400" :stroke-width="2.2" />
           </RouterLink>
+          <RouterLink v-if="canManageRoles" to="/admin/access" class="settings-row gap-3" @click="emit('close')">
+            <span class="flex min-w-0 items-center gap-3"><span class="flex h-9 w-9 items-center justify-center text-ink-500"><AppIcon name="shield-check" :size="4" /></span><span><span class="block text-sm font-semibold">角色管理</span><span class="mt-0.5 block text-xs text-ink-500">管理平台角色與權限</span></span></span><AppIcon name="chevron-right" :size="4" class="text-ink-400" />
+          </RouterLink>
           <button
             type="button"
             class="settings-row gap-3"
@@ -253,6 +256,7 @@ withDefaults(defineProps<{
   displayPhotoUrl: string | null;
   email: string;
   isAdmin: boolean;
+  canManageRoles: boolean;
   personalNotificationOptions: Array<{
     description: string;
     key: PersonalPushPreferenceKey;

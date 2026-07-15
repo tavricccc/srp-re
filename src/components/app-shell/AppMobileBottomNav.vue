@@ -11,7 +11,7 @@
       ></div>
 
       <RouterLink
-        v-for="item in items"
+        v-for="item in items.slice(0, 2)"
         :key="item.key"
         :ref="element => setNavElement(item.key, element)"
         :to="item.to"
@@ -30,6 +30,7 @@
         :default-category="defaultCategory"
         :default-kind="defaultKind"
         @create-announcement="$emit('create-announcement')"
+        @create-facility="$emit('create-facility')"
         @create-issue="category => $emit('create-issue', category)"
       >
         <template #trigger="{ open }">
@@ -49,20 +50,18 @@
       </CreateActionMenu>
 
       <RouterLink
-        :ref="element => setNavElement('notifications', element)"
-        to="/notifications"
+        v-for="item in items.slice(2)"
+        :key="item.key"
+        :ref="element => setNavElement(item.key, element)"
+        :to="item.to"
         class="app-bottom-nav__item"
-        :class="{ 'app-bottom-nav__item--active': notificationsActive }"
+        :class="{ 'app-bottom-nav__item--active': item.isActive }"
+        @click="$emit('navigate', item.isActive)"
       >
-        <span class="app-bottom-nav__icon relative inline-flex" aria-hidden="true">
-          <AppIcon name="bell" :size="4.5" :stroke-width="1.9" />
-          <span
-            v-if="hasUnread"
-            class="app-bottom-nav__badge absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-error dark:border-ink-900"
-            aria-label="有新通知"
-          ></span>
+        <span class="app-bottom-nav__icon" aria-hidden="true">
+          <AppIcon :name="item.icon" :size="4.5" :stroke-width="1.9" />
         </span>
-        <span class="app-bottom-nav__label">通知</span>
+        <span class="app-bottom-nav__label">{{ item.label }}</span>
       </RouterLink>
 
       <RouterLink
@@ -93,11 +92,9 @@ const props = defineProps<{
   activeKey: string;
   bottomGap: number;
   defaultCategory: IssueCategory;
-  defaultKind: 'announcement' | 'issue';
-  hasUnread: boolean;
+  defaultKind: 'announcement' | 'facility' | 'issue';
   isAdmin: boolean;
   items: AppNavigationItem[];
-  notificationsActive: boolean;
   photoUrl: string | null;
   profileActive: boolean;
   userName: string;
@@ -105,6 +102,7 @@ const props = defineProps<{
 
 defineEmits<{
   'create-announcement': [];
+  'create-facility': [];
   'create-issue': [category: IssueCategory];
   navigate: [isActive: boolean];
 }>();

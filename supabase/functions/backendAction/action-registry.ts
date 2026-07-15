@@ -4,7 +4,8 @@ import { handleUploadAction } from "./uploads.ts";
 import { handleIssueAction } from "./issues.ts";
 import { handleAnnouncementAction } from "./announcements.ts";
 import { handleNotificationAction } from "./notifications.ts";
-import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
+import { handleFacilityAction, listFacilities } from "./facilities.ts";
+import type { AuthContext, BackendSupabase, JsonRecord, PermissionCode } from "./types.ts";
 
 export type BackendActionRateLimitGroup =
   | "read"
@@ -17,6 +18,7 @@ export type BackendActionRateLimitGroup =
 export type BackendActionDomain =
   | "announcement"
   | "dashboard"
+  | "facility"
   | "issue"
   | "notification"
   | "upload"
@@ -27,7 +29,7 @@ export interface BackendActionDefinition {
   name: string;
   rateLimitGroup: BackendActionRateLimitGroup;
   idempotent?: boolean;
-  requiresAdmin?: boolean;
+  requiredPermission?: PermissionCode;
   requiresRequestId?: boolean;
   handler: (
     action: string,
@@ -48,7 +50,7 @@ function action(
   domain: BackendActionDomain,
   rateLimitGroup: BackendActionRateLimitGroup,
   handler: BackendActionDefinition["handler"],
-  options: Pick<BackendActionDefinition, "idempotent" | "requiresAdmin" | "requiresRequestId"> = {},
+  options: Pick<BackendActionDefinition, "idempotent" | "requiredPermission" | "requiresRequestId"> = {},
 ): BackendActionDefinition {
   return {
     domain,
@@ -56,7 +58,7 @@ function action(
     idempotent: options.idempotent === true,
     name,
     rateLimitGroup,
-    requiresAdmin: options.requiresAdmin === true,
+    requiredPermission: options.requiredPermission,
     requiresRequestId: options.requiresRequestId === true,
   };
 }
@@ -75,6 +77,10 @@ function idempotentWrite(
 
 export const backendActionDefinitions = [
   action("getCurrentUserRole", "user", "read", userHandler),
+  action("listRoleAssignments", "user", "read", userHandler, { requiredPermission: "role.manage" }),
+  action("setUserRoles", "user", "admin-write", userHandler, {
+    idempotent: true, requiredPermission: "role.manage", requiresRequestId: true,
+  }),
   action("recordPlatformVisit", "user", "general-write", userHandler),
   action("cacheUserAvatar", "user", "sensitive-write", userHandler),
   action("getUserAvatarUrls", "user", "read", userHandler),
@@ -89,8 +95,12 @@ export const backendActionDefinitions = [
   action("searchIssues", "issue", "read", issueHandler),
   action("listUserIssues", "issue", "read", issueHandler),
   idempotentWrite("createIssue", "issue", "sensitive-write", issueHandler),
-  idempotentWrite("moderateIssueStatus", "issue", "admin-write", issueHandler),
-  idempotentWrite("updateIssueResult", "issue", "admin-write", issueHandler),
+  action("moderateIssueStatus", "issue", "admin-write", issueHandler, {
+    idempotent: true, requiredPermission: "proposal.manage", requiresRequestId: true,
+  }),
+  action("updateIssueResult", "issue", "admin-write", issueHandler, {
+    idempotent: true, requiredPermission: "proposal.manage", requiresRequestId: true,
+  }),
   idempotentWrite("toggleSupport", "issue", "sensitive-write", issueHandler),
   idempotentWrite("removeSupport", "issue", "sensitive-write", issueHandler),
   idempotentWrite("deleteIssue", "issue", "admin-write", issueHandler),
@@ -98,10 +108,23 @@ export const backendActionDefinitions = [
   idempotentWrite("createComment", "issue", "sensitive-write", issueHandler),
   idempotentWrite("deleteComment", "issue", "sensitive-write", issueHandler),
 
+  action("listFacilities", "facility", "read", async (_action, payload, auth, supabase) => await listFacilities(payload, auth, supabase)),
+  action("getFacility", "facility", "read", handleFacilityAction),
+  idempotentWrite("createFacility", "facility", "sensitive-write", handleFacilityAction),
+  idempotentWrite("toggleFacilityAffected", "facility", "sensitive-write", handleFacilityAction),
+  action("updateFacilityStatus", "facility", "admin-write", handleFacilityAction, {
+    idempotent: true, requiredPermission: "facility.manage", requiresRequestId: true,
+  }),
+  idempotentWrite("deleteFacility", "facility", "admin-write", handleFacilityAction),
+
   action("listAnnouncements", "announcement", "read", announcementHandler),
   action("getAnnouncement", "announcement", "read", announcementHandler),
-  idempotentWrite("createAnnouncement", "announcement", "admin-write", announcementHandler),
-  idempotentWrite("deleteAnnouncement", "announcement", "admin-write", announcementHandler),
+  action("createAnnouncement", "announcement", "admin-write", announcementHandler, {
+    idempotent: true, requiredPermission: "announcement.manage", requiresRequestId: true,
+  }),
+  action("deleteAnnouncement", "announcement", "admin-write", announcementHandler, {
+    idempotent: true, requiredPermission: "announcement.manage", requiresRequestId: true,
+  }),
   idempotentWrite("setAnnouncementLike", "announcement", "sensitive-write", announcementHandler),
   action("listAnnouncementComments", "announcement", "read", announcementHandler),
   idempotentWrite("createAnnouncementComment", "announcement", "sensitive-write", announcementHandler),
@@ -119,7 +142,7 @@ export const backendActionDefinitions = [
 
   action("getPlatformDashboard", "dashboard", "read", async (_action, _payload, _auth, supabase) => {
     return await getPlatformDashboard(supabase);
-  }, { requiresAdmin: true }),
+  }, { requiredPermission: "dashboard.view" }),
 ] as const satisfies readonly BackendActionDefinition[];
 
 const backendActionDefinitionMap = new Map(

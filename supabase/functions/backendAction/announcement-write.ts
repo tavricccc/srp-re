@@ -1,7 +1,7 @@
 import { asRecord } from "../_shared/http.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
 import { claimFixedWindowRateLimit } from "../_shared/upstash-rate-limit.ts";
-import { requireAdmin } from "./auth.ts";
+import { requirePermission } from "./auth.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import {
   validateMarkdownUploadsBeforeCreate,
@@ -10,7 +10,7 @@ import { asBoolean, asUuid, utcHourWindow } from "./utils.ts";
 import { INPUT_LIMITS, requiredMediaContent, requiredText } from "./validation.ts";
 
 async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
-  requireAdmin(auth);
+  requirePermission(auth, "announcement.manage");
   const content = requiredMediaContent(
     payload.content,
     "content",
@@ -31,7 +31,7 @@ async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
 }
 
 async function deleteAnnouncement(payload: JsonRecord, auth: AuthContext, supabase: BackendSupabase) {
-  requireAdmin(auth);
+  requirePermission(auth, "announcement.manage");
   const announcementId = asUuid(payload.announcementId);
   if (!announcementId) throw new Error("not-found");
   const { error } = await supabase.schema("app_api").rpc("backend_delete_announcement", {

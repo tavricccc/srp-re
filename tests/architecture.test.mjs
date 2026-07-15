@@ -285,9 +285,11 @@ test('backendAction registry owns action metadata and frontend action names', as
   assert.match(registry, /idempotent: true,\s+requiresRequestId: true/u);
 
   assert.match(index, /getBackendActionDefinition\(action\)/u);
-  assert.match(index, /definition\.requiresAdmin && !auth\.isAdmin/u);
+  assert.match(index, /definition\.requiredPermission && !hasPermission\(auth, definition\.requiredPermission\)/u);
   assert.match(index, /definition\.requiresRequestId && !requestId/u);
-  assert.match(registry, /requiresAdmin: true/u);
+  assert.match(registry, /requiredPermission: "facility\.manage"/u);
+  assert.match(registry, /requiredPermission: "role\.manage"/u);
+  assert.doesNotMatch(registry, /requiresAdmin/u);
   assert.doesNotMatch(index, /const idempotentActions = new Set/u);
   assert.doesNotMatch(rateLimit, /const readActions = new Set/u);
   assert.doesNotMatch(rateLimit, /backend\.unknown/u);
@@ -390,7 +392,7 @@ test('cost-sensitive ingress and provider operations are bounded before work', a
   );
   assert.ok(
     backendAction.indexOf('claimBackendActionRateLimit(auth.uid, definition)')
-      < backendAction.indexOf('definition.requiresAdmin && !auth.isAdmin'),
+      < backendAction.indexOf('definition.requiredPermission && !hasPermission(auth, definition.requiredPermission)'),
   );
   assert.match(hardening, /pg_advisory_xact_lock/u);
   assert.match(hardening, /max_devices constant integer := 10/u);
@@ -594,6 +596,31 @@ test('issue cascade deletion keeps dependent triggers parent-safe', async () => 
   );
 });
 
+test('facilities and author-fixed support use independent atomic storage', async () => {
+  const migration = await read('supabase/migrations/202607150003_facilities_rbac.sql');
+  const facilityService = await read('src/services/facilities.ts');
+  const facilityTypes = await read('src/types/index.ts');
+  const notion = await read('supabase/functions/_shared/notion.ts');
+  const maintenanceCleanup = await read('supabase/functions/maintenanceCleanup/index.ts');
+
+  assert.match(migration, /create table if not exists app_private\.facility_reports/u);
+  assert.match(migration, /create table if not exists app_private\.facility_report_affected_users/u);
+  assert.match(migration, /primary key \(facility_id,\s*uid\)/u);
+  assert.match(migration, /affected_count integer not null default 1/u);
+  assert.match(migration, /if facility\.author_uid=actor_uid then raise exception 'facility-author-fixed'/u);
+  assert.match(migration, /affected_count=affected_count\+case when now_affected then 1 else -1 end/u);
+  assert.match(migration, /if issue_record\.author_uid = actor_uid then raise exception 'support-not-available'/u);
+  assert.match(migration, /case when support_enabled then 1 else 0 end/u);
+  assert.match(migration, /drop table if exists app_private\.notion_support_dirty/u);
+  assert.match(migration, /cron\.unschedule\(jobid\)[\s\S]*srp_notion_support_sync/u);
+  assert.doesNotMatch(maintenanceCleanup, /notion_support|syncIssueSupport/u);
+  assert.match(facilityService, /invokeBackendAction[\s\S]*listFacilities/u);
+  assert.match(facilityTypes, /export type FacilityStatus = 'pending' \| 'processing' \| 'completed' \| 'unable-to-handle'/u);
+  assert.match(notion, /if \(!terminal\) return/u);
+  assert.match(notion, /"遇到人數"[\s\S]*facility\.affected_count/u);
+  assert.match(notion, /\["completed", "infeasible"\]\.includes\(newStatus\)/u);
+});
+
 test('announcement editing is removed across frontend, backend, and database', async () => {
   const actionContract = await read('src/services/backend-action-contract.ts');
   const announcementService = await read('src/services/announcements.ts');
@@ -688,10 +715,9 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
   assert.match(outboxWorker, /recipientUid === event\.actor_uid/u);
   assert.match(outboxWorker, /recipient_uid: recipientUid/u);
   assert.match(outboxWorker, /query = query\.eq\("uid", recipientUid\)/u);
-  assert.match(outboxWorker, /source === "admin"/u);
-  assert.match(outboxWorker, /\.from\("user_roles"\)/u);
-  assert.match(outboxWorker, /title: "新提案待審核"/u);
-  assert.match(outboxWorker, /title: "新提案待處理"/u);
+  assert.doesNotMatch(outboxWorker, /srp-admin|topic_admin/u);
+  assert.doesNotMatch(outboxWorker, /title: "新提案待審核"|title: "新提案待處理"/u);
+  assert.match(outboxWorker, /title: "設備狀態已變更"/u);
   assert.match(outboxWorker, /title: isReviewApproved \? "提案審核已通過" : "提案狀態已變更"/u);
   assert.match(outboxWorker, /`\$\{title\} 已通過審核並開放附議。`/u);
   assert.match(outboxWorker, /`\$\{title\} 現在狀態為 \$\{issueStatusLabel\(newStatus\)\}`/u);

@@ -22,6 +22,7 @@ const NOTIFICATION_RESUME_RECONNECT_MS = 10 * 60_000;
 const NOTIFICATION_VISIBLE_BATCH_SIZE = 30;
 const defaultPersonalPreferences = {
   comments: true,
+  facilityUpdates: true,
   issueUpdates: true,
 };
 function emptySourceRecord<T>(createValue: () => T): Record<NotificationSource, T> {

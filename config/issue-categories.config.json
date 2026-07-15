@@ -21,16 +21,6 @@
         "enabled": false
       },
       "responseDeadlineDays": 7
-    },
-    {
-      "id": "facilities",
-      "label": "設備",
-      "readAccess": "school",
-      "authorVisible": true,
-      "support": {
-        "enabled": false
-      },
-      "responseDeadlineDays": 7
     }
   ]
 }
