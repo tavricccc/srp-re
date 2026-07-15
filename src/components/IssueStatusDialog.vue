@@ -24,22 +24,15 @@
         <div v-if="step === 1">
           <p class="field-label mb-2">下一個狀態</p>
           <div class="grid gap-2">
-            <button
+            <SelectionOptionButton
               v-for="option in availableStatusOptions"
               :key="option.value"
-              type="button"
-              class="content-trigger flex w-full items-center justify-between gap-3 border px-3 py-3 text-left"
-              :class="nextStatus === option.value
-                ? 'button-toolbar--active shadow-note'
-                : 'border-ink-100 dark:border-ink-800'"
-              @click="nextStatus = option.value"
-            >
-              <span class="min-w-0">
-                <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ option.label }}</span>
-                <span class="mt-0.5 block text-xs leading-5 text-ink-500 dark:text-ink-400">{{ option.description }}</span>
-              </span>
-              <SelectionMark :selected="nextStatus === option.value" />
-            </button>
+              :label="option.label"
+              :description="option.description"
+              :selected="nextStatus === option.value"
+              :disabled="saving"
+              @select="nextStatus = option.value"
+            />
           </div>
 
           <p
@@ -87,7 +80,7 @@
 import { computed, ref, toRef, watch } from 'vue';
 import DialogOverlay from '@/components/ui/DialogOverlay.vue';
 import BusyButtonContent from '@/components/ui/BusyButtonContent.vue';
-import SelectionMark from '@/components/ui/SelectionMark.vue';
+import SelectionOptionButton from '@/components/ui/SelectionOptionButton.vue';
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock';
 import { useDialogFocus } from '@/composables/useDialogFocus';
 import { useActionFeedback } from '@/composables/useActionFeedback';

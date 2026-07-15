@@ -31,6 +31,7 @@ export async function handleUserAction(
   if (action === "recordPlatformVisit") {
     const { error } = await supabase.schema("app_private").from("user_profiles").upsert({
       uid: auth.uid,
+      email: auth.email.toLowerCase(),
       display_name: auth.name,
       photo_url: auth.photoUrl,
       last_seen_at: new Date().toISOString(),
@@ -46,9 +47,12 @@ export async function handleUserAction(
   if (action === "listRoleAssignments") {
     requirePermission(auth, "role.manage");
     const query = asString(payload.query).trim().toLowerCase();
+    if (!query) return { users: [] };
     let profilesQuery = supabase.schema("app_private").from("user_profiles")
-      .select("uid,display_name,cached_photo_url,photo_url").order("display_name").limit(100);
-    if (query) profilesQuery = profilesQuery.ilike("display_name", `%${query.replace(/[%_]/gu, "")}%`);
+      .select("uid,email,display_name,cached_photo_url,photo_url").limit(1);
+    profilesQuery = query.includes("@")
+      ? profilesQuery.eq("email", query)
+      : profilesQuery.eq("uid", query);
     const { data: profiles, error: profileError } = await profilesQuery;
     if (profileError) throw profileError;
     const uids = (profiles ?? []).map((profile) => profile.uid);
@@ -69,7 +73,7 @@ export async function handleUserAction(
       categoryMap.set(assignment.uid, [...(categoryMap.get(assignment.uid) ?? []), assignment.category_id]);
     }
     return { users: (profiles ?? []).map((profile) => ({
-      uid: profile.uid, name: profile.display_name ?? "使用者",
+      uid: profile.uid, email: profile.email ?? null, name: profile.display_name ?? "使用者",
       photoUrl: profile.cached_photo_url ?? profile.photo_url ?? null,
       roles: roleMap.get(profile.uid) ?? [],
       managedIssueCategoryIds: categoryMap.get(profile.uid) ?? [],

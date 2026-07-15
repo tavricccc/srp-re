@@ -22,6 +22,8 @@ function errorCode(error: unknown) {
   if (message === "unauthenticated") return "unauthenticated";
   if (message === "permission-denied") return "permission-denied";
   if (message === "not-found") return "not-found";
+  if (message === "last-platform-admin") return "last-platform-admin";
+  if (message === "missing-result") return "validation-required";
   if (message === "method-not-allowed") return "method-not-allowed";
   if (message === "missing action" || message.startsWith("Unsupported action:")) return "invalid-action";
   if (message === "unsupported-action") return "invalid-action";

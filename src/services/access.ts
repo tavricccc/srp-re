@@ -2,7 +2,7 @@ import { invokeBackendAction } from '@/services/backend-action';
 import { createRequestId } from '@/lib/request-id';
 import type { RoleCode } from '@/services/session-role';
 
-export interface AccessUser { uid: string; name: string; photoUrl: string | null; roles: RoleCode[]; managedIssueCategoryIds: string[] }
+export interface AccessUser { uid: string; email: string | null; name: string; photoUrl: string | null; roles: RoleCode[]; managedIssueCategoryIds: string[] }
 
 export async function listRoleAssignments(query = '') {
   const fn = invokeBackendAction<{ query: string }, { users: AccessUser[] }>('listRoleAssignments');

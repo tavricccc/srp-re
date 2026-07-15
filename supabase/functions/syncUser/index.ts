@@ -88,6 +88,14 @@ Deno.serve(async (request) => {
       requireEnv("APP_SUPABASE_SERVICE_ROLE_KEY"),
       { auth: { persistSession: false } },
     );
+    const { error: profileError } = await supabase.schema("app_private").from("user_profiles").upsert({
+      uid: user.uid,
+      email: user.email.toLowerCase(),
+      display_name: user.name,
+      photo_url: user.photoUrl,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "uid" });
+    if (profileError) throw profileError;
     const { data: legacyRole, error: legacyRoleError } = await supabase.schema("app_private")
       .from("user_roles").select("role").eq("uid", user.uid).maybeSingle();
     if (legacyRoleError) throw legacyRoleError;

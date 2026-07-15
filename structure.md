@@ -21,7 +21,7 @@
 ## Supabase
 
 - `supabase/config.toml` — schema 暴露與 Functions JWT 模式
-- `supabase/migrations/` — 基線 + 增量 SQL（schema／RLS／RPC／Realtime Broadcast／清理／成本限流硬化／設備與 RBAC／輸入長度、附件型別、圖片網址快取、統一 feed 分頁與集合式留言回覆讀取）；`202607150003_facilities_rbac.sql` 建立設備與 RBAC，`202607150004_backfill_legacy_platform_admins.sql` 承接既有管理員，`202607150005_clarify_role_scopes.sql` 固定平台最高權限，`202607150006_category_scoped_proposal_access.sql` 建立可複選的 config 分類管理權限，細節見 git
+- `supabase/migrations/` — 基線 + 增量 SQL（schema／RLS／RPC／Realtime Broadcast／清理／成本限流硬化／設備與 RBAC／輸入長度、附件型別、圖片網址快取、統一 feed 分頁與集合式留言回覆讀取）；`202607150003_facilities_rbac.sql` 建立設備與 RBAC，`202607150004_backfill_legacy_platform_admins.sql` 承接既有管理員，`202607150005_clarify_role_scopes.sql` 固定平台最高權限，`202607150006_category_scoped_proposal_access.sql` 建立可複選的 config 分類管理權限，`202607150007_access_lookup_and_facility_status.sql` 加入精確帳號查找並修正設備狀態 RPC，細節見 git
 - `supabase/functions/backendAction/` — 受控 action 閘道
   - `index.ts` — CORS、驗證、限流、冪等、分派
   - `action-registry.ts` / `response.ts` / `rate-limit.ts` / `types.ts` / `utils.ts` / `validation.ts` / `auth.ts`
@@ -60,7 +60,7 @@
 
 ## components/ui（無業務）
 
-- `LoadingSpinner.vue` / `BusyButtonContent.vue` / `FeedLoadMoreControl.vue` — spinner、busy 按鈕內容與共用 pill 載入更多控制
+- `LoadingSpinner.vue` / `BusyButtonContent.vue` / `FeedLoadMoreControl.vue` / `SelectionOptionButton.vue` — spinner、busy 按鈕內容、共用載入更多與一致的選取列控制
 - `AppIcon.vue` / `BrandMark.vue` / `UserAvatar.vue` / `DecorativeGlow.vue`
 - `EmptyStatePanel.vue` / `PageLoadFailure.vue` / `SearchHighlight.vue`
 - `PillSegmentedControl.vue` / `SelectionMark.vue` / `DetailActionButton.vue` / `DetailPageShell.vue`

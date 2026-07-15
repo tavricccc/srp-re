@@ -178,6 +178,7 @@ interface PushTokenRow {
 
 interface UserProfileRow {
   uid: string;
+  email: string | null;
   avatar_hash: string | null;
   avatar_public_id: string | null;
   avatar_source_url: string | null;

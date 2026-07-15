@@ -636,6 +636,9 @@ test('proposal manager access is config-driven and category-scoped', async () =>
   const users = await read('supabase/functions/backendAction/users.ts');
   const issueRead = await read('supabase/functions/backendAction/issue-read.ts');
   const migration = await read('supabase/migrations/202607150006_category_scoped_proposal_access.sql');
+  const lookupMigration = await read('supabase/migrations/202607150007_access_lookup_and_facility_status.sql');
+  const selectionControl = await read('src/components/ui/SelectionOptionButton.vue');
+  const facilityDialog = await read('src/components/FacilityStatusDialog.vue');
 
   assert.match(accessView, /import \{ ISSUE_CATEGORIES \} from '@\/generated\/issue-categories'/u);
   assert.match(accessView, /v-for="category in ISSUE_CATEGORIES"/u);
@@ -643,6 +646,13 @@ test('proposal manager access is config-driven and category-scoped', async () =>
   assert.match(users, /managedIssueCategoryIds[\s\S]*filter\(isIssueCategory\)/u);
   assert.match(auth, /canManageIssueCategory/u);
   assert.match(issueRead, /canManageIssueCategory\(auth, category\)/u);
+  assert.match(users, /if \(!query\) return \{ users: \[\] \}/u);
+  assert.match(users, /profilesQuery\.eq\("email", query\)[\s\S]*profilesQuery\.eq\("uid", query\)/u);
+  assert.match(lookupMigration, /user_profiles_email_unique_idx/u);
+  assert.match(lookupMigration, /backend_update_facility_status\.result_content/u);
+  assert.match(accessView, /SelectionOptionButton/u);
+  assert.match(facilityDialog, /SelectionOptionButton/u);
+  assert.match(selectionControl, /button-toolbar--active[\s\S]*SelectionMark/u);
 });
 
 test('announcement editing is removed across frontend, backend, and database', async () => {

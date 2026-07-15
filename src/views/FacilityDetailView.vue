@@ -54,7 +54,7 @@
     </template>
   </DetailPageShell>
 
-  <FacilityStatusDialog v-if="facility" :open="statusOpen" :current-status="facility.status" @close="statusOpen = false" @submit="submitStatus" />
+  <FacilityStatusDialog v-if="facility" :open="statusOpen" :current-status="facility.status" :saving="statusSaving" :error="statusError" @close="closeStatusDialog" @submit="submitStatus" />
 </template>
 
 <script setup lang="ts">
@@ -70,10 +70,14 @@ import { useFacilityDetail } from '@/composables/useFacilityDetail';
 import { useStatusStyling } from '@/composables/useStatusStyling';
 import { formatDate } from '@/lib/format';
 import type { FacilityStatus } from '@/types';
+import { useActionFeedback } from '@/composables/useActionFeedback';
 
 const router = useRouter();
 const { changeStatus, error, facility, loading, remove, toggleAffected } = useFacilityDetail();
 const statusOpen = ref(false);
+const statusSaving = ref(false);
+const statusError = ref('');
+const { start } = useActionFeedback();
 const labels: Record<FacilityStatus, string> = { pending: '待受理', processing: '處理中', completed: '已完成', 'unable-to-handle': '無法處理' };
 const closed = computed(() => facility.value ? ['completed', 'unable-to-handle'].includes(facility.value.status) : false);
 const status = computed(() => facility.value?.status ?? 'pending');
@@ -81,6 +85,22 @@ const { statusClass } = useStatusStyling(status, 'dialog');
 
 function reload() { window.location.reload(); }
 function backToList() { void router.push({ name: 'facilities' }); }
-async function submitStatus(nextStatus: FacilityStatus, result: string) { await changeStatus(nextStatus, result); statusOpen.value = false; }
+function closeStatusDialog() { if (!statusSaving.value) { statusOpen.value = false; statusError.value = ''; } }
+async function submitStatus(nextStatus: FacilityStatus, result: string) {
+  if (statusSaving.value) return;
+  statusSaving.value = true;
+  statusError.value = '';
+  const feedback = start('正在更新設備狀態');
+  try {
+    await changeStatus(nextStatus, result);
+    statusOpen.value = false;
+    feedback.succeed('設備狀態已更新');
+  } catch (caught) {
+    statusError.value = caught instanceof Error ? caught.message : '更新失敗，請稍後再試。';
+    feedback.fail(statusError.value);
+  } finally {
+    statusSaving.value = false;
+  }
+}
 async function confirmDelete() { if (window.confirm('確定要刪除這筆設備嗎？')) await remove(); }
 </script>

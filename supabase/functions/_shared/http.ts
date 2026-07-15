@@ -138,6 +138,8 @@ export function publicError(error: unknown) {
     "invalid-json": "請求格式不正確。",
     "invalid-issue-category": "提案分類不正確。",
     "invalid-status": "提案狀態不正確。",
+    "last-platform-admin": "至少需要保留一位平台管理員。",
+    "missing-result": "結案時必須填寫處理結果。",
     "method-not-allowed": "請求方法不正確。",
     "not-found": "找不到指定內容。",
     "permission-denied": "沒有執行此操作的權限。",
