@@ -2,19 +2,19 @@ import { onScopeDispose } from 'vue';
 import { resetRouteRequestScope } from '@/lib/route-request';
 
 type AppResumeReason = 'pageshow' | 'visibility';
-type ResumeHandler = (reason: AppResumeReason) => void | Promise<void>;
+type ResumeHandler = (reason: AppResumeReason, hiddenDurationMs: number) => void | Promise<void>;
 
 const handlers = new Set<ResumeHandler>();
 let initialized = false;
 let hiddenAt = 0;
 let lastResumeAt = 0;
 
-function emitResume(reason: AppResumeReason) {
+function emitResume(reason: AppResumeReason, hiddenDurationMs = 0) {
   const now = Date.now();
   if (now - lastResumeAt < 500) return;
   lastResumeAt = now;
   resetRouteRequestScope();
-  handlers.forEach((handler) => void handler(reason));
+  handlers.forEach((handler) => void handler(reason, hiddenDurationMs));
 }
 
 export function initializeAppResume() {
@@ -22,14 +22,14 @@ export function initializeAppResume() {
   initialized = true;
 
   window.addEventListener('pageshow', (event) => {
-    if (event.persisted) emitResume('pageshow');
+    if (event.persisted) emitResume('pageshow', Number.POSITIVE_INFINITY);
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       hiddenAt = Date.now();
       return;
     }
-    if (hiddenAt > 0) emitResume('visibility');
+    if (hiddenAt > 0) emitResume('visibility', Date.now() - hiddenAt);
     hiddenAt = 0;
   });
 }

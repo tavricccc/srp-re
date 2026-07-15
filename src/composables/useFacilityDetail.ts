@@ -1,7 +1,8 @@
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onScopeDispose, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { deleteFacility, getFacility, toggleFacilityAffected, updateFacilityStatus } from '@/services/facilities';
 import type { FacilityStatus } from '@/types';
+import { subscribeContentRevisionChanges } from '@/services/content-revisions';
 
 export function useFacilityDetail() {
   const route = useRoute();
@@ -32,6 +33,8 @@ export function useFacilityDetail() {
     await deleteFacility(facility.value.id);
     await router.push({ name: 'facilities' });
   }
+  const unsubscribeRevision = subscribeContentRevisionChanges('facilities', load);
   onMounted(() => void load());
+  onScopeDispose(unsubscribeRevision);
   return { changeStatus, error, facility, loading, remove, toggleAffected };
 }

@@ -2,9 +2,10 @@ import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption, IssueStatu
 import { buildTitleSearchTokens, normalizeSearchText } from '@/lib/search';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { invokeBackendAction } from '@/services/backend-action';
-import { createContentCacheKey, getCachedContent, setCachedContent } from '@/services/content-read-cache';
+import { createContentCacheKey, getCachedContentPersistent, setCachedContent } from '@/services/content-read-cache';
 import { TABLE_PAGE_SIZE, normalizeIssueCursor, normalizeIssueRecord, toReadableBackendError, withSupportState } from './issues-core';
 import { CONTENT_FEED_PAGE_SIZE } from '@/lib/page-size';
+import { prepareContentRevisionRead } from '@/services/content-revisions';
 
 function normalizeIssueList(records: Record<string, unknown>[]) {
   return records.map((record) => normalizeIssueRecord(String(record.id ?? ''), record));
@@ -24,6 +25,7 @@ export async function fetchIssuesPageByStatus(
     supportedIssueIds?: Set<string>;
   },
 ) {
+  if (!options?.forceRefresh) await prepareContentRevisionRead();
   const pageSize = options?.pageSize ?? TABLE_PAGE_SIZE;
   const cacheKey = createContentCacheKey([
     'issue-list-page',
@@ -39,7 +41,7 @@ export async function fetchIssuesPageByStatus(
     cursor?.created_at?.getTime() ?? '',
   ]);
   if (!options?.forceRefresh) {
-    const cached = getCachedContent<{ cursor: IssueCursor | null; hasMore: boolean; issues: IssueRecord[] }>(cacheKey);
+    const cached = await getCachedContentPersistent<{ cursor: IssueCursor | null; hasMore: boolean; issues: IssueRecord[] }>(cacheKey);
     if (cached) {
       return {
         ...cached,
@@ -101,6 +103,7 @@ export async function fetchIssuesForTitleSearch(
   issues: IssueRecord[];
   limited: boolean;
 }> {
+  if (!options?.forceRefresh) await prepareContentRevisionRead();
   const normalizedQuery = normalizeSearchText(titleQuery);
   const searchTokens = buildTitleSearchTokens(normalizedQuery);
   if (searchTokens.length === 0) {
@@ -120,7 +123,7 @@ export async function fetchIssuesForTitleSearch(
     options?.cursor?.created_at?.getTime() ?? '',
   ]);
   if (!options?.forceRefresh) {
-    const cached = getCachedContent<{
+    const cached = await getCachedContentPersistent<{
       cursor: IssueCursor | null;
       hasMore: boolean;
       issues: IssueRecord[];

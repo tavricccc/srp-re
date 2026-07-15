@@ -3,6 +3,7 @@ import { withRequestTimeout } from '@/lib/request';
 import { getFirebaseIdToken } from '@/lib/auth-token';
 import { readSupabaseFunctionError } from '@/services/supabase-function-error';
 import type { BackendActionName } from '@/services/backend-action-contract';
+import { auth } from '@/lib/firebase';
 
 interface BackendActionSuccessEnvelope<TResponse> {
   data: TResponse;
@@ -67,8 +68,9 @@ export function invokeBackendAction<TRequest = Record<string, unknown>, TRespons
   return (initialPayload: TRequest): Promise<TResponse> => {
     const stableOperation = withStableRequestId(name, initialPayload);
     return withRequestTimeout(async (signal) => {
+      const requestUid = auth?.currentUser?.uid ?? '';
       const token = await getFirebaseIdToken();
-      if (!token) {
+      if (!token || !requestUid || auth?.currentUser?.uid !== requestUid) {
         throw new Error('請先登入後再操作。');
       }
 
@@ -79,6 +81,9 @@ export function invokeBackendAction<TRequest = Record<string, unknown>, TRespons
         },
         signal,
       });
+      if (auth?.currentUser?.uid !== requestUid) {
+        throw new Error('登入狀態已變更，已忽略先前的回應。');
+      }
       if (result.error) {
         throw new Error(await readSupabaseFunctionError(result));
       }

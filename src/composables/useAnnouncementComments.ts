@@ -13,6 +13,7 @@ export function useAnnouncementComments(
 ) {
   const core = useDiscussionComments<AnnouncementCommentRecord>({
     cacheNamespace: 'announcement-comments-state',
+    revisionDomain: 'announcements',
     channelPrefix: 'announcement-comments',
     realtimeEventType: 'announcement_comment_changed',
     abortMessage: '公告留言載入已取消。',

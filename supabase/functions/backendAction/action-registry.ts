@@ -17,6 +17,7 @@ export type BackendActionRateLimitGroup =
 
 export type BackendActionDomain =
   | "announcement"
+  | "content"
   | "dashboard"
   | "facility"
   | "issue"
@@ -76,6 +77,25 @@ function idempotentWrite(
 }
 
 export const backendActionDefinitions = [
+  action("getContentRevisions", "content", "read", async (_action, _payload, _auth, supabase) => {
+    const { data, error } = await supabase
+      .schema("app_private")
+      .from("content_revisions")
+      .select("domain,revision");
+    if (error) throw error;
+    const revisions = { announcements: 0, facilities: 0, issues: 0 };
+    for (const row of data ?? []) {
+      const domain = String(row.domain);
+      if (domain === "announcements" || domain === "facilities" || domain === "issues") {
+        revisions[domain] = Number(row.revision);
+      }
+    }
+    if (Object.values(revisions).some((revision) => revision < 1)) {
+      throw new Error("content-revisions-unavailable");
+    }
+    return { revisions };
+  }),
+
   action("getCurrentUserRole", "user", "read", userHandler),
   action("listRoleAssignments", "user", "read", userHandler, { requiredPermission: "role.manage" }),
   action("setUserRoles", "user", "admin-write", userHandler, {

@@ -4,6 +4,13 @@
       <header class="flex min-w-0 items-center gap-2">
         <span class="tag-sm shrink-0 font-semibold" :class="statusClass">{{ statusLabel }}</span>
         <span class="ml-auto truncate text-xs text-ink-400 dark:text-ink-500">{{ formatDate(facility.created_at) }}</span>
+        <div v-if="facility.canManageFacility" class="shrink-0" @click.stop>
+          <FacilityAdminMenu
+            :facility="facility"
+            @status="emit('manage-status', facility)"
+            @delete="emit('delete', facility)"
+          />
+        </div>
       </header>
 
       <div class="mt-3 flex min-w-0 items-center gap-2.5">
@@ -48,6 +55,7 @@
 
 <script setup lang="ts">
 import { computed, toRef } from 'vue';
+import FacilityAdminMenu from '@/components/FacilityAdminMenu.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import SearchHighlight from '@/components/ui/SearchHighlight.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
@@ -59,6 +67,8 @@ const props = withDefaults(defineProps<{ facility: FacilitySummary; highlightQue
 const emit = defineEmits<{
   'open-details': [facility: FacilitySummary];
   'toggle-affected': [facility: FacilitySummary];
+  'manage-status': [facility: FacilitySummary];
+  delete: [facility: FacilitySummary];
 }>();
 const labels: Record<FacilityStatus, string> = {
   pending: '待受理', processing: '處理中', completed: '已完成', 'unable-to-handle': '無法處理',

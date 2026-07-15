@@ -72,6 +72,7 @@ import {
   patchCachedContent,
   shouldRefreshContentAfterResume,
 } from '@/services/content-read-cache';
+import { subscribeContentRevisionChanges } from '@/services/content-revisions';
 
 const route = useRoute();
 const router = useRouter();
@@ -102,6 +103,9 @@ const unregisterResumeHandler = registerAppResumeHandler(() => {
   const cached = getCachedContentEntry<AnnouncementRecord>(detailCacheKey(announcementId));
   if (!shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) return;
   void refreshAnnouncementSilently({ force: true });
+});
+const unsubscribeRevision = subscribeContentRevisionChanges('announcements', () => {
+  if (canLoadAnnouncement.value && announcement.value) return refreshAnnouncementSilently({ force: true });
 });
 
 const sessionLoading = computed(() => loading.value || !initialized.value);
@@ -333,6 +337,7 @@ watch(
 onScopeDispose(() => {
   realtimeUnsubscribe?.();
   unregisterResumeHandler();
+  unsubscribeRevision();
   window.clearTimeout(realtimeRefreshTimer);
 });
 

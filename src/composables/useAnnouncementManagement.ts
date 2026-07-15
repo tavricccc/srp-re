@@ -22,6 +22,7 @@ import {
   markContentWentOffline,
   shouldRefreshContentAfterResume,
 } from '@/services/content-read-cache';
+import { subscribeContentRevisionChanges } from '@/services/content-revisions';
 
 export function useAnnouncementManagement() {
   const router = useRouter();
@@ -64,6 +65,9 @@ export function useAnnouncementManagement() {
     if (!shouldRefreshContentAfterResume(updatedAt.value)) return;
     void refreshAnnouncementList({ force: true });
   });
+  const unsubscribeRevision = subscribeContentRevisionChanges('announcements', () =>
+    refreshAnnouncementList({ force: true })
+  );
 
   function openAnnouncementDetails(announcement: AnnouncementRecord, initialTab: 'details' | 'comments' = 'details') {
     router.push({
@@ -234,6 +238,7 @@ export function useAnnouncementManagement() {
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
     unregisterResumeHandler();
+    unsubscribeRevision();
   });
 
   watch(isOnline, (online) => {

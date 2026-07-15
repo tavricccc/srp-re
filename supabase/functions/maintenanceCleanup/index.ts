@@ -4,6 +4,7 @@ import { requireEnv } from "../_shared/env.ts";
 import { errorMessage, errorStatus, jsonResponse, publicError, requireMethod } from "../_shared/http.ts";
 import { ISSUE_CATEGORY_IDS } from "../_shared/issue-categories.ts";
 import { RATE_LIMITS } from "../_shared/rate-limits.ts";
+import { DATA_RETENTION } from "../_shared/data-retention.ts";
 import { claimFixedWindowRateLimits, utcMinuteWindow, utcSecondWindow } from "../_shared/upstash-rate-limit.ts";
 import { requireBearerSecret } from "../_shared/webhook.ts";
 
@@ -26,7 +27,10 @@ Deno.serve(async (request) => {
     );
     const { data, error } = await supabase
       .schema("app_api")
-      .rpc("run_maintenance_cleanup", { valid_issue_categories: [...ISSUE_CATEGORY_IDS] });
+      .rpc("run_maintenance_cleanup", {
+        retention_config: DATA_RETENTION,
+        valid_issue_categories: [...ISSUE_CATEGORY_IDS],
+      });
     if (error) throw error;
 
     const baseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/u, "");

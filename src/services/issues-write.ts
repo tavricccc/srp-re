@@ -97,6 +97,13 @@ function normalizeCommentResponse(comment: CommentResponseRecord): CommentRecord
   };
 }
 
+function invalidateIssueCache() {
+  markContentCachePrefixStale('issue-list-page|');
+  markContentCachePrefixStale('issue-search|');
+  markContentCachePrefixStale('user-issue-list-page|');
+  markContentCachePrefixStale('issue-detail|');
+}
+
 export async function createIssue(
   input: ComposerInput,
 ) {
@@ -111,6 +118,7 @@ export async function createIssue(
       category: input.category,
       requestId: createRequestId(),
     });
+    invalidateIssueCache();
     return normalizeIssueResponse(result.issue);
   } catch (error) {
     throw toReadableBackendError(error);
@@ -124,6 +132,7 @@ export async function moderateIssueStatus(issueId: string, status: IssueStatus, 
       { issue: IssueResponseRecord }
     >('moderateIssueStatus');
     const result = await fn({ issueId, status, reason, requestId: createRequestId() });
+    invalidateIssueCache();
     return normalizeIssueResponse(result.issue);
   } catch (error) {
     throw toReadableBackendError(error);
@@ -137,6 +146,7 @@ export async function updateIssueResult(issueId: string, resultContent: string) 
       { issue: IssueResponseRecord }
     >('updateIssueResult');
     const result = await fn({ issueId, resultContent, requestId: createRequestId() });
+    invalidateIssueCache();
     return normalizeIssueResponse(result.issue);
   } catch (error) {
     throw toReadableBackendError(error);
@@ -149,6 +159,7 @@ export async function toggleSupport(
   try {
     const fn = invokeBackendAction<{ issueId: string; requestId: string }, SupportResponse>('toggleSupport');
     const result = await fn({ issueId, requestId: createRequestId() });
+    invalidateIssueCache();
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -159,6 +170,7 @@ export async function removeSupport(issueId: string) {
   try {
     const fn = invokeBackendAction<{ issueId: string; requestId: string }, SupportResponse>('removeSupport');
     const result = await fn({ issueId, requestId: createRequestId() });
+    invalidateIssueCache();
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -171,6 +183,7 @@ export async function deleteIssue(
   try {
     const fn = invokeBackendAction<{ issueId: string; requestId: string }, { success: boolean; issueId: string }>('deleteIssue');
     const result = await fn({ issueId, requestId: createRequestId() });
+    invalidateIssueCache();
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -195,6 +208,7 @@ export async function createComment(
     });
     const comment = normalizeCommentResponse(result.comment);
     markContentCachePrefixStale('issue-comments-page|');
+    invalidateIssueCache();
     return comment;
   } catch (error) {
     throw toReadableBackendError(error);

@@ -3,6 +3,7 @@ import { auth } from '@/lib/firebase';
 import { isIssueCategory } from '@/constants/categories';
 import { getCachedSessionRole } from '@/services/session-role';
 import type { IssueCategory } from '@/types';
+import { markContentCachePrefixStale } from '@/services/content-read-cache';
 
 type SupabaseAppClient = ReturnType<typeof getSupabaseClient>;
 type RealtimeChannel = ReturnType<SupabaseAppClient['channel']>;
@@ -122,6 +123,7 @@ function ensureSharedRealtimeChannel() {
       .on('broadcast', { event: 'content_changed' }, (message) => {
         const event = normalizeRealtimeEvent(message.payload as Record<string, unknown>);
         if (!event) return;
+        invalidateRealtimeContent(event);
         realtimeSubscribers.forEach((subscriber) => subscriber.callback(event));
       })
       .subscribe((status) => {
@@ -142,6 +144,24 @@ function ensureSharedRealtimeChannel() {
     return channel;
   });
   sharedRealtimeChannels = channels;
+}
+
+function invalidateRealtimeContent(event: ContentRealtimeEvent) {
+  if (event.eventType.startsWith('issue_')) {
+    markContentCachePrefixStale('issue-list-page|');
+    markContentCachePrefixStale('issue-search|');
+    markContentCachePrefixStale('user-issue-list-page|');
+    markContentCachePrefixStale('issue-detail|');
+    if (event.eventType === 'issue_comment_changed') {
+      markContentCachePrefixStale('issue-comments-page|');
+    }
+    return;
+  }
+  markContentCachePrefixStale('announcement-list-page|');
+  markContentCachePrefixStale('announcement-detail|');
+  if (event.eventType === 'announcement_comment_changed') {
+    markContentCachePrefixStale('announcement-comments-page|');
+  }
 }
 
 export function subscribeContentRealtimeEvents(

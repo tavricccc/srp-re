@@ -16,6 +16,19 @@ import {
   toReadableBackendError,
 } from './issues-core';
 import { NOTIFICATION_FEED_PAGE_SIZE } from '@/lib/page-size';
+import {
+  CONTENT_SHORT_CACHE_TTL_MS,
+  createContentCacheKey,
+  getCachedContentPersistent,
+  markContentCachePrefixStale,
+  setCachedContent,
+} from '@/services/content-read-cache';
+
+const NOTIFICATION_PAGES_CACHE_PREFIX = 'notification-pages|';
+const NOTIFICATION_STATE_CACHE_KEY = 'notification-read-state';
+const NOTIFICATION_UNREAD_CACHE_KEY = 'notification-unread-hint';
+const PUSH_PREFERENCE_CACHE_PREFIX = 'push-notification-preference|';
+const NOTIFICATION_HINT_CACHE_TTL_MS = 2 * 60_000;
 
 type NotificationBroadcastMessage = { payload: Record<string, unknown> };
 interface NotificationBroadcastListener {
@@ -43,6 +56,17 @@ function subscribeNotificationBroadcast(
     const client = getSupabaseClient();
     const channel = client.channel(topic, { config: { private: true } })
       .on<Record<string, unknown>>('broadcast', { event }, (message) => {
+        if (event === 'notification_insert') {
+          markContentCachePrefixStale(NOTIFICATION_PAGES_CACHE_PREFIX);
+          markContentCachePrefixStale(NOTIFICATION_UNREAD_CACHE_KEY);
+          if (message.payload.type === 'facility_status_changed') {
+            markContentCachePrefixStale('facility-list-page|');
+            markContentCachePrefixStale('facility-detail|');
+          }
+        } else {
+          markContentCachePrefixStale(NOTIFICATION_STATE_CACHE_KEY);
+          markContentCachePrefixStale(NOTIFICATION_UNREAD_CACHE_KEY);
+        }
         listeners.forEach((listener) => listener.callback({ payload: message.payload }));
       })
       .subscribe((status) => {
@@ -209,6 +233,17 @@ export async function fetchNotificationSourcePages(
   uid: string,
   signal?: AbortSignal,
 ): Promise<Partial<Record<NotificationSource, NotificationSourcePage>>> {
+  const cacheKey = createContentCacheKey([
+    'notification-pages',
+    uid,
+    ...requests.map(({ cursor, source }) => `${source}:${cursor?.id ?? 'first'}:${cursor?.createdAtMs ?? ''}`),
+  ]);
+  const cached = await getCachedContentPersistent<Partial<Record<NotificationSource, NotificationSourcePage>>>(
+    cacheKey,
+    CONTENT_SHORT_CACHE_TTL_MS,
+  );
+  if (cached) return cached;
+
   try {
     const fn = invokeBackendAction<
       { requests: Array<{ cursor: NotificationCursor; pageSize: number; source: NotificationSource }>; uid: string },
@@ -218,7 +253,7 @@ export async function fetchNotificationSourcePages(
       requests: requests.map((request) => ({ ...request, pageSize: NOTIFICATION_FEED_PAGE_SIZE })),
       uid,
     });
-    return Object.fromEntries(requests.flatMap(({ source }) => {
+    const pages = Object.fromEntries(requests.flatMap(({ source }) => {
       const page = result.pages[source];
       if (!page) return [];
       const notifications = Array.isArray(page.notifications) ? page.notifications : [];
@@ -231,6 +266,8 @@ export async function fetchNotificationSourcePages(
         )),
       } satisfies NotificationSourcePage]];
     })) as Partial<Record<NotificationSource, NotificationSourcePage>>;
+    setCachedContent(cacheKey, pages);
+    return pages;
   } catch (error) {
     throw toReadableBackendError(error);
   }
@@ -261,11 +298,18 @@ export function subscribeNotificationReadState(
 }
 
 async function getNotificationReadState(uid: string): Promise<NotificationReadState> {
+  const cached = await getCachedContentPersistent<NotificationReadState>(
+    NOTIFICATION_STATE_CACHE_KEY,
+    CONTENT_SHORT_CACHE_TTL_MS,
+  );
+  if (cached) return cached;
   const fn = invokeBackendAction<{ uid: string }, { state: Record<string, unknown> }>('getNotificationReadState', {
     timeoutMs: READ_REQUEST_TIMEOUT_MS,
   });
   const result = await fn({ uid });
-  return normalizeNotificationReadState(result.state);
+  const state = normalizeNotificationReadState(result.state);
+  setCachedContent(NOTIFICATION_STATE_CACHE_KEY, state);
+  return state;
 }
 
 export async function fetchNotificationSnapshot(
@@ -297,10 +341,17 @@ export async function fetchNotificationSnapshot(
 }
 
 export async function fetchNotificationUnreadHint() {
+  const cached = await getCachedContentPersistent<{ value: boolean }>(
+    NOTIFICATION_UNREAD_CACHE_KEY,
+    NOTIFICATION_HINT_CACHE_TTL_MS,
+  );
+  if (cached) return cached.value;
   const fn = invokeBackendAction<Record<string, never>, { hasUnread: boolean }>('getNotificationUnreadHint', {
     timeoutMs: READ_REQUEST_TIMEOUT_MS,
   });
-  return (await fn({})).hasUnread;
+  const value = (await fn({})).hasUnread;
+  setCachedContent(NOTIFICATION_UNREAD_CACHE_KEY, { value });
+  return value;
 }
 
 export function subscribeNotificationBadge(
@@ -337,6 +388,8 @@ export async function markNotificationsOpened() {
   try {
     const fn = invokeBackendAction<Record<string, never>, { openedAtMs: number; success: boolean }>('markNotificationsOpened');
     const result = await fn({});
+    markContentCachePrefixStale(NOTIFICATION_STATE_CACHE_KEY);
+    setCachedContent(NOTIFICATION_UNREAD_CACHE_KEY, { value: false });
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -344,9 +397,21 @@ export async function markNotificationsOpened() {
 }
 
 export async function getPushNotificationPreference(payload: GetPushNotificationPreferencePayload = {}) {
+  const cacheKey = createContentCacheKey([
+    'push-notification-preference',
+    payload.deviceId ?? '',
+    payload.permission ?? '',
+    payload.token ?? '',
+  ]);
+  const cached = await getCachedContentPersistent<PushNotificationPreference>(
+    cacheKey,
+    CONTENT_SHORT_CACHE_TTL_MS,
+  );
+  if (cached) return cached;
   try {
     const fn = invokeBackendAction<GetPushNotificationPreferencePayload, PushNotificationPreference>('getPushNotificationPreference');
     const result = await fn(payload);
+    setCachedContent(cacheKey, result);
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -357,6 +422,7 @@ export async function registerPushToken(payload: RegisterPushTokenPayload) {
   try {
     const fn = invokeBackendAction<RegisterPushTokenPayload, PushNotificationPreference>('registerPushToken');
     const result = await fn(payload);
+    markContentCachePrefixStale(PUSH_PREFERENCE_CACHE_PREFIX);
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -367,6 +433,7 @@ export async function unregisterPushToken(payload: UnregisterPushTokenPayload) {
   try {
     const fn = invokeBackendAction<UnregisterPushTokenPayload, PushNotificationPreference>('unregisterPushToken');
     const result = await fn(payload);
+    markContentCachePrefixStale(PUSH_PREFERENCE_CACHE_PREFIX);
     return result;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -377,6 +444,7 @@ export async function updatePushNotificationPreferences(payload: UpdatePushNotif
   try {
     const fn = invokeBackendAction<UpdatePushNotificationPreferencesPayload, PushNotificationPreference>('updatePushNotificationPreferences');
     const result = await fn(payload);
+    markContentCachePrefixStale(PUSH_PREFERENCE_CACHE_PREFIX);
     return result;
   } catch (error) {
     throw toReadableBackendError(error);

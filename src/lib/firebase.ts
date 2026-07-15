@@ -1,5 +1,5 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
+import { browserLocalPersistence, getAuth, initializeAuth, type Auth } from 'firebase/auth';
 
 const allowedDomain = String(import.meta.env.VITE_ALLOWED_DOMAIN ?? '').trim().toLowerCase();
 const firebaseVapidKey = readEnv('VITE_FIREBASE_VAPID_KEY');
@@ -33,7 +33,11 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
 if (!firebaseInitError) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  try {
+    auth = initializeAuth(app, { persistence: browserLocalPersistence });
+  } catch {
+    auth = getAuth(app);
+  }
 }
 export { allowedDomain, app, auth, firebaseVapidKey };

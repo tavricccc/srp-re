@@ -1,10 +1,4 @@
-import {
-  browserLocalPersistence,
-  getRedirectResult,
-  onAuthStateChanged,
-  setPersistence,
-  signOut,
-} from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
 import { computed, reactive } from 'vue';
 import { auth, allowedDomain } from '@/lib/firebase';
 import type { SessionState } from '@/composables/sessionTypes';
@@ -22,6 +16,7 @@ import { validateBasicUser, validateUserAgainstToken } from '@/composables/sessi
 import { withRequestTimeout } from '@/lib/request';
 import { ensureSupabaseAuthenticatedRole } from '@/services/supabase-auth';
 import { fetchCurrentUserRole } from '@/services/session-role';
+import { ensureContentRevisionsFresh } from '@/services/content-revisions';
 
 const state = reactive<SessionState>({
   initialized: false,
@@ -45,7 +40,6 @@ const sessionReadyWaiters: Array<() => void> = [];
 const roleReadyWaiters: Array<() => void> = [];
 let sessionStartupTimeout: number | null = null;
 
-const SESSION_PERSISTENCE_TIMEOUT_MS = 5_000;
 const SESSION_STARTUP_TIMEOUT_MS = 12_000;
 const ROLE_READY_TIMEOUT_MS = 12_000;
 
@@ -217,6 +211,8 @@ async function refreshVerifiedSession(user: NonNullable<SessionState['user']>, v
     try {
       await ensureSupabaseAuthenticatedRole(user);
       if (!isCurrentVerification(user, verificationId)) return;
+      await ensureContentRevisionsFresh().catch(() => undefined);
+      if (!isCurrentVerification(user, verificationId)) return;
     } catch (error) {
       debugLog('background supabase auth initialization failed', error);
       await rejectCurrentUser('登入初始化失敗，請重新登入後再試。');
@@ -262,14 +258,7 @@ export function initializeSession() {
     recoverFromSessionStartupTimeout,
     SESSION_STARTUP_TIMEOUT_MS,
   );
-  void withRequestTimeout(
-    () => setPersistence(firebaseAuth, browserLocalPersistence),
-    { label: '登入狀態初始化', timeoutMs: SESSION_PERSISTENCE_TIMEOUT_MS },
-  )
-    .catch((error) => {
-      debugLog('local auth persistence unavailable', error);
-    })
-    .finally(() => observeAuthState(firebaseAuth));
+  observeAuthState(firebaseAuth);
 }
 
 export function waitForSessionReady() {

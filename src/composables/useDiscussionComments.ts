@@ -15,6 +15,7 @@ import {
 import { isContentUnavailableError } from '@/services/issues-core';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import type { DiscussionCommentRecord } from '@/types';
+import { subscribeContentRevisionChanges, type ContentRevisionDomain } from '@/services/content-revisions';
 
 export interface DiscussionCommentsPage<TComment extends DiscussionCommentRecord> {
   comments: TComment[];
@@ -24,6 +25,7 @@ export interface DiscussionCommentsPage<TComment extends DiscussionCommentRecord
 
 export interface DiscussionCommentsAdapters<TComment extends DiscussionCommentRecord> {
   cacheNamespace: string;
+  revisionDomain: Extract<ContentRevisionDomain, 'announcements' | 'issues'>;
   channelPrefix: string;
   realtimeEventType: string;
   abortMessage: string;
@@ -461,6 +463,10 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
       void loadComments({ force: true, id, silent: true });
     }
   });
+  const unsubscribeRevision = subscribeContentRevisionChanges(adapters.revisionDomain, () => {
+    const id = targetId();
+    if (id) return loadComments({ force: true, id, silent: true });
+  });
 
   watch(isOnline, (online) => {
     if (!online) {
@@ -503,6 +509,7 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
     unregisterResumeHandler();
+    unsubscribeRevision();
     window.clearTimeout(realtimeRefreshTimer);
     requestVersion += 1;
     requestController?.abort(new RequestFailure(adapters.abortMessage, 'aborted'));

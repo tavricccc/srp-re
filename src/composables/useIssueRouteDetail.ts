@@ -12,6 +12,7 @@ import { fetchIssueRecordById } from '@/services/issues';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import type { IssueRecord } from '@/types';
 import { isAbortFailure } from '@/lib/request';
+import { subscribeContentRevisionChanges } from '@/services/content-revisions';
 import {
   createContentCacheKey,
   getCachedContentEntry,
@@ -50,6 +51,9 @@ export function useIssueRouteDetail(
     const cached = getCachedContentEntry<IssueRecord>(detailCacheKey(issueId));
     if (!shouldRefreshContentAfterResume(cached?.updatedAt ?? 0)) return;
     void refreshRouteIssueSilently({ force: true });
+  });
+  const unsubscribeRevision = subscribeContentRevisionChanges('issues', () => {
+    if (route.name === 'issue-detail') return refreshRouteIssueSilently({ force: true });
   });
 
   const routeIssueSupportClosed = computed(() => {
@@ -249,6 +253,7 @@ export function useIssueRouteDetail(
   onScopeDispose(() => {
     realtimeUnsubscribe?.();
     unregisterResumeHandler();
+    unsubscribeRevision();
     window.clearTimeout(realtimeRefreshTimer);
   });
 

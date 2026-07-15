@@ -14,6 +14,7 @@ export const BACKEND_ACTION_NAMES = [
   'deleteUploadedImages',
   'finalizeImageUploads',
   'getAnnouncement',
+  'getContentRevisions',
   'getCurrentUserRole',
   'getIssue',
   'getFacility',

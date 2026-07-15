@@ -10,6 +10,8 @@
         :highlight-query="highlightQuery"
         @open-details="emit('open-details', $event)"
         @toggle-affected="emit('toggle-affected', $event)"
+        @manage-status="emit('manage-status', $event)"
+        @delete="emit('delete', $event)"
       />
     </div>
   </div>
@@ -24,5 +26,7 @@ withDefaults(defineProps<{ facilities: FacilitySummary[]; loading: boolean; high
 const emit = defineEmits<{
   'open-details': [facility: FacilitySummary];
   'toggle-affected': [facility: FacilitySummary];
+  'manage-status': [facility: FacilitySummary];
+  delete: [facility: FacilitySummary];
 }>();
 </script>

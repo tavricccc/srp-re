@@ -3,6 +3,12 @@ import { toReadableBackendError } from '@/services/issues-core';
 import type { PlatformDashboardData, PlatformDashboardOperations, PlatformDashboardStats } from '@/types';
 import { getRouteRequestSignal } from '@/lib/route-request';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
+import {
+  CONTENT_SHORT_CACHE_TTL_MS,
+  getCachedContentPersistent,
+  runCoalescedContentRequest,
+  setCachedContent,
+} from '@/services/content-read-cache';
 
 interface DashboardResponse {
   stats: Omit<PlatformDashboardStats, 'last_activity_at' | 'updated_at'> & {
@@ -38,9 +44,7 @@ interface DashboardResponse {
   };
 }
 
-const DASHBOARD_CACHE_MS = 60_000;
-let cachedDashboard: { data: PlatformDashboardData; updatedAt: number } | null = null;
-let pendingDashboard: Promise<PlatformDashboardData> | null = null;
+const DASHBOARD_CACHE_KEY = 'platform-dashboard';
 
 function toDate(value: number | null) {
   return typeof value === 'number' ? new Date(value) : null;
@@ -56,19 +60,18 @@ export async function recordPlatformVisit() {
 }
 
 export async function fetchPlatformDashboard(options: { forceRefresh?: boolean } = {}): Promise<PlatformDashboardData> {
-  if (!options.forceRefresh && cachedDashboard && Date.now() - cachedDashboard.updatedAt < DASHBOARD_CACHE_MS) {
-    return cachedDashboard.data;
+  if (!options.forceRefresh) {
+    const cached = await getCachedContentPersistent<PlatformDashboardData>(
+      DASHBOARD_CACHE_KEY,
+      CONTENT_SHORT_CACHE_TTL_MS,
+    );
+    if (cached) return cached;
   }
-  if (!options.forceRefresh && pendingDashboard) return pendingDashboard;
-  const request = loadPlatformDashboard();
-  pendingDashboard = request;
-  try {
-    const data = await request;
-    cachedDashboard = { data, updatedAt: Date.now() };
+  return runCoalescedContentRequest(DASHBOARD_CACHE_KEY, async () => {
+    const data = await loadPlatformDashboard();
+    setCachedContent(DASHBOARD_CACHE_KEY, data);
     return data;
-  } finally {
-    if (pendingDashboard === request) pendingDashboard = null;
-  }
+  });
 }
 
 async function loadPlatformDashboard(): Promise<PlatformDashboardData> {

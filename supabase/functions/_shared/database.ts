@@ -235,11 +235,18 @@ interface MaintenanceRunRow {
   task_name: string;
 }
 
+interface ContentRevisionRow {
+  domain: string;
+  revision: number;
+  updated_at: string;
+}
+
 interface AppPrivateTables {
   announcement_comments: Table<AnnouncementCommentRow>;
   announcement_likes: Table<{ announcement_id: string; uid: string; created_at: string }>;
   announcements: Table<AnnouncementRow>;
   comments: Table<CommentRow>;
+  content_revisions: Table<ContentRevisionRow>;
   deletion_jobs: Table<DeletionJobRow>;
   facility_reports: Table<FacilityRow>;
   facility_report_affected_users: Table<{ facility_id: string; uid: string; created_at: string }>;
@@ -538,7 +545,10 @@ interface AppApiFunctions {
   backend_delete_issue: AppFunction<{ actor_is_admin: boolean; actor_uid: string; issue_id: string }, void>;
   release_idempotency_key: AppFunction<{ action_name: string; actor_uid: string; request_id: string }, void>;
   resignal_background_worker: AppFunction<{ worker_name: string }, void>;
-  run_maintenance_cleanup: AppFunction<{ valid_issue_categories?: string[] | null }, Json>;
+  run_maintenance_cleanup: AppFunction<{
+    retention_config?: Json;
+    valid_issue_categories?: string[] | null;
+  }, Json>;
 }
 
 interface EmptySchema {

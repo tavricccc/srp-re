@@ -9,6 +9,7 @@ export function useIssueComments(issueId: Ref<string>, categoryId: Ref<string>, 
   const core = useDiscussionComments<CommentRecord>(
     {
       cacheNamespace: 'issue-comments-state',
+      revisionDomain: 'issues',
       channelPrefix: 'issue-comments',
       realtimeEventType: 'issue_comment_changed',
       abortMessage: '留言載入已取消。',

@@ -6,7 +6,6 @@ import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption, IssueStatu
 import { sortIssues } from '@/lib/issue-sort';
 import { isAbortFailure } from '@/lib/request';
 
-const SEARCH_DEBOUNCE_MS = 700;
 const MIN_GLOBAL_SEARCH_LENGTH = 3;
 
 export function useIssueSearch(options: {
@@ -18,7 +17,7 @@ export function useIssueSearch(options: {
   supportedIssueIds: Ref<Set<string>>;
 }) {
   const searchQuery = ref('');
-  const debouncedSearchQuery = ref('');
+  const committedSearchQuery = ref('');
   const searchState = reactive({
     loading: false,
     error: '',
@@ -29,22 +28,23 @@ export function useIssueSearch(options: {
     issues: [] as IssueRecord[],
   });
 
-  let debounceTimer: ReturnType<typeof window.setTimeout> | null = null;
   let requestToken = 0;
   let requestController: AbortController | null = null;
   let searchPool: IssueRecord[] = [];
+  const searchRefreshToken = ref(0);
 
   const normalizedSearchQuery = computed(() => normalizeSearchText(searchQuery.value));
-  const normalizedDebouncedSearchQuery = computed(() => normalizeSearchText(debouncedSearchQuery.value));
-  const isSearching = computed(() => normalizedSearchQuery.value.length > 0);
+  const normalizedCommittedSearchQuery = computed(() => normalizeSearchText(committedSearchQuery.value));
+  const isSearching = computed(() => normalizedCommittedSearchQuery.value.length > 0);
   const canSearchGlobally = computed(
-    () => normalizedDebouncedSearchQuery.value.length >= MIN_GLOBAL_SEARCH_LENGTH,
+    () => normalizedCommittedSearchQuery.value.length >= MIN_GLOBAL_SEARCH_LENGTH,
   );
   const searchResultCount = computed(() => searchState.issues.length);
   const searchHint = computed(() => {
-    if (!isSearching.value) return '';
-    if (normalizedSearchQuery.value.length < MIN_GLOBAL_SEARCH_LENGTH) {
-      return '輸入至少 3 個字可搜尋更多提案，目前只搜尋本頁。';
+    if (normalizedSearchQuery.value !== normalizedCommittedSearchQuery.value) return '按 Enter 搜尋。';
+    if (!isSearching.value) return '輸入關鍵字後按 Enter 搜尋。';
+    if (normalizedCommittedSearchQuery.value.length < MIN_GLOBAL_SEARCH_LENGTH) {
+      return '目前只搜尋已載入的提案；輸入至少 3 個字可搜尋更多。';
     }
     if (searchState.loading) return '搜尋中...';
     if (searchState.limited) return `找到 ${searchResultCount.value} 筆，已優先檢查最相關的索引候選。`;
@@ -74,7 +74,7 @@ export function useIssueSearch(options: {
   }
 
   function filterIssues(issues: IssueRecord[]) {
-    const query = normalizedSearchQuery.value;
+    const query = normalizedCommittedSearchQuery.value;
     if (!query) {
       return issues;
     }
@@ -93,7 +93,7 @@ export function useIssueSearch(options: {
   }
 
   function addSearchIssue(issue: IssueRecord) {
-    const query = normalizedSearchQuery.value;
+    const query = normalizedCommittedSearchQuery.value;
     const derivedStatus = getDerivedIssueStatus(issue);
     const isActiveIssue = derivedStatus === 'under-review' || derivedStatus === 'pending' || derivedStatus === 'processing';
     const matchesBucket = options.statusBucket.value === 'active' ? isActiveIssue : !isActiveIssue;
@@ -132,25 +132,32 @@ export function useIssueSearch(options: {
     );
   }
 
-  watch(searchQuery, (value) => {
-    if (debounceTimer) {
-      window.clearTimeout(debounceTimer);
-    }
-    debounceTimer = window.setTimeout(() => {
-      debouncedSearchQuery.value = value;
-      debounceTimer = null;
-    }, SEARCH_DEBOUNCE_MS);
-  });
+  function submitSearch() {
+    const query = normalizedSearchQuery.value;
+    if (query === normalizedCommittedSearchQuery.value) return;
+    committedSearchQuery.value = query;
+  }
+
+  function clearSearch() {
+    searchQuery.value = '';
+    committedSearchQuery.value = '';
+    resetSearchPool();
+  }
+
+  function refreshSearchResults() {
+    searchRefreshToken.value += 1;
+  }
 
   watch(
     () => [
       canSearchGlobally.value,
-      normalizedDebouncedSearchQuery.value,
+      normalizedCommittedSearchQuery.value,
       options.activeFilter.value,
       options.statusBucket.value,
       options.userUid.value,
       options.isAdmin.value,
       options.sortOption.value,
+      searchRefreshToken.value,
     ] as const,
     async ([ready, titleQuery, filter, statusBucket, uid, nextIsAdmin, sort]) => {
       resetSearchResults();
@@ -203,7 +210,7 @@ export function useIssueSearch(options: {
 
     const filter = options.activeFilter.value;
     const uid = options.userUid.value;
-    const titleQuery = normalizedDebouncedSearchQuery.value;
+    const titleQuery = normalizedCommittedSearchQuery.value;
     if (filter === 'my-proposals' || !uid || !titleQuery) return;
 
     const currentToken = requestToken;
@@ -246,17 +253,14 @@ export function useIssueSearch(options: {
   watch(options.supportedIssueIds, refreshSearchSupportState);
 
   onBeforeUnmount(() => {
-    if (debounceTimer) {
-      window.clearTimeout(debounceTimer);
-    }
     resetSearchPool();
   });
 
   return {
     searchQuery,
-    debouncedSearchQuery,
+    committedSearchQuery,
     normalizedSearchQuery,
-    normalizedDebouncedSearchQuery,
+    normalizedCommittedSearchQuery,
     isSearching,
     canSearchGlobally,
     searchHint,
@@ -269,5 +273,8 @@ export function useIssueSearch(options: {
     removeSearchIssue,
     resetSearchResults,
     resetSearchPool,
+    submitSearch,
+    clearSearch,
+    refreshSearchResults,
   };
 }

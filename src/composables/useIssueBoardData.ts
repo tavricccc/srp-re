@@ -21,6 +21,7 @@ import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import { fetchIssueRecordById } from '@/services/issues';
 import type { IssueRecord, IssueSortOption } from '@/types';
 import { CONTENT_FEED_PAGE_SIZE } from '@/lib/page-size';
+import { subscribeContentRevisionChanges } from '@/services/content-revisions';
 
 export function useIssueBoardData() {
   const { user, canManageIssueCategory, isAllowedUser, mySupportedIssueIds, roleLoading } = useSession();
@@ -66,6 +67,7 @@ export function useIssueBoardData() {
 
   const {
     searchQuery,
+    committedSearchQuery,
     isSearching,
     canSearchGlobally,
     searchHint,
@@ -76,6 +78,9 @@ export function useIssueBoardData() {
     patchSearchIssue,
     loadMoreSearchResults,
     resetSearchResults,
+    submitSearch,
+    clearSearch,
+    refreshSearchResults,
   } = useIssueSearch({
     activeFilter,
     statusBucket: statusTab,
@@ -114,7 +119,7 @@ export function useIssueBoardData() {
     activeFilter,
     statusTab,
     sortOption,
-    searchQuery,
+    searchQuery: committedSearchQuery,
     canSearchGlobally,
     isSearching,
     searchIssues: computed(() => searchState.issues),
@@ -123,6 +128,7 @@ export function useIssueBoardData() {
     filterIssues,
   });
   let realtimeUnsubscribe: (() => void) | null = null;
+  const unsubscribeRevision = subscribeContentRevisionChanges('issues', () => refreshCurrentData());
   const unregisterResumeHandler = registerAppResumeHandler(() => {
     if (!isAllowedUser.value) return;
     const updatedAt = activeFilter.value === 'my-proposals'
@@ -250,7 +256,7 @@ export function useIssueBoardData() {
   });
 
   watch(activeFilter, () => {
-    searchQuery.value = '';
+    clearSearch();
   });
 
   watch(
@@ -308,13 +314,15 @@ export function useIssueBoardData() {
 
   async function refreshCurrentData() {
     document.documentElement.classList.add('no-transitions');
-    resetSearchResults();
     stopUserIssuesRequest();
 
     if (activeFilter.value === 'my-proposals') {
       bumpUserIssuesRequestToken();
       await loadCurrentUserIssues({ silent: true });
+    } else if (isSearching.value && canSearchGlobally.value) {
+      refreshSearchResults();
     } else {
+      resetSearchResults();
       await refreshBucket(statusTab.value);
     }
     markContentRealtimeReliable();
@@ -347,6 +355,7 @@ export function useIssueBoardData() {
   onBeforeUnmount(() => {
     realtimeUnsubscribe?.();
     unregisterResumeHandler();
+    unsubscribeRevision();
     restoreDocumentTitle();
     bumpUserIssuesRequestToken();
     resetSearchResults();
@@ -368,6 +377,9 @@ export function useIssueBoardData() {
     activeFilter,
     statusTab,
     searchQuery,
+    committedSearchQuery,
+    submitSearch,
+    clearSearch,
     sortOption,
     composerMessage,
     activeCategoryLabel,

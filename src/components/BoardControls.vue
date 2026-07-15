@@ -151,7 +151,7 @@
               v-if="isSearchOpen"
               class="popover-panel popover-panel--search absolute z-[100] mt-2 max-md:left-4 max-md:right-4 max-md:w-auto md:right-0 md:left-auto md:w-80"
             >
-              <div class="relative">
+              <form class="relative" role="search" @submit.prevent="emit('submitSearch')">
                 <AppIcon name="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-ink-500" />
                 <input
                   ref="searchInputRef"
@@ -168,11 +168,11 @@
                   type="button"
                   class="button-toolbar absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full p-0"
                   aria-label="清除搜尋"
-                  @click="emit('update:searchQuery', '')"
+                  @click="emit('clearSearch')"
                 >
                   <AppIcon name="close" :size="3" />
                 </button>
-              </div>
+              </form>
               <p
                 v-if="searchHint"
                 class="mt-2 text-xs font-normal leading-5 text-ink-500 dark:text-ink-400"
@@ -214,6 +214,8 @@ const emit = defineEmits<{
   'update:statusTab': [value: 'active' | 'closed'];
   'update:searchQuery': [value: string];
   'update:sortOption': [value: BoardSortOption];
+  'submitSearch': [];
+  'clearSearch': [];
 }>();
 
 const issueSortOptions = [

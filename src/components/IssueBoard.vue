@@ -7,6 +7,8 @@
       :active-filter="activeFilter"
       :active-category-label="activeCategoryLabel"
       :search-hint="searchHint"
+      @submit-search="submitSearch"
+      @clear-search="clearSearch"
     />
 
     <div ref="boardScrollRef" class="scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-4">
@@ -52,7 +54,7 @@
               :loading="false"
               error=""
               :show-author="showAuthorCol"
-              :highlight-query="searchQuery"
+              :highlight-query="committedSearchQuery"
               @open-details="openIssueDetails"
               @support-changed="handleSupportChanged"
               @issue-updated="handleIssueUpdatedFromList"
@@ -141,6 +143,9 @@ const {
   activeFilter,
   statusTab,
   searchQuery,
+  committedSearchQuery,
+  submitSearch,
+  clearSearch,
   sortOption,
   composerMessage,
   activeCategoryLabel,
@@ -172,7 +177,7 @@ const boardPanelKey = computed(() => [
   activeFilter.value,
   statusTab.value,
   sortOption.value,
-  isSearching.value ? searchQuery.value.trim() : '',
+  isSearching.value ? committedSearchQuery.value.trim() : '',
 ].join(':'));
 const rawContentLoading = computed(() => currentLoading.value);
 const { visibleLoading: visibleContentLoading } = useMinimumLoading(rawContentLoading, {
@@ -215,7 +220,7 @@ const { sentinel: loadMoreSentinel } = useInfiniteScroll({
 });
 const emptyStateDescription = computed(() => {
   if (showEmptySearchResult.value) {
-    return `沒有找到與關鍵字「${searchQuery.value}」相關的提案。`;
+    return `沒有找到與關鍵字「${committedSearchQuery.value}」相關的提案。`;
   }
   if (issueIsPrivateToOwner(activeFilter.value) && !isAdmin.value) {
     return `${activeCategoryLabel.value}分類只會顯示你自己提出的提案；你目前還沒有符合目前狀態的提案。`;
@@ -228,7 +233,7 @@ function issueBoardScrollKey() {
     activeFilter.value,
     statusTab.value,
     sortOption.value,
-    searchQuery.value,
+    committedSearchQuery.value,
   ].join(':');
 }
 

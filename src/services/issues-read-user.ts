@@ -1,8 +1,9 @@
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { invokeBackendAction } from '@/services/backend-action';
-import { createContentCacheKey, getCachedContent, setCachedContent } from '@/services/content-read-cache';
+import { createContentCacheKey, getCachedContentPersistent, setCachedContent } from '@/services/content-read-cache';
 import type { IssueCursor, IssueSortOption, IssueStatusBucket } from '@/types';
 import { normalizeIssueCursor, normalizeIssueRecord, toReadableBackendError, withSupportState } from './issues-core';
+import { prepareContentRevisionRead } from '@/services/content-revisions';
 
 export async function fetchUserIssues(
   uid: string,
@@ -16,6 +17,7 @@ export async function fetchUserIssues(
     signal?: AbortSignal;
   },
 ) {
+  if (!options?.forceRefresh) await prepareContentRevisionRead();
   const pageSize = options?.pageSize ?? 30;
   const sort = options?.sort ?? 'latest';
   const statusBucket = options?.statusBucket ?? 'active';
@@ -31,7 +33,7 @@ export async function fetchUserIssues(
     cursor?.created_at?.getTime() ?? '',
   ]);
   if (!options?.forceRefresh) {
-    const cached = getCachedContent<{ cursor: IssueCursor | null; hasMore: boolean; issues: ReturnType<typeof normalizeIssueRecord>[] }>(cacheKey);
+    const cached = await getCachedContentPersistent<{ cursor: IssueCursor | null; hasMore: boolean; issues: ReturnType<typeof normalizeIssueRecord>[] }>(cacheKey);
     if (cached) {
       return {
         ...cached,

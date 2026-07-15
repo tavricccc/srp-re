@@ -8,7 +8,7 @@ import { createRequestId } from '@/lib/request-id';
 import { READ_REQUEST_TIMEOUT_MS, RequestFailure } from '@/lib/request';
 import {
   createContentCacheKey,
-  getCachedContent,
+  getCachedContentPersistent,
   markContentCachePrefixStale,
   setCachedContent,
 } from '@/services/content-read-cache';
@@ -16,10 +16,12 @@ import { normalizeDate, toReadableBackendError } from '@/services/issues-core';
 import type { CommentCursor } from './comment-cursor';
 import { normalizeCommentCursor } from './comment-cursor';
 import { COMMENT_FEED_PAGE_SIZE } from '@/lib/page-size';
+import { prepareContentRevisionRead } from '@/services/content-revisions';
 
 const ANNOUNCEMENT_LIMIT = 10;
 const ANNOUNCEMENT_LIST_CACHE_PREFIX = 'announcement-list-page|';
 const ANNOUNCEMENT_COMMENTS_CACHE_PREFIX = 'announcement-comments-page|';
+const ANNOUNCEMENT_DETAIL_CACHE_PREFIX = 'announcement-detail|';
 export type AnnouncementCursor = { id: string; publishedAtMs: number } | null;
 
 function dateFromMs(value: unknown) {
@@ -84,6 +86,7 @@ export async function fetchAnnouncementsPage(
   pageSize = ANNOUNCEMENT_LIMIT,
   options: { cacheScope?: string; forceRefresh?: boolean; signal?: AbortSignal } = {},
 ) {
+  if (!options.forceRefresh) await prepareContentRevisionRead();
   const cacheKey = createContentCacheKey([
     'announcement-list-page',
     options.cacheScope ?? 'default',
@@ -92,7 +95,7 @@ export async function fetchAnnouncementsPage(
     cursor?.publishedAtMs ?? '',
   ]);
   if (!options.forceRefresh) {
-    const cached = getCachedContent<{ announcements: AnnouncementRecord[]; cursor: AnnouncementCursor; hasMore: boolean }>(cacheKey);
+    const cached = await getCachedContentPersistent<{ announcements: AnnouncementRecord[]; cursor: AnnouncementCursor; hasMore: boolean }>(cacheKey);
     if (cached) return cached;
   }
 
@@ -118,9 +121,10 @@ export async function fetchAnnouncementRecordById(
   announcementId: string,
   options: { cacheScope?: string; forceRefresh?: boolean } = {},
 ): Promise<AnnouncementRecord> {
+  if (!options.forceRefresh) await prepareContentRevisionRead();
   const cacheKey = createContentCacheKey(['announcement-detail', options.cacheScope ?? 'default', announcementId]);
   if (!options.forceRefresh) {
-    const cached = getCachedContent<AnnouncementRecord>(cacheKey);
+    const cached = await getCachedContentPersistent<AnnouncementRecord>(cacheKey);
     if (cached) return cached;
   }
 
@@ -144,6 +148,7 @@ export async function createAnnouncement(input: AnnouncementInput): Promise<Anno
   const result = await fn({ ...input, requestId: createRequestId() });
   const announcement = normalizeAnnouncementRecord(result.announcement);
   markContentCachePrefixStale(ANNOUNCEMENT_LIST_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_DETAIL_CACHE_PREFIX);
   return announcement;
 }
 
@@ -151,6 +156,7 @@ export async function deleteAnnouncement(announcementId: string) {
   const fn = invokeBackendAction<{ announcementId: string; requestId: string }, { success: boolean }>('deleteAnnouncement');
   const result = await fn({ announcementId, requestId: createRequestId() });
   markContentCachePrefixStale(ANNOUNCEMENT_LIST_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_DETAIL_CACHE_PREFIX);
   return result;
 }
 
@@ -160,6 +166,8 @@ export async function setAnnouncementLike(announcementId: string, liked: boolean
     { liked: boolean; like_count: number }
   >('setAnnouncementLike');
   const result = await fn({ announcementId, liked, requestId: createRequestId() });
+  markContentCachePrefixStale(ANNOUNCEMENT_LIST_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_DETAIL_CACHE_PREFIX);
   return result;
 }
 
@@ -168,6 +176,7 @@ export async function fetchAnnouncementComments(
   cursor?: CommentCursor,
   options: { cacheScope?: string; forceRefresh?: boolean; signal?: AbortSignal | null } = {},
 ) {
+  if (!options.forceRefresh) await prepareContentRevisionRead();
   const cacheKey = createContentCacheKey([
     'announcement-comments-page',
     options.cacheScope ?? 'default',
@@ -176,7 +185,7 @@ export async function fetchAnnouncementComments(
     cursor?.createdAtMs ?? '',
   ]);
   if (!options.forceRefresh) {
-    const cached = getCachedContent<{ comments: AnnouncementCommentRecord[]; cursor: CommentCursor; hasMore: boolean }>(cacheKey);
+    const cached = await getCachedContentPersistent<{ comments: AnnouncementCommentRecord[]; cursor: CommentCursor; hasMore: boolean }>(cacheKey);
     if (cached) return cached;
   }
 
@@ -208,6 +217,8 @@ export async function createAnnouncementComment(announcementId: string, content:
   >('createAnnouncementComment');
   const result = await fn({ announcementId, content, parentCommentId, requestId: createRequestId() });
   markContentCachePrefixStale(ANNOUNCEMENT_COMMENTS_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_LIST_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_DETAIL_CACHE_PREFIX);
   return {
     comment: normalizeAnnouncementComment(result.comment),
     comment_count: result.comment_count,
@@ -221,5 +232,7 @@ export async function deleteAnnouncementComment(commentId: string) {
   >('deleteAnnouncementComment');
   const result = await fn({ commentId, requestId: createRequestId() });
   markContentCachePrefixStale(ANNOUNCEMENT_COMMENTS_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_LIST_CACHE_PREFIX);
+  markContentCachePrefixStale(ANNOUNCEMENT_DETAIL_CACHE_PREFIX);
   return result;
 }

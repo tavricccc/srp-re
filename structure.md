@@ -11,6 +11,7 @@
 - 官方網站、完整文件、更新紀錄與分類設定產生器由 [`tavricccc/novae-website`](https://github.com/tavricccc/novae-website) 獨立維護與發布
 - `config/issue-categories.config.json` — 提案分類與分類管理權限選項的單一設定入口
 - `config/rate-limits.config.json` — 限流與圖片壓縮設定入口
+- `config/data-retention.config.json` — 已結案內容、通知、事件、log、暫存與維護紀錄保留期的單一設定入口
 - `structure.md` / `AGENTS.md` / `design-qa.md` — 結構地圖 / 代理人規則 / 最近一次視覺比對紀錄
 - `package.json` — scripts（typecheck、lint、build、check:edge、test:architecture、verify:local…）
 - `index.html` / `vite.config.ts` / `vercel.json` / `eslint.config.js` / `tsconfig*.json` / `tailwind.config.cjs`
@@ -21,7 +22,7 @@
 ## Supabase
 
 - `supabase/config.toml` — schema 暴露與 Functions JWT 模式
-- `supabase/migrations/` — 基線 + 增量 SQL（schema／RLS／RPC／Realtime Broadcast／清理／成本限流硬化／設備與 RBAC／輸入長度、附件型別、圖片網址快取、統一 feed 分頁與集合式留言回覆讀取）；`202607150003_facilities_rbac.sql` 建立設備與 RBAC，`202607150004_backfill_legacy_platform_admins.sql` 承接既有管理員，`202607150005_clarify_role_scopes.sql` 固定平台最高權限，`202607150006_category_scoped_proposal_access.sql` 建立可複選的 config 分類管理權限，`202607150007_access_lookup_and_facility_status.sql` 加入精確帳號查找並修正設備狀態 RPC，細節見 git
+- `supabase/migrations/` — 基線 + 增量 SQL（schema／RLS／RPC／Realtime Broadcast／清理／成本限流硬化／設備與 RBAC／輸入長度、附件型別、圖片網址快取、統一 feed 分頁與集合式留言回覆讀取）；`202607150003_facilities_rbac.sql` 建立設備與 RBAC，`202607150004_backfill_legacy_platform_admins.sql` 承接既有管理員，`202607150005_clarify_role_scopes.sql` 固定平台最高權限，`202607150006_category_scoped_proposal_access.sql` 建立可複選的 config 分類管理權限，`202607150007_access_lookup_and_facility_status.sql` 加入精確帳號查找並修正設備狀態 RPC，`202607160001_configurable_retention_cleanup.sql` 由 config 控制已結案內容與營運資料保留期，`202607160002_content_revisions.sql` 建立提案／公告／設備的批次內容版本，細節見 git
 - `supabase/functions/backendAction/` — 受控 action 閘道
   - `index.ts` — CORS、驗證、限流、冪等、分派
   - `action-registry.ts` / `response.ts` / `rate-limit.ts` / `types.ts` / `utils.ts` / `validation.ts` / `auth.ts`
@@ -79,7 +80,7 @@
 - 內容：`MarkdownRenderer`、`MarkdownMediaContent`、`AuthorAvatar`、`VoteButtons`
 - 看板：`IssueBoard`、`BoardControls`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailContent`、`IssueDetailSupportFooter`
 - 公告：`AnnouncementTable`、`AnnouncementTableRow`、`AnnouncementDetailPagePanel`、`AnnouncementDetailContent`、`AnnouncementDetailActions`、`CompactActionMenu`
-- 設備：`FacilityComposer`、`FacilityStatusDialog`、`FacilityTable`、`FacilityTableRow`；列表與詳情沿用提案看板、卡片與 `DetailPageShell` 視覺系統，資料流維持獨立 service/composable
+- 設備：`FacilityComposer`、`FacilityStatusDialog`、`FacilityAdminMenu`、`FacilityTable`、`FacilityTableRow`；列表與詳情沿用提案看板、卡片與 `DetailPageShell` 視覺系統，資料流維持獨立 service/composable
 
 ---
 
@@ -104,14 +105,14 @@
 - `generated/issue-categories.ts` — 分類 codegen
 - `constants/app.ts` / `constants/input-limits.ts` — Novae 品牌名稱、學校顯示設定與前端輸入長度
 - `constants/categories.ts` / `statuses.ts`
-- `lib/` — `firebase`、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-sort`、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
+- `lib/` — `firebase`、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-sort`、`persistent-cache`（IndexedDB 跨 reload 快取）、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
 - `types/index.ts` / `types/pwa.d.ts` — 共通型別及獨立 `FacilityStatus`／`FacilitySummary`／`FacilityRecord`／`FacilityInput`／`FacilityPageResult`
 
 ---
 
 ## services
 
-- `backend-action.ts` / `backend-action-contract.ts` / `supabase-function-error.ts` / `supabase-auth.ts` / `session-role.ts`（roles／permissions）/ `access.ts`（角色管理）/ `content-read-cache.ts` / `realtime-events.ts`
+- `backend-action.ts` / `backend-action-contract.ts` / `supabase-function-error.ts` / `supabase-auth.ts` / `session-role.ts`（roles／permissions）/ `access.ts`（角色管理）/ `content-read-cache.ts` / `content-revisions.ts`（三領域批次版本檢查與精準失效）/ `realtime-events.ts`
 - 提案：`issues.ts` barrel + `issues-core` / `constants` / `errors` / `utils` / `normalize` / `read*` / `write` / `comment-cursor`
 - 其他：`facilities.ts`（設備摘要分頁／詳情／寫入）、`announcements.ts`、`notifications.ts`、`dashboard.ts`、`uploads.ts`、`users-read.ts`、`users-write.ts`
 
@@ -120,6 +121,6 @@
 ## public / scripts / tests / CI
 
 - `public/` — favicon、PWA icons
-- `scripts/generate-issue-categories.mjs` / `generate-rate-limits.mjs` / `issue-category-config.mjs`
+- `scripts/generate-issue-categories.mjs` / `generate-rate-limits.mjs` / `generate-data-retention.mjs` / `issue-category-config.mjs`
 - `tests/architecture.test.mjs` — 靜態架構回歸
 - `.github/workflows/` — `verify-pr`、`deploy-frontend`、`deploy-backend`、`reset-db`、`reset-cloudinary`
