@@ -1113,3 +1113,31 @@ test('primary navigation preloads route chunks and page transitions do not overl
   assert.match(routeComponents, /for \(const routeName of routeNames\)/u);
   assert.match(responsiveStyles, /\.page-content-leave-active \{[\s\S]*position: absolute/u);
 });
+
+test('navigation and contextual creation share the same responsive information architecture', async () => {
+  const appShell = await read('src/components/AppShell.vue');
+  const mobileHeader = await read('src/components/app-shell/AppMobileHeader.vue');
+  const mobileNav = await read('src/components/app-shell/AppMobileBottomNav.vue');
+  const desktopSidebar = await read('src/components/app-shell/AppDesktopSidebar.vue');
+  const boardControls = await read('src/components/BoardControls.vue');
+  const issueBoard = await read('src/components/IssueBoard.vue');
+  const facilitiesView = await read('src/views/FacilitiesView.vue');
+  const announcementsView = await read('src/views/AnnouncementsView.vue');
+
+  assert.match(appShell, /label: '提案'/u);
+  assert.match(appShell, /:category-filter="mobileCategoryFilter"/u);
+  assert.match(mobileHeader, /IssueCategorySelector/u);
+  assert.match(boardControls, /IssueCategorySelector/u);
+  assert.doesNotMatch(mobileNav, /CreateActionMenu|新增/u);
+  assert.doesNotMatch(desktopSidebar, /CreateActionMenu|新增/u);
+  assert.ok(mobileNav.indexOf('v-for="item in items"') < mobileNav.indexOf('to="/notifications"'));
+  assert.ok(mobileNav.indexOf('to="/notifications"') < mobileNav.indexOf('to="/settings"'));
+  assert.ok(desktopSidebar.indexOf('v-for="item in items"') < desktopSidebar.indexOf('to="/notifications"'));
+  assert.ok(desktopSidebar.indexOf('to="/notifications"') < desktopSidebar.indexOf('to="/settings"'));
+  assert.match(boardControls, /v-if="createLabel"[\s\S]*name="plus"/u);
+  assert.match(issueBoard, /`新增到\$\{activeCategoryLabel\.value\}`/u);
+  assert.match(facilitiesView, /create-label="新增設備"[\s\S]*@create="composerOpen = true"/u);
+  assert.match(announcementsView, /v-if="isAdmin"[\s\S]*新增公告/u);
+  await assert.rejects(read('src/components/CreateActionMenu.vue'));
+  await assert.rejects(read('src/composables/useCreateEntryActions.ts'));
+});

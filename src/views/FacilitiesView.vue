@@ -7,7 +7,9 @@
       mode="facility"
       active-filter=""
       active-category-label="設備"
+      create-label="新增設備"
       :search-hint="searchHint"
+      @create="composerOpen = true"
       @submit-search="submitSearch"
       @clear-search="clearSearch"
     />
@@ -63,8 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import BoardControls from '@/components/BoardControls.vue';
 import FacilityComposer from '@/components/FacilityComposer.vue';
 import FacilityStatusDialog from '@/components/FacilityStatusDialog.vue';
@@ -76,10 +78,8 @@ import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
 import { useFacilities } from '@/composables/useFacilities';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { normalizeSearchText } from '@/lib/search';
-import { CREATE_ENTRY_QUERY_KEY, CREATE_FACILITY_QUERY_VALUE, registerCreateFacilityHandler } from '@/composables/useCreateEntryActions';
 import type { FacilityRecord, FacilityStatus, FacilitySummary } from '@/types';
 
-const route = useRoute();
 const router = useRouter();
 const composerOpen = ref(false);
 const { bucket, changeStatus, clearSearch, committedQuery, error, facilities, hasMore, load, loading, loadingMore, query, remove, sort, submitSearch, toggleAffected } = useFacilities();
@@ -101,15 +101,6 @@ const searchHint = computed(() => {
 const emptyDescription = computed(() => committedQuery.value.trim()
   ? `沒有找到與「${committedQuery.value.trim()}」相關的設備。`
   : `目前沒有${bucket.value === 'closed' ? '已結案' : '處理中'}設備。`);
-
-registerCreateFacilityHandler(() => { composerOpen.value = true; });
-watch(() => route.query[CREATE_ENTRY_QUERY_KEY], (value) => {
-  if (value !== CREATE_FACILITY_QUERY_VALUE) return;
-  composerOpen.value = true;
-  const nextQuery = { ...route.query };
-  delete nextQuery[CREATE_ENTRY_QUERY_KEY];
-  void router.replace({ query: nextQuery });
-}, { immediate: true });
 
 function openDetails(facility: FacilitySummary) {
   void router.push({ name: 'facility-detail', params: { facilityId: facility.id } });

@@ -12,36 +12,36 @@
         >
           <AppIcon name="chevron-left" :size="5" />
         </button>
-        <h1 class="app-header__title flex h-10 min-w-0 shrink-0 items-center text-ink-950 dark:text-ink-50" :aria-label="title">
-          <span class="truncate text-2xl font-semibold leading-tight tracking-[0.015em]">{{ title }}</span>
+        <h1 class="app-header__title flex h-10 min-w-0 items-center text-ink-950 dark:text-ink-50" :aria-label="title">
+          <IssueCategorySelector
+            v-if="categoryFilter && categoryLabel"
+            :active-filter="categoryFilter"
+            :label="categoryLabel"
+            variant="mobile-header"
+            @select="filter => $emit('select-category', filter)"
+          />
+          <span v-else class="truncate text-2xl font-semibold leading-tight tracking-[0.015em]">{{ title }}</span>
         </h1>
       </div>
-      <RouterLink
-        to="/notifications"
-        class="button-icon relative shrink-0"
-        :class="{ 'button-toolbar--active': notificationsActive }"
-        :aria-label="hasUnread ? '通知，有新通知' : '通知'"
-      >
-        <AppIcon name="bell" :size="5" />
-        <span v-if="hasUnread" class="absolute right-1 top-1 h-2 w-2 rounded-full bg-error"></span>
-      </RouterLink>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
+import IssueCategorySelector from '@/components/IssueCategorySelector.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
+import type { IssueFilter } from '@/types';
 
 defineProps<{
   backLabel: string;
+  categoryFilter?: IssueFilter;
+  categoryLabel?: string;
   showBackButton: boolean;
   title: string;
-  hasUnread: boolean;
-  notificationsActive: boolean;
 }>();
 
 defineEmits<{
   back: [];
+  'select-category': [filter: IssueFilter];
 }>();
 </script>

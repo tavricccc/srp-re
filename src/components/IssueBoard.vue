@@ -6,7 +6,9 @@
       v-model:sort-option="sortOption"
       :active-filter="activeFilter"
       :active-category-label="activeCategoryLabel"
+      :create-label="createLabel"
       :search-hint="searchHint"
+      @create="openComposerForActiveCategory"
       @submit-search="submitSearch"
       @clear-search="clearSearch"
     />
@@ -100,12 +102,6 @@ import { useIssueBoardData } from '@/composables/useIssueBoardData';
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll';
 import { useMinimumLoading } from '@/composables/useMinimumLoading';
 import { useLoadingTimeout } from '@/composables/useLoadingTimeout';
-import {
-  CREATE_ENTRY_CATEGORY_QUERY_KEY,
-  CREATE_ENTRY_QUERY_KEY,
-  CREATE_ISSUE_QUERY_VALUE,
-  registerCreateIssueHandler,
-} from '@/composables/useCreateEntryActions';
 import { useSession } from '@/composables/useSession';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { registerActiveNavigationRefreshHandler } from '@/composables/useActiveNavigationRefresh';
@@ -166,6 +162,9 @@ const {
   refreshCurrentData,
 } = useIssueBoardData();
 const isAdmin = computed(() => activeFilter.value !== 'my-proposals' && canManageIssueCategory(activeFilter.value));
+const createLabel = computed(() => isIssueCategory(activeFilter.value)
+  ? `新增到${activeCategoryLabel.value}`
+  : undefined);
 
 const showAuthorCol = computed(() => isAdmin.value || !issueStoresAuthorPrivately(activeFilter.value));
 const contentContextKey = computed(() => [
@@ -279,25 +278,9 @@ function openComposerForCategory(category: IssueCategory) {
   }
 }
 
-async function clearCreateQuery() {
-  const query = { ...route.query };
-  delete query[CREATE_ENTRY_QUERY_KEY];
-  delete query[CREATE_ENTRY_CATEGORY_QUERY_KEY];
-  await router.replace({ query });
+function openComposerForActiveCategory() {
+  if (isIssueCategory(activeFilter.value)) openComposerForCategory(activeFilter.value);
 }
-
-registerCreateIssueHandler(openComposerForCategory);
-
-watch(
-  () => [route.query[CREATE_ENTRY_QUERY_KEY], route.query[CREATE_ENTRY_CATEGORY_QUERY_KEY]],
-  ([createType, categoryParam]) => {
-    if (createType !== CREATE_ISSUE_QUERY_VALUE) return;
-    const categoryValue = Array.isArray(categoryParam) ? categoryParam[0] : categoryParam;
-    openComposerForCategory(isIssueCategory(categoryValue) ? categoryValue : DEFAULT_ISSUE_CATEGORY);
-    void clearCreateQuery();
-  },
-  { immediate: true },
-);
 
 watch(
   () => route.query.status,

@@ -2,93 +2,30 @@
   <div class="relative z-20 space-y-3">
     <div class="flex flex-row items-center justify-between gap-3 md:mt-0">
       <div class="hidden min-w-0 flex-row items-center gap-3 sm:gap-4 md:flex md:gap-6">
-        <h2 class="shrink-0 text-xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:text-2xl">{{ boardTitle }}</h2>
-
-        <div
+        <IssueCategorySelector
           v-if="mode !== 'facility' && activeFilter !== 'my-proposals'"
-          class="relative"
-          @click.stop
-          @pointerdown.stop
-        >
-          <button
-            type="button"
-            class="button-toolbar hidden h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold md:flex"
-            :class="{ 'button-toolbar--active': isCategoryOpen }"
-            :title="filterButtonTitle"
-            :aria-label="filterButtonTitle"
-            :aria-expanded="isCategoryOpen"
-            @click="toggleCategory"
-          >
-            <span class="text-sm font-semibold leading-none">{{ filterLabel }}</span>
-            <AppIcon name="chevron-down" :size="4" />
-          </button>
-
-          <transition name="popover">
-            <div
-              v-if="isCategoryOpen"
-              class="popover-panel popover-panel--section absolute z-[100] mt-2 hidden w-max min-w-[10rem] left-0 right-auto md:block"
-            >
-              <div class="popover-section-label mb-1.5 whitespace-nowrap">{{ filterSectionLabel }}</div>
-              <div class="space-y-0.5">
-                <button
-                  v-for="option in filterOptions"
-                  :key="`desk-${option.value}`"
-                  type="button"
-                  class="menu-item justify-between gap-4 whitespace-nowrap"
-                  :class="{ 'button-toolbar--active': option.value === activeFilterValue }"
-                  @click="handleCategoryChangeInPopover(option.value)"
-                >
-                  <span>{{ option.label }}</span>
-                  <SelectionMark :selected="option.value === activeFilterValue" />
-                </button>
-              </div>
-            </div>
-          </transition>
-        </div>
+          :active-filter="issueCategoryFilter"
+          :label="activeCategoryLabel"
+          variant="desktop-heading"
+          @select="handleCategoryChange"
+        />
+        <h2 v-else class="shrink-0 text-xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:text-2xl">
+          {{ activeFilter === 'my-proposals' ? '我的提案' : boardTitle }}
+        </h2>
       </div>
 
       <div class="flex w-full shrink-0 flex-row items-center justify-end gap-1.5 sm:gap-2 md:w-auto">
-        <div
-          v-if="mode !== 'facility' && activeFilter !== 'my-proposals'"
-          class="static mr-auto md:hidden"
-          @click.stop
-          @pointerdown.stop
+        <button
+          v-if="createLabel"
+          type="button"
+          class="button-primary mr-auto flex h-8 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full px-3 text-xs font-semibold md:h-9 md:max-w-none md:px-4 md:text-sm"
+          :aria-label="createLabel"
+          :title="createLabel"
+          @click="$emit('create')"
         >
-          <button
-            type="button"
-            class="button-toolbar flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold"
-            :class="{ 'button-toolbar--active': isCategoryOpen }"
-            :title="filterButtonTitle"
-            :aria-label="filterButtonTitle"
-            :aria-expanded="isCategoryOpen"
-            @click="toggleCategory"
-          >
-            <span class="text-xs font-semibold leading-none">{{ filterLabel }}</span>
-            <AppIcon name="chevron-down" :size="4" />
-          </button>
-
-          <transition name="popover">
-            <div
-              v-if="isCategoryOpen"
-              class="popover-panel popover-panel--section absolute z-[100] mt-2 left-4 right-4 w-auto"
-            >
-              <div class="popover-section-label mb-1.5">{{ filterSectionLabel }}</div>
-              <div class="space-y-0.5">
-                <button
-                  v-for="option in filterOptions"
-                  :key="`mob-${option.value}`"
-                  type="button"
-                  class="menu-item justify-between"
-                  :class="{ 'button-toolbar--active': option.value === activeFilterValue }"
-                  @click="handleCategoryChangeInPopover(option.value)"
-                >
-                  <span>{{ option.label }}</span>
-                  <SelectionMark :selected="option.value === activeFilterValue" />
-                </button>
-              </div>
-            </div>
-          </transition>
-        </div>
+          <AppIcon name="plus" :size="4" :stroke-width="2.4" />
+          <span class="truncate">{{ createLabel }}</span>
+        </button>
 
         <PillSegmentedControl
           v-if="mode === 'facility' || activeFilter !== 'my-proposals'"
@@ -191,12 +128,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import IssueCategorySelector from '@/components/IssueCategorySelector.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import PillSegmentedControl from '@/components/ui/PillSegmentedControl.vue';
-import SelectionMark from '@/components/ui/SelectionMark.vue';
-import { ISSUE_FILTER_OPTIONS } from '@/constants/categories';
+import { DEFAULT_ISSUE_CATEGORY, isIssueCategory } from '@/constants/categories';
 import { useClickOutside } from '@/composables/useClickOutside';
-import type { FacilitySortOption, IssueSortOption } from '@/types';
+import type { FacilitySortOption, IssueFilter, IssueSortOption } from '@/types';
 
 type BoardSortOption = IssueSortOption | FacilitySortOption;
 
@@ -207,6 +144,7 @@ const props = defineProps<{
   searchHint: string;
   activeFilter: string;
   activeCategoryLabel: string;
+  createLabel?: string;
   sortOption: BoardSortOption;
 }>();
 
@@ -216,6 +154,7 @@ const emit = defineEmits<{
   'update:sortOption': [value: BoardSortOption];
   'submitSearch': [];
   'clearSearch': [];
+  create: [];
 }>();
 
 const issueSortOptions = [
@@ -236,28 +175,23 @@ const visibleSortOptions = computed(() => props.mode === 'facility'
     ? issueSortOptions.filter((option) => option.value === 'latest')
     : issueSortOptions);
 
-const categoryOptions = ISSUE_FILTER_OPTIONS;
 const boardTitle = computed(() => props.mode === 'facility' ? '設備' : '提案');
-const filterSectionLabel = '提案分類';
-const filterButtonTitle = '選擇分類';
 const searchPlaceholder = computed(() => props.mode === 'facility' ? '搜尋標題或地點...' : '搜尋全站標題...');
-const filterOptions = categoryOptions;
-const activeFilterValue = computed(() => props.activeFilter);
-const filterLabel = computed(() => props.activeCategoryLabel);
+const issueCategoryFilter = computed<IssueFilter>(() =>
+  isIssueCategory(props.activeFilter) ? props.activeFilter : DEFAULT_ISSUE_CATEGORY
+);
 const statusOptions = computed(() => [
   { value: 'active' as const, label: props.mode === 'facility' ? '處理中' : '進行中', icon: 'list' as const, title: `查看${props.mode === 'facility' ? '處理中設備' : '進行中提案'}` },
   { value: 'closed' as const, label: '已結案', icon: 'inbox' as const, title: `查看已結案${boardTitle.value}` },
 ]);
 const isSearchOpen = ref(false);
 const isSortOpen = ref(false);
-const isCategoryOpen = ref(false);
 const searchInputRef = ref<HTMLInputElement | null>(null);
-const anyPanelOpen = computed(() => isSearchOpen.value || isSortOpen.value || isCategoryOpen.value);
+const anyPanelOpen = computed(() => isSearchOpen.value || isSortOpen.value);
 
 function closeFloatingPanels() {
   isSearchOpen.value = false;
   isSortOpen.value = false;
-  isCategoryOpen.value = false;
 }
 
 useClickOutside(anyPanelOpen, [], closeFloatingPanels);
@@ -265,7 +199,6 @@ useClickOutside(anyPanelOpen, [], closeFloatingPanels);
 function toggleSearch() {
   isSearchOpen.value = !isSearchOpen.value;
   isSortOpen.value = false;
-  isCategoryOpen.value = false;
   if (isSearchOpen.value) {
     nextTick(() => searchInputRef.value?.focus());
   }
@@ -273,13 +206,6 @@ function toggleSearch() {
 
 function toggleSort() {
   isSortOpen.value = !isSortOpen.value;
-  isCategoryOpen.value = false;
-  isSearchOpen.value = false;
-}
-
-function toggleCategory() {
-  isCategoryOpen.value = !isCategoryOpen.value;
-  isSortOpen.value = false;
   isSearchOpen.value = false;
 }
 
@@ -292,17 +218,12 @@ const statusTabModel = computed({
   set: (value: 'active' | 'closed') => emit('update:statusTab', value),
 });
 
-async function handleCategoryChange(value: string) {
+async function handleCategoryChange(value: IssueFilter) {
   if (value === props.activeFilter) return;
   await router.push({
     name: 'issues',
     params: { filter: value },
     query: route.query,
   });
-}
-
-async function handleCategoryChangeInPopover(value: string) {
-  isCategoryOpen.value = false;
-  await handleCategoryChange(value);
 }
 </script>

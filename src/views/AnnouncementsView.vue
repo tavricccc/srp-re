@@ -1,7 +1,16 @@
 <template>
   <section class="mx-auto w-full max-w-7xl space-y-5">
-    <div class="hidden items-center justify-between gap-3 md:flex">
-      <h2 class="shrink-0 text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50">公告</h2>
+    <div class="flex items-center justify-end gap-3 md:justify-between">
+      <h2 class="hidden shrink-0 text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:block">公告</h2>
+      <button
+        v-if="isAdmin"
+        type="button"
+        class="button-primary flex h-8 min-w-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold"
+        @click="openComposer"
+      >
+        <AppIcon name="plus" :size="4" />
+        <span class="truncate">新增公告</span>
+      </button>
     </div>
 
     <div>
@@ -88,20 +97,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
 import AnnouncementComposerDialog from '@/components/AnnouncementComposerDialog.vue';
 import AnnouncementTable from '@/components/AnnouncementTable.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import AppIcon from '@/components/ui/AppIcon.vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';
 import FeedLoadMoreControl from '@/components/ui/FeedLoadMoreControl.vue';
 import SkeletonAnnouncementList from '@/components/ui/SkeletonAnnouncementList.vue';
 import PageLoadFailure from '@/components/ui/PageLoadFailure.vue';
-import {
-  CREATE_ANNOUNCEMENT_QUERY_VALUE,
-  CREATE_ENTRY_QUERY_KEY,
-  registerCreateAnnouncementHandler,
-} from '@/composables/useCreateEntryActions';
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll';
 import { useAnnouncementManagement } from '@/composables/useAnnouncementManagement';
 import { useMinimumLoading } from '@/composables/useMinimumLoading';
@@ -137,8 +141,6 @@ const {
   handleToggleLike,
 } = useAnnouncementManagement();
 
-const route = useRoute();
-const router = useRouter();
 const { start } = useActionFeedback();
 const manualRefreshing = ref(false);
 const rawAnnouncementLoading = computed(() => sessionLoading.value || loading.value);
@@ -171,23 +173,6 @@ async function handleManualRefresh() {
   }
 }
 registerActiveNavigationRefreshHandler(handleManualRefresh);
-async function clearCreateQuery() {
-  const query = { ...route.query };
-  delete query[CREATE_ENTRY_QUERY_KEY];
-  await router.replace({ query });
-}
-
-registerCreateAnnouncementHandler(openComposer);
-
-watch(
-  () => route.query[CREATE_ENTRY_QUERY_KEY],
-  (createType) => {
-    if (createType !== CREATE_ANNOUNCEMENT_QUERY_VALUE) return;
-    openComposer();
-    void clearCreateQuery();
-  },
-  { immediate: true },
-);
 
 const { sentinel: loadMoreSentinel } = useInfiniteScroll({
   disabled: infiniteScrollDisabled,

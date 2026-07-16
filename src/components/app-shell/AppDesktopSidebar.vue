@@ -40,22 +40,6 @@
         <span class="app-sidebar__label">{{ item.label }}</span>
       </RouterLink>
 
-      <CreateActionMenu
-        :can-create-announcement="isAdmin"
-        :default-category="defaultCategory"
-        :default-kind="defaultKind"
-        @create-announcement="$emit('create-announcement')"
-        @create-facility="$emit('create-facility')"
-        @create-issue="category => $emit('create-issue', category)"
-      >
-        <template #trigger="{ open }">
-          <button type="button" class="app-sidebar__item" aria-label="新增" data-label="新增" @click="open">
-            <AppIcon name="plus" :size="5.5" :stroke-width="2.4" />
-            <span class="app-sidebar__label">新增</span>
-          </button>
-        </template>
-      </CreateActionMenu>
-
       <RouterLink
         to="/notifications"
         class="app-sidebar__item"
@@ -89,20 +73,15 @@
 
 <script setup lang="ts">
 import { RouterLink, type RouteLocationRaw } from 'vue-router';
-import CreateActionMenu from '@/components/CreateActionMenu.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import BrandMark from '@/components/ui/BrandMark.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
-import type { IssueCategory } from '@/types';
 import type { AppNavigationItem } from './types';
 
 defineProps<{
-  defaultCategory: IssueCategory;
-  defaultKind: 'announcement' | 'facility' | 'issue';
   expanded: boolean;
   hasUnread: boolean;
   homeRoute: RouteLocationRaw;
-  isAdmin: boolean;
   items: AppNavigationItem[];
   notificationsActive: boolean;
   photoUrl: string | null;
@@ -112,9 +91,6 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'create-announcement': [];
-  'create-facility': [];
-  'create-issue': [category: IssueCategory];
   navigate: [isActive: boolean];
   'navigate-link': [];
   toggle: [];

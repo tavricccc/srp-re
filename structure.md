@@ -75,10 +75,10 @@
 
 - Shell：`AppShell.vue`（共用導覽狀態、返回與捲動記憶）、`app-shell/AppDesktopSidebar.vue`、`app-shell/AppMobileHeader.vue`、`app-shell/AppMobileBottomNav.vue`、`app-shell/types.ts`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ActionFeedbackBar.vue`
 - 設定／通知：`SettingsPanelContent.vue`；通知與設定使用獨立路由頁
-- Dialog：`ConfirmDialog`、`CreateActionMenu`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`IssueComposer`、`FacilityComposer`、`FacilityStatusDialog`、`AnnouncementComposerDialog`、`IssueReviewDialog`、`IssueStatusDialog`
+- Dialog：`ConfirmDialog`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`IssueComposer`、`FacilityComposer`、`FacilityStatusDialog`、`AnnouncementComposerDialog`、`IssueReviewDialog`、`IssueStatusDialog`
 - 留言：`CommentThreadPanel`、`CommentItem`、`CommentComposer`、`IssueComments`、`AnnouncementComments`
 - 內容：`MarkdownRenderer`、`MarkdownMediaContent`、`AuthorAvatar`、`VoteButtons`
-- 看板：`IssueBoard`、`BoardControls`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailContent`、`IssueDetailSupportFooter`
+- 看板：`IssueBoard`、`BoardControls`、`IssueCategorySelector`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailContent`、`IssueDetailSupportFooter`
 - 公告：`AnnouncementTable`、`AnnouncementTableRow`、`AnnouncementDetailPagePanel`、`AnnouncementDetailContent`、`AnnouncementDetailActions`、`CompactActionMenu`
 - 設備：`FacilityComposer`、`FacilityStatusDialog`、`FacilityAdminMenu`、`FacilityTable`、`FacilityTableRow`；列表與詳情沿用提案看板、卡片與 `DetailPageShell` 視覺系統，資料流維持獨立 service/composable
 
@@ -94,7 +94,7 @@
 - 設備：`useFacilities`、`useFacilityDetail`、`useFacilityComposerForm`
 - 通知／推播：`useNotificationBadge`、`useNotifications`、`useNotificationNavigation`、`usePushNotifications`、`usePushPermissionPrompt`
 - UI 流程：`useActionFeedback`、`useActiveNavigationRefresh`、`useBodyScrollLock`、`useDialogFocus`、`useDialogThemeColor`、`useDropdownPosition`、`useClickOutside`、`useInfiniteScroll`、`useMinimumLoading`、`useLoadingTimeout`、`useTimedMessage`、`useNetworkStatus`、`useCompactTableLayout`
-- App：`useAppResume`、`useAppStartupGate`、`useAppUpdate`、`useAppInstallPrompt`、`useCreateEntryActions`、`useShareUrl`、`useAuthorAvatar`
+- App：`useAppResume`、`useAppStartupGate`、`useAppUpdate`、`useAppInstallPrompt`、`useShareUrl`、`useAuthorAvatar`
 - Markdown／圖：`useMarkdown`、`useResolvedMarkdown`、`useImageUpload`、`useMarkdownImageUpload`、`useMarkdownImageEditor`
 - Dashboard：`usePlatformDashboard`、`useDashboardMetrics`
 

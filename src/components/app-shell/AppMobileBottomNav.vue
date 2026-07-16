@@ -11,7 +11,7 @@
       ></div>
 
       <RouterLink
-        v-for="item in items.slice(0, 2)"
+        v-for="item in items"
         :key="item.key"
         :ref="element => setNavElement(item.key, element)"
         :to="item.to"
@@ -25,43 +25,19 @@
         <span class="app-bottom-nav__label">{{ item.label }}</span>
       </RouterLink>
 
-      <CreateActionMenu
-        :can-create-announcement="isAdmin"
-        :default-category="defaultCategory"
-        :default-kind="defaultKind"
-        @create-announcement="$emit('create-announcement')"
-        @create-facility="$emit('create-facility')"
-        @create-issue="category => $emit('create-issue', category)"
-      >
-        <template #trigger="{ open }">
-          <button
-            :ref="element => setNavElement('create', element)"
-            type="button"
-            class="app-bottom-nav__item"
-            title="新增"
-            aria-label="新增"
-            @click="open"
-          >
-            <span class="app-bottom-nav__icon" aria-hidden="true">
-              <AppIcon name="plus" :size="5" :stroke-width="2.4" />
-            </span>
-          </button>
-        </template>
-      </CreateActionMenu>
-
       <RouterLink
-        v-for="item in items.slice(2)"
-        :key="item.key"
-        :ref="element => setNavElement(item.key, element)"
-        :to="item.to"
+        :ref="element => setNavElement('notifications', element)"
+        to="/notifications"
         class="app-bottom-nav__item"
-        :class="{ 'app-bottom-nav__item--active': item.isActive }"
-        @click="$emit('navigate', item.isActive)"
+        :class="{ 'app-bottom-nav__item--active': activeKey === 'notifications' }"
+        :aria-label="hasUnread ? '通知，有新通知' : '通知'"
+        @click="$emit('navigate', activeKey === 'notifications')"
       >
-        <span class="app-bottom-nav__icon" aria-hidden="true">
-          <AppIcon :name="item.icon" :size="4.5" :stroke-width="1.9" />
+        <span class="app-bottom-nav__icon relative" aria-hidden="true">
+          <AppIcon name="bell" :size="4.5" :stroke-width="1.9" />
+          <span v-if="hasUnread" class="app-bottom-nav__badge absolute h-2 w-2 rounded-full bg-error"></span>
         </span>
-        <span class="app-bottom-nav__label">{{ item.label }}</span>
+        <span class="app-bottom-nav__label">通知</span>
       </RouterLink>
 
       <RouterLink
@@ -82,18 +58,14 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
-import CreateActionMenu from '@/components/CreateActionMenu.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import UserAvatar from '@/components/ui/UserAvatar.vue';
-import type { IssueCategory } from '@/types';
 import type { AppNavigationItem } from './types';
 
 const props = defineProps<{
   activeKey: string;
   bottomGap: number;
-  defaultCategory: IssueCategory;
-  defaultKind: 'announcement' | 'facility' | 'issue';
-  isAdmin: boolean;
+  hasUnread: boolean;
   items: AppNavigationItem[];
   photoUrl: string | null;
   profileActive: boolean;
@@ -101,9 +73,6 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  'create-announcement': [];
-  'create-facility': [];
-  'create-issue': [category: IssueCategory];
   navigate: [isActive: boolean];
 }>();
 

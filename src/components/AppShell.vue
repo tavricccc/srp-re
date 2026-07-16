@@ -13,30 +13,25 @@
 
     <AppMobileHeader
       :back-label="mobileBackLabel"
+      :category-filter="mobileCategoryFilter"
+      :category-label="mobileCategoryLabel"
       :show-back-button="showMobileBackButton"
       :title="mobileHeaderTitle"
-      :has-unread="hasUnread"
-      :notifications-active="route.name === 'notifications'"
       @back="handleMobileBack"
+      @select-category="handleCategoryChange"
     />
 
     <AppDesktopSidebar
       v-if="isAllowedUser"
-      :default-category="defaultCreateCategory"
-      :default-kind="defaultCreateKind"
       :expanded="isSidebarExpanded"
       :has-unread="hasUnread"
       :home-route="homeRoute"
-      :is-admin="canCreateAnnouncement"
       :items="primaryRouteNavItems"
       :notifications-active="route.name === 'notifications'"
       :photo-url="displayPhotoUrl"
       :profile-active="isProfileRouteActive"
       :school-label="schoolLabel"
       :user-name="userName"
-      @create-announcement="handleCreateAnnouncement"
-      @create-facility="handleCreateFacility"
-      @create-issue="handleCreateIssue"
       @navigate="handleNavigationClick"
       @navigate-link="closeSidebarDrawerIfNeeded"
       @toggle="toggleSidebar"
@@ -58,16 +53,11 @@
       v-if="isAllowedUser"
       :active-key="activeMobileNavKey"
       :bottom-gap="bottomGap"
-      :default-category="defaultCreateCategory"
-      :default-kind="defaultCreateKind"
-      :is-admin="canCreateAnnouncement"
+      :has-unread="hasUnread"
       :items="primaryRouteNavItems"
       :photo-url="displayPhotoUrl"
       :profile-active="isProfileRouteActive"
       :user-name="userName"
-      @create-announcement="handleCreateAnnouncement"
-      @create-facility="handleCreateFacility"
-      @create-issue="handleCreateIssue"
       @navigate="handleNavigationClick"
     />
   </div>
@@ -80,20 +70,19 @@ import AppDesktopSidebar from '@/components/app-shell/AppDesktopSidebar.vue';
 import AppMobileBottomNav from '@/components/app-shell/AppMobileBottomNav.vue';
 import AppMobileHeader from '@/components/app-shell/AppMobileHeader.vue';
 import { SCHOOL_NAME } from '@/constants/app';
-import { DEFAULT_ISSUE_CATEGORY, DEFAULT_ISSUE_ROUTE_FILTER, isIssueCategory } from '@/constants/categories';
+import { DEFAULT_ISSUE_ROUTE_FILTER, ISSUE_CATEGORY_LABELS, isIssueCategory } from '@/constants/categories';
 import { refreshFromActiveNavigation } from '@/composables/useActiveNavigationRefresh';
-import { requestCreateAnnouncement, requestCreateFacility, requestCreateIssue } from '@/composables/useCreateEntryActions';
 import { useIssueRouteFilter } from '@/composables/useIssueRouteFilter';
 import { useNotificationBadge } from '@/composables/useNotificationBadge';
 import { useSession } from '@/composables/useSession';
-import type { IssueCategory } from '@/types';
+import type { IssueFilter } from '@/types';
 import { preloadRoutePath } from '@/router/route-components';
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'novae:desktop-sidebar-expanded';
 const MOBILE_NAV_HEIGHT = 60;
 const SCROLL_POSITION_LIMIT = 30;
 
-const { can, customPhotoUrl, isAllowedUser, user } = useSession();
+const { customPhotoUrl, isAllowedUser, user } = useSession();
 const { activeFilter } = useIssueRouteFilter();
 const { hasUnread } = useNotificationBadge();
 const route = useRoute();
@@ -135,9 +124,12 @@ const primaryRouteNavItems = computed(() => [
 const displayPhotoUrl = computed(() => customPhotoUrl.value || user.value?.photoURL || null);
 const userName = computed(() => user.value?.displayName || '使用者');
 const schoolLabel = computed(() => SCHOOL_NAME || '學校未設定');
-const canCreateAnnouncement = computed(() => can('announcement.manage'));
-const defaultCreateCategory = computed<IssueCategory>(() => isIssueCategory(activeFilter.value) ? activeFilter.value : DEFAULT_ISSUE_CATEGORY);
-const defaultCreateKind = computed(() => isFacilityRouteActive.value ? 'facility' as const : isAnnouncementRouteActive.value ? 'announcement' as const : 'issue' as const);
+const mobileCategoryFilter = computed<IssueFilter | undefined>(() =>
+  route.name === 'issues' && isIssueCategory(activeFilter.value) ? activeFilter.value : undefined
+);
+const mobileCategoryLabel = computed(() => mobileCategoryFilter.value
+  ? ISSUE_CATEGORY_LABELS[mobileCategoryFilter.value]
+  : undefined);
 const bottomGap = computed(() => hasSafeIndicator.value ? 22 : 12);
 const rootStyle = computed(() => isAllowedUser.value
   ? { '--app-bottom-nav-height': `${bottomGap.value + MOBILE_NAV_HEIGHT + 6}px` }
@@ -174,20 +166,13 @@ const mobileBackLabel = computed(() => {
   return '返回提案列表';
 });
 
-async function handleCreateIssue(category: IssueCategory) {
-  await requestCreateIssue(router, category);
-}
-
-async function handleCreateAnnouncement() {
-  await requestCreateAnnouncement(router);
-}
-
 function handleNavigationClick(isActive: boolean) {
   if (isActive) void refreshFromActiveNavigation();
 }
 
-async function handleCreateFacility() {
-  await requestCreateFacility(router);
+async function handleCategoryChange(filter: IssueFilter) {
+  if (filter === activeFilter.value && route.name === 'issues') return;
+  await router.push({ name: 'issues', params: { filter }, query: route.query });
 }
 
 function handleNavigationIntent(event: Event) {
