@@ -4,7 +4,7 @@ import {
   CONTENT_SHORT_CACHE_TTL_MS,
   getCachedContentPersistent,
   runCoalescedContentRequest,
-  setCachedContent,
+  setCachedContentFromRead,
 } from '@/services/content-read-cache';
 
 export type SessionRole = 'admin' | 'user';
@@ -33,7 +33,7 @@ export async function fetchCurrentUserRole(): Promise<SessionAccess> {
     return cached;
   }
 
-  return runCoalescedContentRequest(SESSION_ACCESS_CACHE_KEY, async () => {
+  return runCoalescedContentRequest(SESSION_ACCESS_CACHE_KEY, async (cacheGuard) => {
     try {
       const result = await invokeBackendAction<Record<string, never>, SessionAccess>('getCurrentUserRole')({});
       cachedSessionRole = result.role === 'admin' ? 'admin' : 'user';
@@ -43,7 +43,7 @@ export async function fetchCurrentUserRole(): Promise<SessionAccess> {
         permissions: Array.isArray(result.permissions) ? result.permissions : [],
         managedIssueCategoryIds: Array.isArray(result.managedIssueCategoryIds) ? result.managedIssueCategoryIds : [],
       };
-      setCachedContent(SESSION_ACCESS_CACHE_KEY, access);
+      setCachedContentFromRead(cacheGuard, access);
       return access;
     } catch (error) {
       throw toReadableBackendError(error);

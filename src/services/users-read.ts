@@ -2,10 +2,11 @@ import { invokeBackendAction } from '@/services/backend-action';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { toReadableBackendError } from './issues-core';
 import {
+  captureContentCacheWriteGuard,
   createContentCacheKey,
   getCachedContentPersistent,
   runCoalescedContentRequest,
-  setCachedContent,
+  setCachedContentFromRead,
 } from '@/services/content-read-cache';
 
 const USER_AVATAR_CACHE_PREFIX = 'user-avatar|';
@@ -30,6 +31,10 @@ export async function fetchUserAvatarUrls(uids: string[]) {
   ));
   const missingUids = uniqueUids.filter((uid) => !(uid in avatars));
   if (missingUids.length === 0) return avatars;
+  const cacheGuards = new Map(missingUids.map((uid) => {
+    const key = createContentCacheKey(['user-avatar', uid]);
+    return [uid, captureContentCacheWriteGuard(key)] as const;
+  }));
 
   try {
     const requestKey = `${USER_AVATAR_CACHE_PREFIX}request|${[...missingUids].sort().join(',')}`;
@@ -43,7 +48,8 @@ export async function fetchUserAvatarUrls(uids: string[]) {
     missingUids.forEach((uid) => {
       const value = fetched[uid] ?? null;
       avatars[uid] = value;
-      setCachedContent(createContentCacheKey(['user-avatar', uid]), { value });
+      const cacheGuard = cacheGuards.get(uid);
+      if (cacheGuard) setCachedContentFromRead(cacheGuard, { value });
     });
     return avatars;
   } catch (error) {

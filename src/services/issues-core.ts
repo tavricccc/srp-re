@@ -1,7 +1,7 @@
 import type { IssueRecord } from '@/types';
 import { invokeBackendAction } from '@/services/backend-action';
 import { READ_REQUEST_TIMEOUT_MS, RequestFailure } from '@/lib/request';
-import { createContentCacheKey, getCachedContentPersistent, runCoalescedContentRequest, setCachedContent } from '@/services/content-read-cache';
+import { createContentCacheKey, getCachedContentPersistent, runCoalescedContentRequest, setCachedContentFromRead } from '@/services/content-read-cache';
 import {
   STATUS_BUCKETS,
   TABLE_PAGE_SIZE,
@@ -39,13 +39,13 @@ export async function fetchIssueRecordById(
     if (cached) return cached;
   }
 
-  return runCoalescedContentRequest(cacheKey, async () => { try {
+  return runCoalescedContentRequest(cacheKey, async (cacheGuard) => { try {
     const fn = invokeBackendAction<{ issueId: string }, { issue: Record<string, unknown> }>('getIssue', {
       timeoutMs: READ_REQUEST_TIMEOUT_MS,
     });
     const result = await fn({ issueId });
     const issue = normalizeIssueRecord(String(result.issue.id ?? issueId), result.issue);
-    setCachedContent(cacheKey, issue);
+    setCachedContentFromRead(cacheGuard, issue);
     return issue;
   } catch (error) {
     if (error instanceof RequestFailure) throw error;

@@ -1,6 +1,6 @@
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { invokeBackendAction } from '@/services/backend-action';
-import { createContentCacheKey, getCachedContentPersistent, setCachedContent } from '@/services/content-read-cache';
+import { captureContentCacheWriteGuard, createContentCacheKey, getCachedContentPersistent, setCachedContentFromRead } from '@/services/content-read-cache';
 import type { IssueCursor, IssueSortOption, IssueStatusBucket } from '@/types';
 import { normalizeIssueCursor, normalizeIssueRecord, toReadableBackendError, withSupportState } from './issues-core';
 import { prepareContentRevisionRead } from '@/services/content-revisions';
@@ -41,6 +41,7 @@ export async function fetchUserIssues(
       };
     }
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -57,7 +58,7 @@ export async function fetchUserIssues(
       hasMore: result.hasMore,
       issues: withSupportState(issues, options?.supportedIssueIds),
     };
-    setCachedContent(cacheKey, page);
+    setCachedContentFromRead(cacheGuard, page);
     return page;
   } catch (error) {
     throw toReadableBackendError(error);

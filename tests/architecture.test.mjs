@@ -601,6 +601,8 @@ test('configured retention covers closed content and operational records', async
   const generator = await read('scripts/generate-data-retention.mjs');
   const maintenanceCleanup = await read('supabase/functions/maintenanceCleanup/index.ts');
   const migration = await read('supabase/migrations/202607160001_configurable_retention_cleanup.sql');
+  const hardeningMigration = await read('supabase/migrations/202607160003_harden_retention_deletion_flow.sql');
+  const outboxWorker = await read('supabase/functions/outboxWorker/index.ts');
 
   assert.match(config, /"closedIssuesDays"/u);
   assert.match(config, /"closedFacilitiesDays"/u);
@@ -611,6 +613,16 @@ test('configured retention covers closed content and operational records', async
   assert.match(migration, /expired_closed_issues_deleted/u);
   assert.match(migration, /expired_closed_facilities_deleted/u);
   assert.match(migration, /role_assignment_audit_deleted/u);
+  assert.match(hardeningMigration, /drop function if exists app_api\.run_maintenance_cleanup\(text\[\]\)/u);
+  assert.match(hardeningMigration, /drop function if exists app_private\.run_maintenance_cleanup\(text\[\]\)/u);
+  assert.match(hardeningMigration, /with expired_issues as materialized/u);
+  assert.match(hardeningMigration, /with expired_facilities as materialized/u);
+  assert.match(hardeningMigration, /'retention_cleanup', true/u);
+  assert.match(hardeningMigration, /notion_page\.target_type = 'issue'/u);
+  assert.match(hardeningMigration, /notion_page\.target_type = 'facility'/u);
+  assert.match(hardeningMigration, /expired_closed_issue_notion_deletions_queued/u);
+  assert.match(hardeningMigration, /expired_closed_facility_notion_deletions_queued/u);
+  assert.match(outboxWorker, /event\.payload\.retention_cleanup === true\) return null/u);
 });
 
 test('facilities and author-fixed support use independent atomic storage', async () => {
@@ -990,15 +1002,28 @@ test('content reads persist by account and invalidate after writes or realtime e
 
   assert.match(persistentCache, /indexedDB\.open/u);
   assert.match(persistentCache, /createIndex\('scope'/u);
+  assert.match(persistentCache, /deletePersistentCacheIfVersion/u);
+  assert.match(persistentCache, /entry\?\.writeVersion === writeVersion/u);
   assert.match(contentCache, /CONTENT_READ_CACHE_TTL_MS = 30 \* 24 \* 60 \* 60/u);
   assert.match(contentCache, /getCachedContentPersistent/u);
   assert.match(contentCache, /runCoalescedContentRequest/u);
   assert.match(contentCache, /pendingInvalidations/u);
+  assert.match(contentCache, /interface ContentCacheWriteGuard/u);
+  assert.match(contentCache, /scopeVersion \+= 1/u);
+  assert.match(contentCache, /invalidationVersions/u);
+  assert.match(contentCache, /isContentCacheWriteGuardCurrent\(guard\)/u);
+  assert.match(contentCache, /setCachedContentFromRead/u);
+  assert.match(contentCache, /pendingPersistentReads\.get\(persistentKey\) === pending/u);
+  assert.match(contentCache, /pendingRequests\.get\(scopedRequestKey\) === pending/u);
+  assert.match(contentCache, /deletePersistentCacheIfVersion\(persistentKey, writeVersion\)/u);
   assert.match(sessionEffects, /setContentCacheScope\(uid\)/u);
   assert.match(issuePages, /getCachedContentPersistent/u);
   assert.match(announcements, /getCachedContentPersistent/u);
   assert.match(facilities, /getCachedContentPersistent/u);
   assert.match(notifications, /NOTIFICATION_HINT_CACHE_TTL_MS/u);
+  for (const service of [issuePages, announcements, facilities, notifications]) {
+    assert.match(service, /setCachedContentFromRead/u);
+  }
   assert.match(realtime, /invalidateRealtimeContent/u);
   assert.match(backendAction, /auth\?\.currentUser\?\.uid !== requestUid/u);
 });

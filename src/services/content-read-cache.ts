@@ -1,5 +1,6 @@
 import {
   clearPersistentCacheScope,
+  deletePersistentCacheIfVersion,
   deletePersistentCacheByPrefix,
   readPersistentCache,
   writePersistentCache,
@@ -18,10 +19,21 @@ const cache = new Map<string, CacheEntry<unknown>>();
 const pendingPersistentReads = new Map<string, Promise<unknown | null>>();
 const pendingRequests = new Map<string, Promise<unknown>>();
 const pendingInvalidations = new Map<string, Promise<void>>();
+const invalidationVersions = new Map<string, number>();
 const MAX_MEMORY_CACHE_ENTRIES = 2_000;
 let activeScope = 'anonymous';
+let cacheVersion = 0;
+let persistentWriteVersion = 0;
+let scopeVersion = 0;
 let realtimeReliable = true;
 let wasOffline = false;
+
+export interface ContentCacheWriteGuard {
+  cacheVersion: number;
+  key: string;
+  scope: string;
+  scopeVersion: number;
+}
 
 function scopedKey(key: string) {
   return `${activeScope}\u0000${key}`;
@@ -31,9 +43,11 @@ export function setContentCacheScope(scope: string) {
   const normalized = scope.trim() || 'anonymous';
   if (normalized === activeScope) return;
   activeScope = normalized;
+  scopeVersion += 1;
   cache.clear();
   pendingPersistentReads.clear();
   pendingRequests.clear();
+  invalidationVersions.clear();
 }
 
 export function createContentCacheKey(parts: Array<string | number | boolean | null | undefined>) {
@@ -70,13 +84,15 @@ export async function getCachedContentPersistent<T>(key: string, maxAgeMs = CONT
   const existing = pendingPersistentReads.get(persistentKey);
   if (existing) return await existing as T | null;
 
-  const scopeAtRead = activeScope;
+  const guard = captureContentCacheWriteGuard(key);
   const pending = readPersistentCache<T>(persistentKey).then((entry) => {
-    if (!entry || entry.scope !== scopeAtRead || !isContentCacheFresh(entry.updatedAt, Date.now(), maxAgeMs)) return null;
-    if (activeScope !== scopeAtRead) return null;
+    if (!entry || entry.scope !== guard.scope || !isContentCacheFresh(entry.updatedAt, Date.now(), maxAgeMs)) return null;
+    if (!isContentCacheWriteGuardCurrent(guard)) return null;
     cache.set(key, { stale: false, updatedAt: entry.updatedAt, value: entry.value });
     return entry.value;
-  }).finally(() => pendingPersistentReads.delete(persistentKey));
+  }).finally(() => {
+    if (pendingPersistentReads.get(persistentKey) === pending) pendingPersistentReads.delete(persistentKey);
+  });
   pendingPersistentReads.set(persistentKey, pending);
   return await pending;
 }
@@ -88,9 +104,30 @@ export function getCachedContentEntry<T>(key: string) {
 }
 
 export function setCachedContent<T>(key: string, value: T, updatedAt = Date.now()) {
+  writeCachedContent(key, value, updatedAt, captureContentCacheWriteGuard(key));
+}
+
+export function captureContentCacheWriteGuard(key: string): ContentCacheWriteGuard {
+  return { cacheVersion, key, scope: activeScope, scopeVersion };
+}
+
+export function setCachedContentFromRead<T>(guard: ContentCacheWriteGuard, value: T, updatedAt = Date.now()) {
+  if (!isContentCacheWriteGuardCurrent(guard)) return false;
+  writeCachedContent(guard.key, value, updatedAt, guard);
+  return true;
+}
+
+function writeCachedContent<T>(key: string, value: T, updatedAt: number, guard: ContentCacheWriteGuard) {
   cache.set(key, { stale: false, updatedAt, value });
   const scope = activeScope;
-  void writePersistentCache({ cacheKey: key, key: `${scope}\u0000${key}`, scope, updatedAt, value });
+  const persistentKey = `${scope}\u0000${key}`;
+  const writeVersion = ++persistentWriteVersion;
+  void writePersistentCache({ cacheKey: key, key: persistentKey, scope, updatedAt, value, writeVersion })
+    .then(() => {
+      if (!isContentCacheWriteGuardCurrent(guard)) {
+        return deletePersistentCacheIfVersion(persistentKey, writeVersion);
+      }
+    });
 
   while (cache.size > MAX_MEMORY_CACHE_ENTRIES) {
     const oldestKey = cache.keys().next().value;
@@ -99,11 +136,14 @@ export function setCachedContent<T>(key: string, value: T, updatedAt = Date.now(
   }
 }
 
-export function runCoalescedContentRequest<T>(key: string, request: () => Promise<T>) {
-  const scopedRequestKey = scopedKey(key);
+export function runCoalescedContentRequest<T>(key: string, request: (guard: ContentCacheWriteGuard) => Promise<T>) {
+  const guard = captureContentCacheWriteGuard(key);
+  const scopedRequestKey = `${guard.scope}\u0000${guard.scopeVersion}\u0000${key}`;
   const existing = pendingRequests.get(scopedRequestKey);
   if (existing) return existing as Promise<T>;
-  const pending = request().finally(() => pendingRequests.delete(scopedRequestKey));
+  const pending = request(guard).finally(() => {
+    if (pendingRequests.get(scopedRequestKey) === pending) pendingRequests.delete(scopedRequestKey);
+  });
   pendingRequests.set(scopedRequestKey, pending);
   return pending;
 }
@@ -123,6 +163,8 @@ export function markContentCacheStale(predicate: (key: string) => boolean) {
 export function markContentCachePrefixStale(prefix: string) {
   markContentCacheStale((key) => key.startsWith(prefix));
   const scope = activeScope;
+  cacheVersion += 1;
+  invalidationVersions.set(`${scope}\u0000${prefix}`, cacheVersion);
   const invalidationKey = `${scope}\u0000${prefix}`;
   const previous = pendingInvalidations.get(invalidationKey) ?? Promise.resolve();
   const pending = previous
@@ -134,9 +176,11 @@ export function markContentCachePrefixStale(prefix: string) {
 }
 
 export function clearContentReadMemoryCache() {
+  scopeVersion += 1;
   cache.clear();
   pendingPersistentReads.clear();
   pendingRequests.clear();
+  invalidationVersions.clear();
 }
 
 export function clearContentReadCache() {
@@ -151,4 +195,17 @@ export function markContentWentOffline() { wasOffline = true; }
 
 export function shouldRefreshContentAfterResume(updatedAt: number) {
   return wasOffline || !realtimeReliable || !isContentCacheFresh(updatedAt);
+}
+
+function isContentCacheWriteGuardCurrent(guard: ContentCacheWriteGuard) {
+  if (guard.scope !== activeScope || guard.scopeVersion !== scopeVersion) return false;
+  for (const [invalidationKey, version] of invalidationVersions) {
+    if (version <= guard.cacheVersion) continue;
+    const separatorIndex = invalidationKey.indexOf('\u0000');
+    if (
+      invalidationKey.slice(0, separatorIndex) === guard.scope
+      && guard.key.startsWith(invalidationKey.slice(separatorIndex + 1))
+    ) return false;
+  }
+  return true;
 }

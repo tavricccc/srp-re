@@ -7,7 +7,7 @@ import {
   CONTENT_SHORT_CACHE_TTL_MS,
   getCachedContentPersistent,
   runCoalescedContentRequest,
-  setCachedContent,
+  setCachedContentFromRead,
 } from '@/services/content-read-cache';
 
 interface DashboardResponse {
@@ -67,9 +67,9 @@ export async function fetchPlatformDashboard(options: { forceRefresh?: boolean }
     );
     if (cached) return cached;
   }
-  return runCoalescedContentRequest(DASHBOARD_CACHE_KEY, async () => {
+  return runCoalescedContentRequest(DASHBOARD_CACHE_KEY, async (cacheGuard) => {
     const data = await loadPlatformDashboard();
-    setCachedContent(DASHBOARD_CACHE_KEY, data);
+    setCachedContentFromRead(cacheGuard, data);
     return data;
   });
 }

@@ -2,7 +2,7 @@ import type { IssueCursor, IssueFilter, IssueRecord, IssueSortOption, IssueStatu
 import { buildTitleSearchTokens, normalizeSearchText } from '@/lib/search';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { invokeBackendAction } from '@/services/backend-action';
-import { createContentCacheKey, getCachedContentPersistent, setCachedContent } from '@/services/content-read-cache';
+import { captureContentCacheWriteGuard, createContentCacheKey, getCachedContentPersistent, setCachedContentFromRead } from '@/services/content-read-cache';
 import { TABLE_PAGE_SIZE, normalizeIssueCursor, normalizeIssueRecord, toReadableBackendError, withSupportState } from './issues-core';
 import { CONTENT_FEED_PAGE_SIZE } from '@/lib/page-size';
 import { prepareContentRevisionRead } from '@/services/content-revisions';
@@ -49,6 +49,7 @@ export async function fetchIssuesPageByStatus(
       };
     }
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -77,7 +78,7 @@ export async function fetchIssuesPageByStatus(
       hasMore: result.hasMore,
       issues: withSupportState(normalizeIssueList(result.issues), options?.supportedIssueIds),
     };
-    setCachedContent(cacheKey, page);
+    setCachedContentFromRead(cacheGuard, page);
     return page;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -138,6 +139,7 @@ export async function fetchIssuesForTitleSearch(
       };
     }
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -169,7 +171,7 @@ export async function fetchIssuesForTitleSearch(
       issues: withSupportState(normalizeIssueList(result.issues), options?.supportedIssueIds),
       limited: result.limited,
     };
-    setCachedContent(cacheKey, page);
+    setCachedContentFromRead(cacheGuard, page);
     return page;
   } catch (error) {
     throw toReadableBackendError(error);

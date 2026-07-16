@@ -6,7 +6,7 @@ import { toReadableBackendError } from './issues-core';
 import type { CommentResponseRecord } from './issues-read-shared';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { getRouteRequestSignal } from '@/lib/route-request';
-import { createContentCacheKey, getCachedContentPersistent, setCachedContent } from '@/services/content-read-cache';
+import { captureContentCacheWriteGuard, createContentCacheKey, getCachedContentPersistent, setCachedContentFromRead } from '@/services/content-read-cache';
 import { COMMENT_FEED_PAGE_SIZE } from '@/lib/page-size';
 import { prepareContentRevisionRead } from '@/services/content-revisions';
 
@@ -38,6 +38,7 @@ export async function fetchComments(
     const cached = await getCachedContentPersistent<{ comments: CommentRecord[]; cursor: CommentCursor | null; hasMore: boolean }>(cacheKey);
     if (cached) return cached;
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -74,7 +75,7 @@ export async function fetchComments(
       cursor: normalizeCommentCursor(result.cursor),
       hasMore: result.hasMore,
     } satisfies { comments: CommentRecord[]; cursor: CommentCursor | null; hasMore: boolean };
-    setCachedContent(cacheKey, page);
+    setCachedContentFromRead(cacheGuard, page);
     return page;
   } catch (error) {
     throw toReadableBackendError(error);

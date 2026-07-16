@@ -7,10 +7,11 @@ import { invokeBackendAction } from '@/services/backend-action';
 import { createRequestId } from '@/lib/request-id';
 import { READ_REQUEST_TIMEOUT_MS, RequestFailure } from '@/lib/request';
 import {
+  captureContentCacheWriteGuard,
   createContentCacheKey,
   getCachedContentPersistent,
   markContentCachePrefixStale,
-  setCachedContent,
+  setCachedContentFromRead,
 } from '@/services/content-read-cache';
 import { normalizeDate, toReadableBackendError } from '@/services/issues-core';
 import type { CommentCursor } from './comment-cursor';
@@ -98,6 +99,7 @@ export async function fetchAnnouncementsPage(
     const cached = await getCachedContentPersistent<{ announcements: AnnouncementRecord[]; cursor: AnnouncementCursor; hasMore: boolean }>(cacheKey);
     if (cached) return cached;
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -110,7 +112,7 @@ export async function fetchAnnouncementsPage(
       cursor: normalizeAnnouncementCursor(result.cursor),
       hasMore: result.hasMore,
     };
-    setCachedContent(cacheKey, page);
+    setCachedContentFromRead(cacheGuard, page);
     return page;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -127,6 +129,7 @@ export async function fetchAnnouncementRecordById(
     const cached = await getCachedContentPersistent<AnnouncementRecord>(cacheKey);
     if (cached) return cached;
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -135,7 +138,7 @@ export async function fetchAnnouncementRecordById(
     >('getAnnouncement', { timeoutMs: READ_REQUEST_TIMEOUT_MS });
     const result = await fn({ announcementId });
     const announcement = normalizeAnnouncementRecord(result.announcement);
-    setCachedContent(cacheKey, announcement);
+    setCachedContentFromRead(cacheGuard, announcement);
     return announcement;
   } catch (error) {
     if (error instanceof RequestFailure) throw error;
@@ -188,6 +191,7 @@ export async function fetchAnnouncementComments(
     const cached = await getCachedContentPersistent<{ comments: AnnouncementCommentRecord[]; cursor: CommentCursor; hasMore: boolean }>(cacheKey);
     if (cached) return cached;
   }
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   const fn = invokeBackendAction<
     { announcementId: string; cursor?: CommentCursor; pageSize: number },
@@ -206,7 +210,7 @@ export async function fetchAnnouncementComments(
     cursor: CommentCursor;
     hasMore: boolean;
   };
-  setCachedContent(cacheKey, page);
+  setCachedContentFromRead(cacheGuard, page);
   return page;
 }
 

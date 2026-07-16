@@ -10,7 +10,7 @@ import type {
   FacilitySummary,
 } from '@/types';
 import { toReadableBackendError } from '@/services/issues-core';
-import { createContentCacheKey, getCachedContentPersistent, markContentCachePrefixStale, runCoalescedContentRequest, setCachedContent } from '@/services/content-read-cache';
+import { captureContentCacheWriteGuard, createContentCacheKey, getCachedContentPersistent, markContentCachePrefixStale, runCoalescedContentRequest, setCachedContentFromRead } from '@/services/content-read-cache';
 import { READ_REQUEST_TIMEOUT_MS } from '@/lib/request';
 import { prepareContentRevisionRead } from '@/services/content-revisions';
 
@@ -54,13 +54,14 @@ export async function listFacilities(input: {
   ]);
   const cached = await getCachedContentPersistent<FacilityPageResult>(cacheKey);
   if (cached) return cached;
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
   try {
     const fn = invokeBackendAction<typeof input & { pageSize: number }, { facilities: RawFacility[]; cursor: FacilityCursor | null; hasMore: boolean }>(
       'listFacilities', { signal: options.signal, timeoutMs: READ_REQUEST_TIMEOUT_MS },
     );
     const result = await fn({ ...input, pageSize: 20 });
     const page = { ...result, facilities: result.facilities.map(normalizeSummary) };
-    setCachedContent(cacheKey, page);
+    setCachedContentFromRead(cacheGuard, page);
     return page;
   } catch (error) { throw toReadableBackendError(error); }
 }
@@ -70,10 +71,10 @@ export async function getFacility(facilityId: string) {
   const cacheKey = createContentCacheKey(['facility-detail', facilityId]);
   const cached = await getCachedContentPersistent<FacilityRecord>(cacheKey);
   if (cached) return cached;
-  return runCoalescedContentRequest(cacheKey, async () => { try {
+  return runCoalescedContentRequest(cacheKey, async (cacheGuard) => { try {
     const fn = invokeBackendAction<{ facilityId: string }, { facility: RawFacility }>('getFacility');
     const facility = normalizeFacility((await fn({ facilityId })).facility);
-    setCachedContent(cacheKey, facility);
+    setCachedContentFromRead(cacheGuard, facility);
     return facility;
   } catch (error) { throw toReadableBackendError(error); } });
 }

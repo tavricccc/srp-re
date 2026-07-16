@@ -8,6 +8,7 @@ export interface PersistentCacheEntry<T> {
   scope: string;
   updatedAt: number;
   value: T;
+  writeVersion?: number;
 }
 
 let databasePromise: Promise<IDBDatabase> | null = null;
@@ -69,6 +70,19 @@ export async function writePersistentCache<T>(entry: PersistentCacheEntry<T>) {
     await transactionDone(transaction);
   } catch {
     // Persistent caching is opportunistic; memory caching remains available.
+  }
+}
+
+export async function deletePersistentCacheIfVersion(key: string, writeVersion: number) {
+  try {
+    const database = await openDatabase();
+    const transaction = database.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const entry = await requestResult(store.get(key)) as PersistentCacheEntry<unknown> | undefined;
+    if (entry?.writeVersion === writeVersion) store.delete(key);
+    await transactionDone(transaction);
+  } catch {
+    // Ignore unavailable or blocked storage.
   }
 }
 

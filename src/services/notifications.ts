@@ -18,10 +18,12 @@ import {
 import { NOTIFICATION_FEED_PAGE_SIZE } from '@/lib/page-size';
 import {
   CONTENT_SHORT_CACHE_TTL_MS,
+  captureContentCacheWriteGuard,
   createContentCacheKey,
   getCachedContentPersistent,
   markContentCachePrefixStale,
   setCachedContent,
+  setCachedContentFromRead,
 } from '@/services/content-read-cache';
 
 const NOTIFICATION_PAGES_CACHE_PREFIX = 'notification-pages|';
@@ -243,6 +245,7 @@ export async function fetchNotificationSourcePages(
     CONTENT_SHORT_CACHE_TTL_MS,
   );
   if (cached) return cached;
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
 
   try {
     const fn = invokeBackendAction<
@@ -266,7 +269,7 @@ export async function fetchNotificationSourcePages(
         )),
       } satisfies NotificationSourcePage]];
     })) as Partial<Record<NotificationSource, NotificationSourcePage>>;
-    setCachedContent(cacheKey, pages);
+    setCachedContentFromRead(cacheGuard, pages);
     return pages;
   } catch (error) {
     throw toReadableBackendError(error);
@@ -303,12 +306,13 @@ async function getNotificationReadState(uid: string): Promise<NotificationReadSt
     CONTENT_SHORT_CACHE_TTL_MS,
   );
   if (cached) return cached;
+  const cacheGuard = captureContentCacheWriteGuard(NOTIFICATION_STATE_CACHE_KEY);
   const fn = invokeBackendAction<{ uid: string }, { state: Record<string, unknown> }>('getNotificationReadState', {
     timeoutMs: READ_REQUEST_TIMEOUT_MS,
   });
   const result = await fn({ uid });
   const state = normalizeNotificationReadState(result.state);
-  setCachedContent(NOTIFICATION_STATE_CACHE_KEY, state);
+  setCachedContentFromRead(cacheGuard, state);
   return state;
 }
 
@@ -346,11 +350,12 @@ export async function fetchNotificationUnreadHint() {
     NOTIFICATION_HINT_CACHE_TTL_MS,
   );
   if (cached) return cached.value;
+  const cacheGuard = captureContentCacheWriteGuard(NOTIFICATION_UNREAD_CACHE_KEY);
   const fn = invokeBackendAction<Record<string, never>, { hasUnread: boolean }>('getNotificationUnreadHint', {
     timeoutMs: READ_REQUEST_TIMEOUT_MS,
   });
   const value = (await fn({})).hasUnread;
-  setCachedContent(NOTIFICATION_UNREAD_CACHE_KEY, { value });
+  setCachedContentFromRead(cacheGuard, { value });
   return value;
 }
 
@@ -408,10 +413,11 @@ export async function getPushNotificationPreference(payload: GetPushNotification
     CONTENT_SHORT_CACHE_TTL_MS,
   );
   if (cached) return cached;
+  const cacheGuard = captureContentCacheWriteGuard(cacheKey);
   try {
     const fn = invokeBackendAction<GetPushNotificationPreferencePayload, PushNotificationPreference>('getPushNotificationPreference');
     const result = await fn(payload);
-    setCachedContent(cacheKey, result);
+    setCachedContentFromRead(cacheGuard, result);
     return result;
   } catch (error) {
     throw toReadableBackendError(error);

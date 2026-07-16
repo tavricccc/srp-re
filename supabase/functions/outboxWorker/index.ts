@@ -74,6 +74,7 @@ function commentIdForEvent(event: OutboxEvent) {
 }
 
 function notificationForEvent(event: OutboxEvent): Record<string, unknown> | null {
+  if (event.payload.retention_cleanup === true) return null;
   const title = asString(event.payload.title, event.event_type);
   if (event.event_type === "issue.created") return null;
   if (event.event_type === "facility.status_changed") {
