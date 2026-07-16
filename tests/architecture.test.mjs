@@ -884,9 +884,18 @@ test('app updates hand over the service worker with bounded reload recovery', as
 });
 
 test('Google redirect recovery runs only after an explicit redirect fallback', async () => {
+  const firebase = await read('src/lib/firebase.ts');
   const authActions = await read('src/composables/sessionAuthActions.ts');
   const session = await read('src/composables/useSession.ts');
+  const loginPanel = await read('src/components/LoginPanel.vue');
+  const loginButton = await read('src/components/ui/GoogleLoginButton.vue');
 
+  assert.match(firebase, /browserPopupRedirectResolver/u);
+  assert.match(firebase, /popupRedirectResolver: browserPopupRedirectResolver/u);
+  assert.match(authActions, /await signInWithPopup\(firebaseAuth/u);
+  assert.match(authActions, /error\.code === 'auth\/argument-error'/u);
+  assert.match(loginPanel, /<GoogleLoginButton :loading="loading" @login="login"/u);
+  assert.match(loginButton, /@click="emit\('login'\)"/u);
   assert.match(authActions, /GOOGLE_REDIRECT_PENDING_KEY = 'novae:google-redirect-pending'/u);
   assert.match(authActions, /markGoogleRedirectPending\(\);[\s\S]*await signInWithRedirect/u);
   assert.match(authActions, /if \(!hasPendingGoogleRedirect\(\)\) return;/u);
