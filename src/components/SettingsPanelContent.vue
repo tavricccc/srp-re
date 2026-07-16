@@ -31,14 +31,14 @@
             <p class="truncate text-sm font-semibold text-ink-950 dark:text-ink-50">
               {{ displayName || '校內使用者' }}
             </p>
-            <p class="truncate text-xs text-ink-500 dark:text-ink-400">
+            <p class="truncate text-xs leading-5 text-ink-500 dark:text-ink-400">
               {{ email }}
             </p>
-            <div class="mt-0.5 flex min-w-0 items-center gap-1">
-              <p class="truncate text-[11px] text-ink-400 dark:text-ink-500">UID：{{ uid }}</p>
+            <div class="settings-account__uid-row flex min-w-0 items-center gap-1">
+              <p class="truncate text-[11px] leading-5 text-ink-400 dark:text-ink-500">UID：{{ uid }}</p>
               <button
                 type="button"
-                class="button-toolbar flex h-6 w-6 shrink-0 items-center justify-center rounded-full p-0"
+                class="settings-account__uid-copy button-toolbar shrink-0 rounded-full p-0"
                 title="複製 UID"
                 aria-label="複製 UID"
                 @click="copyUid"

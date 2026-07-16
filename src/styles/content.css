@@ -50,6 +50,17 @@
     @apply min-w-0 max-w-full overflow-hidden rounded-[var(--radius-outer)] border-0 bg-surface px-4 shadow-elevated dark:bg-surface;
   }
 
+  .settings-account__uid-row {
+    min-height: 1.25rem;
+  }
+
+  .settings-account__uid-copy {
+    width: 1.25rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    min-height: 1.25rem;
+  }
+
   .notification-group-card {
     @apply divide-y divide-ink-200/60 overflow-hidden rounded-[var(--radius-outer)] border-0 bg-white shadow-elevated dark:divide-ink-700/40 dark:bg-surface;
     box-shadow: var(--shadow-card);

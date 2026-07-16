@@ -33,6 +33,14 @@
   --dialog-safe-padding: var(--panel-padding);
 }
 
+.entry-composer__action {
+  min-height: var(--control-height);
+  padding-block: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
 .entry-composer__scroll {
   margin-inline: -0.5rem;
   padding-inline: 0.5rem;

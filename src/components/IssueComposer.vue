@@ -85,13 +85,13 @@
           <div class="flex items-center gap-2.5 w-full sm:w-auto">
             <button
               type="button"
-              class="button-secondary flex-1 px-5 text-sm font-medium sm:flex-none"
+              class="entry-composer__action button-secondary flex-1 px-5 sm:flex-none"
               :disabled="submitting || uploading"
               @click="handleClose"
             >
               取消
             </button>
-            <button type="submit" class="button-contextual flex-1 px-5 sm:flex-none" :disabled="submitting || uploading" :aria-busy="submitting || undefined">
+            <button type="submit" class="entry-composer__action button-contextual flex-1 px-5 sm:flex-none" :disabled="submitting || uploading" :aria-busy="submitting || undefined">
               <BusyButtonContent :busy="submitting" label="確認發布" busy-label="發布中" />
             </button>
           </div>
