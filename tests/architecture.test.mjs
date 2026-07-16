@@ -1298,6 +1298,14 @@ test('Edge Functions avoid the Supabase JS Node-version shim', async () => {
   assert.match(databaseClient, /npm:@supabase\/postgrest-js@2\.110\.7/u);
   assert.match(databaseClient, /APP_SUPABASE_SERVICE_ROLE_KEY/u);
   assert.match(integrationScript, /-X OPTIONS[\s\S]*backendAction/u);
+  assert.match(
+    integrationScript,
+    /DENO_FALLBACK[\s\S]*node_modules\/\.bin[\s\S]*type -aP deno/u,
+  );
+  assert.match(
+    integrationScript,
+    /test --help[\s\S]*--minimum-dependency-age[\s\S]*DENO_DEPENDENCY_AGE_ARGS/u,
+  );
   assert.doesNotMatch(
     integrationScript,
     /--data ['"][^'"]*integrationReadinessProbe/u,

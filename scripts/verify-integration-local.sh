@@ -25,23 +25,38 @@ if [[ -n "$ENV_FILE" && ! -f "$ENV_FILE" ]]; then
   exit 2
 fi
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 for command_name in docker supabase curl; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "Missing local integration dependency: $command_name" >&2
     exit 2
   fi
 done
-DENO_COMMAND="${NOVAE_DENO_BIN:-deno}"
+
+DENO_COMMAND="${NOVAE_DENO_BIN:-}"
+if [[ -z "$DENO_COMMAND" ]]; then
+  DENO_FALLBACK=""
+  while IFS= read -r deno_candidate; do
+    if [[ "$deno_candidate" == "$ROOT/node_modules/.bin/"* ]]; then
+      DENO_FALLBACK="${DENO_FALLBACK:-$deno_candidate}"
+      continue
+    fi
+    DENO_COMMAND="$deno_candidate"
+    break
+  done < <(type -aP deno || true)
+  DENO_COMMAND="${DENO_COMMAND:-${DENO_FALLBACK:-deno}}"
+fi
 if ! command -v "$DENO_COMMAND" >/dev/null 2>&1; then
   echo "Missing local integration dependency: $DENO_COMMAND" >&2
   exit 2
 fi
+echo "[integration] Using $("$DENO_COMMAND" --version | head -n 1) from $DENO_COMMAND"
 if ! docker info >/dev/null 2>&1; then
   echo "Docker is not running or the current WSL user cannot access it." >&2
   exit 2
 fi
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 TEMP_ENV="$(mktemp)"
 FUNCTION_ENV="$(mktemp)"
@@ -151,10 +166,14 @@ if grep -Eq 'Node\.js 20 and below are deprecated|integrationReadinessProbe' "$F
 fi
 
 echo "[integration] Running every backend action, permission matrix, RLS, and worker lifecycle"
+DENO_DEPENDENCY_AGE_ARGS=()
+if "$DENO_COMMAND" test --help | grep -q -- '--minimum-dependency-age'; then
+  DENO_DEPENDENCY_AGE_ARGS+=(--minimum-dependency-age=0)
+fi
 if ! "$DENO_COMMAND" test \
   --node-modules-dir=none \
   --no-lock \
-  --minimum-dependency-age=0 \
+  "${DENO_DEPENDENCY_AGE_ARGS[@]}" \
   --env-file="$TEMP_ENV" \
   --allow-env \
   --allow-net \
