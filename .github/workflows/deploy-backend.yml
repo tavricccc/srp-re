@@ -247,6 +247,10 @@ jobs:
             if [ "$status" = "401" ]; then
               exit 0
             fi
+            if [ "$status" = "403" ] && grep -q '"code":"origin-denied"' /tmp/worker-smoke.json; then
+              sleep 5
+              continue
+            fi
             if [ "$status" -lt 500 ]; then
               break
             fi
