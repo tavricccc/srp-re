@@ -24,7 +24,7 @@ function clientIp(request: Request) {
 
 function originUrl(env: Env, role: string) {
   const base = env.SUPABASE_FUNCTIONS_BASE_URL.replace(/\/+$/u, '');
-  return `${base}/${env.EDGE_FUNCTION_NAMESPACE}-${role}`;
+  return `${base}/n${env.EDGE_FUNCTION_NAMESPACE}-${role}`;
 }
 
 function upstreamHeaders(request: Request, env: Env) {

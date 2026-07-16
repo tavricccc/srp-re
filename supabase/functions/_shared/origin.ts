@@ -21,7 +21,7 @@ export function requireOriginSecret(request: Request) {
 }
 
 export function edgeFunctionName(role: "api" | "sync" | "media" | "outbox" | "delete" | "maintenance") {
-  return `${requireEnv("EDGE_FUNCTION_NAMESPACE")}-${role}`;
+  return `n${requireEnv("EDGE_FUNCTION_NAMESPACE")}-${role}`;
 }
 
 export function edgeFunctionUrl(role: Parameters<typeof edgeFunctionName>[0]) {

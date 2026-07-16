@@ -82,6 +82,7 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
   assert.match(workflow, /supabase db push/u);
   assert.match(workflow, /prepare-edge-functions\.mjs prepare/u);
   assert.match(workflow, /supabase functions deploy \$names --no-verify-jwt/u);
+  assert.match(workflow, /function_namespace="n\$\{EDGE_FUNCTION_NAMESPACE\}"/u);
   assert.match(workflow, /Deploy Cloudflare API Gateway/u);
   assert.match(workflow, /wrangler@4\.111\.0 secret bulk/u);
   assert.match(workflow, /wrangler@4\.111\.0 deploy/u);
@@ -90,7 +91,7 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
   assert.match(workflow, /x-novae-origin-secret/u);
   assert.match(workflow, /EDGE_FUNCTION_NAMESPACE/u);
   assert.match(workflow, /Run maintenance cleanup/u);
-  assert.match(workflow, /EDGE_FUNCTION_NAMESPACE\}-maintenance/u);
+  assert.match(workflow, /function_namespace\}-maintenance/u);
   assert.match(workflow, /SUPABASE_ACCESS_TOKEN/u);
   assert.match(workflow, /CLOUDINARY_API_SECRET/u);
   assert.match(workflow, /APP_SUPABASE_SERVICE_ROLE_KEY/u);

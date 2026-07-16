@@ -41,8 +41,9 @@ jobs:
           EDGE_ORIGIN_SECRET: ${{ secrets.EDGE_ORIGIN_SECRET }}
           EDGE_FUNCTION_NAMESPACE: ${{ secrets.EDGE_FUNCTION_NAMESPACE }}
         run: |
+          function_namespace="n${EDGE_FUNCTION_NAMESPACE}"
           response="$(curl -sS -w '\n%{http_code}' \
-            -X POST "https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/${EDGE_FUNCTION_NAMESPACE}-api" \
+            -X POST "https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/${function_namespace}-api" \
             -H "content-type: application/json" \
             -H "x-healthcheck-secret: ${WEBHOOK_SECRET}" \
             -H "x-novae-origin-secret: ${EDGE_ORIGIN_SECRET}" \
