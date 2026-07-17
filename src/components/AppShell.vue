@@ -1,7 +1,9 @@
 <template>
   <div
     class="app-root relative flex flex-col bg-[rgb(var(--color-page-background))]"
-    :data-bottom-nav="isAllowedUser ? 'true' : 'false'"
+    :data-bottom-nav="showMobileBottomNavigation ? 'true' : 'false'"
+    :data-navigation-depth="navigationDepth"
+    :data-sidebar="isAllowedUser ? 'true' : 'false'"
     :data-sidebar-expanded="isSidebarExpanded ? 'true' : 'false'"
     :style="rootStyle"
     @focusin.capture="handleNavigationIntent"
@@ -49,17 +51,19 @@
       <ViewportFrame as="main" class="min-h-0 flex-1"><slot /></ViewportFrame>
     </div>
 
-    <AppMobileBottomNav
-      v-if="isAllowedUser"
-      :active-key="activeMobileNavKey"
-      :bottom-gap="bottomGap"
-      :has-unread="hasUnread"
-      :items="primaryRouteNavItems"
-      :photo-url="displayPhotoUrl"
-      :profile-active="isProfileRouteActive"
-      :user-name="userName"
-      @navigate="handleNavigationClick"
-    />
+    <Transition name="mobile-nav">
+      <AppMobileBottomNav
+        v-if="showMobileBottomNavigation"
+        :active-key="activeMobileNavKey"
+        :bottom-gap="bottomGap"
+        :has-unread="hasUnread"
+        :items="primaryRouteNavItems"
+        :photo-url="displayPhotoUrl"
+        :profile-active="isProfileRouteActive"
+        :user-name="userName"
+        @navigate="handleNavigationClick"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -78,6 +82,7 @@ import { useNotificationBadge } from '@/composables/useNotificationBadge';
 import { useSession } from '@/composables/useSession';
 import type { IssueFilter } from '@/types';
 import { preloadRoutePath } from '@/router/route-components';
+import { getRouteNavigationDepth, returnToNavigationOrigin } from '@/router/navigation-hierarchy';
 import { useI18n } from '@/i18n';
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'novae:desktop-sidebar-expanded';
@@ -134,9 +139,13 @@ const mobileCategoryLabel = computed(() => mobileCategoryFilter.value
   ? t(ISSUE_CATEGORY_LABELS[mobileCategoryFilter.value])
   : undefined);
 const bottomGap = computed(() => hasSafeIndicator.value ? 22 : 12);
-const rootStyle = computed(() => isAllowedUser.value
-  ? { '--app-bottom-nav-height': `${bottomGap.value + MOBILE_NAV_HEIGHT + 6}px` }
-  : {});
+const navigationDepth = computed(() => getRouteNavigationDepth(route));
+const showMobileBottomNavigation = computed(() => isAllowedUser.value && navigationDepth.value === 0);
+const rootStyle = computed(() => ({
+  '--app-bottom-nav-height': showMobileBottomNavigation.value
+    ? `${bottomGap.value + MOBILE_NAV_HEIGHT + 6}px`
+    : '0px',
+}));
 const activeMobileNavKey = computed(() => {
   if (isAnnouncementRouteActive.value) return 'announcements';
   if (isFacilityRouteActive.value) return 'facilities';
@@ -210,15 +219,16 @@ function handleSidebarKeydown(event: KeyboardEvent) {
 }
 
 async function handleMobileBack() {
-  if (route.name === 'announcement-detail') return void await router.push({ name: 'announcements' });
-  if (route.name === 'facility-detail') return void await router.push({ name: 'facilities' });
+  if (returnToNavigationOrigin(router)) return;
+  if (route.name === 'announcement-detail') return void await router.replace({ name: 'announcements' });
+  if (route.name === 'facility-detail') return void await router.replace({ name: 'facilities' });
   if (route.name === 'issue-detail') {
     const query = { ...route.query };
     delete query.tab;
     delete query.comment;
-    return void await router.push({ name: 'issues', params: { filter: activeFilter.value }, query });
+    return void await router.replace({ name: 'issues', params: { filter: activeFilter.value }, query });
   }
-  if (isMyProposalsRouteActive.value || route.name === 'dashboard' || route.name === 'access-management') await router.push({ name: 'settings' });
+  if (isMyProposalsRouteActive.value || route.name === 'dashboard' || route.name === 'access-management') await router.replace({ name: 'settings' });
 }
 
 watch(() => route.fullPath, (newPath, oldPath) => {

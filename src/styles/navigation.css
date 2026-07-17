@@ -3,6 +3,26 @@
     -webkit-backdrop-filter: blur(24px);
   }
 
+  .mobile-nav-enter-active,
+  .mobile-nav-leave-active {
+    transition:
+      opacity var(--motion-duration-panel) var(--motion-ease-enter),
+      transform var(--motion-duration-panel) var(--motion-ease-enter),
+      filter var(--motion-duration) var(--motion-ease-enter);
+  }
+
+  .mobile-nav-leave-active {
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-exit);
+  }
+
+  .mobile-nav-enter-from,
+  .mobile-nav-leave-to {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(18px) scale(0.96);
+  }
+
   .app-bottom-nav__item {
     @apply relative flex h-12 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-full px-1 text-center text-ink-500 dark:text-ink-400;
   }

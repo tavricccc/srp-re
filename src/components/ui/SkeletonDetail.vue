@@ -1,5 +1,5 @@
 <template>
-  <div class="route-page pb-3 sm:pb-5" :aria-label="label || t('common.loading')" aria-busy="true">
+  <div class="route-page pb-0 md:pb-5" :aria-label="label || t('common.loading')" aria-busy="true">
     <!-- Desktop Viewport Skeleton -->
     <article
       v-if="isDesktopViewport"
@@ -22,9 +22,8 @@
         <!-- Details Column -->
         <div class="flex min-h-0 min-w-0 flex-col px-5 py-5 pr-6 space-y-6">
           <!-- Title -->
-          <div class="space-y-3 pb-1">
+          <div class="pb-1">
             <div class="h-7 w-3/4 rounded bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
-            <div class="h-7 w-1/2 rounded bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
           </div>
           <!-- Author -->
           <div class="flex items-center gap-3 border-b border-ink-100 pb-3 dark:border-ink-800/60">
@@ -72,24 +71,22 @@
     <!-- Mobile Viewport Skeleton -->
     <article
       v-else
-      class="panel flex h-[calc(100dvh-var(--app-header-height)-var(--app-bottom-nav-height)-env(safe-area-inset-top)-1rem)] min-h-0 flex-col overflow-hidden"
+      class="flex h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-0.5rem)] min-h-0 flex-col overflow-hidden"
     >
-      <header class="flex shrink-0 items-start gap-3 px-4 py-3.5">
-        <!-- Back Button -->
-        <div class="h-8 w-8 shrink-0 rounded-full bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
+      <header class="flex shrink-0 items-start gap-3 px-0 py-3">
         <!-- Tags -->
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 pt-1.5">
           <div class="h-6 w-16 rounded-full bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
           <div class="h-6 w-20 rounded-full bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
         </div>
+        <div v-if="showComments" class="h-8 w-[9.375rem] shrink-0 rounded-full bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
       </header>
 
       <div class="flex min-h-0 flex-1 flex-col border-t border-ink-100/70 dark:border-ink-800/70">
-        <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-5">
+        <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-0 py-3 space-y-5">
           <!-- Title -->
-          <div class="space-y-3 pb-1">
+          <div class="pb-1">
             <div class="h-6 w-3/4 rounded bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
-            <div class="h-6 w-1/2 rounded bg-ink-200/60 skeleton-block dark:bg-ink-700/50"></div>
           </div>
           <!-- Author -->
           <div class="flex items-center gap-3 border-b border-ink-100 pb-3 dark:border-ink-800/60">

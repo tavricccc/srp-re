@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { returnToNavigationOrigin } from '@/router/navigation-hierarchy';
 import { normalizeIssueRouteFilterParam } from '@/constants/categories';
 import { getDerivedIssueStatus } from '@/lib/issue-status';
 import { getIssueStatusBucket } from '@/lib/issue-timeline';
@@ -90,8 +91,8 @@ export function useIssueRouteDetail(
   function closeRouteIssue() {
     const currentIssue = routeIssue.value;
     requestId += 1;
-    routeIssue.value = null;
     routeIssueLoading.value = false;
+    if (returnToNavigationOrigin(router)) return;
     router.replace(issueListRoute(currentIssue));
   }
 

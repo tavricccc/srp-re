@@ -39,14 +39,14 @@ export const issueRoutes: RouteRecordRaw[] = [
     path: '/issues/:filter',
     name: 'issues',
     component: loadIssueBoardView,
-    meta: { requiresAuth: true },
+    meta: { navigationDepth: 0, requiresAuth: true },
     beforeEnter: validateIssueRoute,
   },
   {
     path: '/issues/:filter/:issueId',
     name: 'issue-detail',
     component: loadIssueDetailView,
-    meta: { requiresAuth: true },
+    meta: { navigationDepth: 1, requiresAuth: true },
     beforeEnter: validateIssueRoute,
   },
 ];

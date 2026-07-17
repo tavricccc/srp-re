@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { returnToNavigationOrigin } from '@/router/navigation-hierarchy';
 import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { useDetailRouteQuery } from '@/composables/useDetailRouteQuery';
@@ -54,6 +55,7 @@ export function useAnnouncementDetail(canLoad: Ref<boolean>) {
 
   function goBack() {
     requestId += 1;
+    if (returnToNavigationOrigin(router)) return;
     void router.replace({ name: 'announcements' });
   }
 

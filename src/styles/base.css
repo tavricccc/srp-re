@@ -331,9 +331,74 @@
     width: 100%;
   }
 
+  .route-stage {
+    isolation: isolate;
+  }
+
   .route-content-frame {
-    animation: route-content-enter var(--motion-duration-panel) var(--motion-ease-enter) both;
     transform-origin: 50% 0;
+  }
+
+  .route-fade-enter-active,
+  .route-fade-leave-active,
+  .route-pop-enter-active,
+  .route-pop-leave-active,
+  .route-push-enter-active,
+  .route-push-leave-active {
+    transition:
+      opacity var(--motion-duration-panel) var(--motion-ease-enter),
+      transform var(--motion-duration-panel) var(--motion-ease-enter),
+      filter var(--motion-duration) var(--motion-ease-enter);
+    will-change: opacity, transform;
+  }
+
+  .route-fade-leave-active,
+  .route-pop-leave-active,
+  .route-push-leave-active {
+    inset: 0;
+    position: absolute;
+    width: 100%;
+  }
+
+  .route-fade-enter-from,
+  .route-fade-leave-to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  @media (max-width: 767px) {
+    .route-push-enter-active,
+    .route-pop-leave-active {
+      z-index: 2;
+    }
+
+    .route-push-leave-active,
+    .route-pop-enter-active {
+      z-index: 1;
+    }
+
+    .route-push-enter-from,
+    .route-pop-leave-to {
+      opacity: 0.96;
+      transform: translateX(100%);
+    }
+
+    .route-push-leave-to,
+    .route-pop-enter-from {
+      filter: brightness(0.96);
+      opacity: 0.72;
+      transform: translateX(-5%) scale(0.985);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .route-pop-enter-from,
+    .route-pop-leave-to,
+    .route-push-enter-from,
+    .route-push-leave-to {
+      opacity: 0;
+      transform: translateY(5px);
+    }
   }
 
   .page-bottom-safe {
@@ -404,7 +469,7 @@
       padding-bottom: 3px;
     }
 
-    .app-root[data-bottom-nav='false'] .app-main-content {
+    .app-root[data-sidebar='false'] .app-main-content {
       margin-left: 0;
       width: 100%;
     }
@@ -464,12 +529,5 @@
 
   ::selection {
     @apply bg-ink-900 text-ink-50 dark:bg-ink-100 dark:text-ink-900;
-  }
-}
-
-@keyframes route-content-enter {
-  from {
-    opacity: 0.35;
-    transform: translateY(5px);
   }
 }

@@ -7,21 +7,23 @@
     @retry="reloadApp({ reason: 'restart' })"
   />
   <AppShell v-else>
-    <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1">
+    <div class="route-stage relative flex min-h-0 min-w-0 w-full max-w-full flex-1">
       <RouterView v-slot="{ Component, route: viewRoute }">
-        <div
-          :key="String(viewRoute.name ?? viewRoute.path)"
-          class="route-content-frame min-h-0 min-w-0 w-full max-w-full flex-1"
-        >
-          <Suspense>
-            <component :is="Component" />
-            <template #fallback>
-              <div class="flex min-h-[40dvh] items-center justify-center" :aria-label="t('common.switchingPages')" aria-busy="true">
-                <LoadingSpinner :size="8" />
-              </div>
-            </template>
-          </Suspense>
-        </div>
+        <Transition :name="viewRoute.meta.navigationTransition ?? 'route-fade'">
+          <div
+            :key="String(viewRoute.name ?? viewRoute.path)"
+            class="route-content-frame min-h-0 min-w-0 w-full max-w-full flex-1"
+          >
+            <Suspense>
+              <component :is="Component" />
+              <template #fallback>
+                <div class="flex min-h-[40dvh] items-center justify-center" :aria-label="t('common.switchingPages')" aria-busy="true">
+                  <LoadingSpinner :size="8" />
+                </div>
+              </template>
+            </Suspense>
+          </div>
+        </Transition>
       </RouterView>
     </div>
     <ActionFeedbackBar />

@@ -4,6 +4,7 @@ import { fetchIssueRecordById } from '@/services/issues';
 import { getFacility } from '@/services/facilities';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import type { NotificationRecord } from '@/types';
+import { NOTIFICATION_NAVIGATION_STATE } from '@/router/navigation-hierarchy';
 
 export function useNotificationNavigation() {
   const route = useRoute();
@@ -38,13 +39,18 @@ export function useNotificationNavigation() {
           name: 'announcement-detail',
           params: { announcementId: announcement.id },
           query: commentQuery(notification),
+          state: NOTIFICATION_NAVIGATION_STATE,
         });
         return true;
       }
       if (notification.target_type === 'facility') {
         const facility = await getFacility(notification.target_id);
         if (currentVersion !== navigationVersion) return false;
-        await router.push({ name: 'facility-detail', params: { facilityId: facility.id } });
+        await router.push({
+          name: 'facility-detail',
+          params: { facilityId: facility.id },
+          state: NOTIFICATION_NAVIGATION_STATE,
+        });
         return true;
       }
 
@@ -57,6 +63,7 @@ export function useNotificationNavigation() {
           issueId: issue.id,
         },
         query: commentQuery(notification),
+        state: NOTIFICATION_NAVIGATION_STATE,
       });
       return true;
     } catch {

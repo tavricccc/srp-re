@@ -49,7 +49,7 @@
 
 - `main.ts` — 掛載 app、resume、PWA、session
 - `i18n/` — `messages/<locale>/<domain>.ts` 依語系與領域拆分的 catalog（含 API error code 對應文案）、系統語言首次偵測、localStorage 語言偏好、日期 locale 與共用 `t()`；所有前端可見字串只放語系目錄，key 使用短而穩定的語意命名
-- `App.vue` — startup gate + AppShell；route 只切換內容並套用單向柔和進場，導覽列與 action bar 維持固定，不建立離場空窗
+- `App.vue` — startup gate + AppShell；route stage 依導覽深度套用手機 push／pop、同層 fade，桌面維持輕量網頁轉場
 - `sw.ts` — PWA SW、快取策略、FCM 背景通知
 - `style.css` — 全域樣式載入入口；依序載入 base、primitives 與領域樣式
 - `styles/base.css` — design tokens、全域基礎與頁面骨架
@@ -58,7 +58,7 @@
 - `styles/navigation.css` — 桌面側欄與手機底部導覽
 - `styles/content.css` / `responsive.css` — 列表、設定、統計、Dialog 與跨裝置覆寫
 - `assets/fonts/` — JetBrains Mono 與 Material Symbols 子集
-- `router/index.ts` / `router/route-components.ts` — 組合 modules、abort 上一頁、session guard 與主要頁面 chunk 預載
+- `router/index.ts` / `router/route-components.ts` / `router/navigation-hierarchy.ts` — 組合 modules、abort 上一頁、session guard、主要頁面 chunk 預載，以及 root／子頁／巢狀詳情深度、轉場方向與通知來源返回
 - `router/authRoutes.ts` / `issueRoutes.ts` / `facilityRoutes.ts` / `announcementRoutes.ts` / `adminRoutes.ts` / `notificationRoutes.ts` / `settingsRoutes.ts`
 - `views/LoginView.vue` — 登入
 - `views/IssueBoardView.vue` — 提案看板
@@ -83,10 +83,10 @@
 - `StatusTransitionDialog.vue` — 提案與設備共用的狀態選擇、結果填寫、字數、錯誤及 busy 流程；各領域只提供狀態與文案
 - `AppIcon.vue` / `BrandMark.vue` / `UserAvatar.vue` / `DecorativeGlow.vue`
 - `EmptyStatePanel.vue` / `PageLoadFailure.vue` / `ContentListState.vue` / `SearchHighlight.vue`（三領域共用載入失敗、不可用、錯誤、空內容與分頁狀態殼）
-- `PillSegmentedControl.vue` / `SelectionMark.vue` / `DetailActionButton.vue` / `DetailActionGroup.vue` / `DetailPageShell.vue` / `OperationTimeList.vue`（詳情頁共用操作列、分享／刪除動作與狀態時間列）
+- `PillSegmentedControl.vue` / `SelectionMark.vue` / `DetailActionButton.vue` / `DetailActionGroup.vue` / `DetailPageShell.vue` / `OperationTimeList.vue`（詳情頁共用操作列、分享／刪除動作與狀態時間列；手機詳情使用無卡片的高利用率內容層，桌面保留 panel）
 - `DialogOverlay.vue` / `GoogleLoginButton.vue`
 - Markdown：`MarkdownImageEditor.vue`、`MarkdownToolbar.vue`、`MarkdownImagePreviews.vue`、`MarkdownImageToolbarStatus.vue`、`MarkdownTableBlockCard.vue`、`TableGridPicker.vue`、`VisualTableEditor.vue`
-- Skeleton：`ContentCardSkeleton`（提案／公告／設備共用、固定兩張並對齊實際卡片區段）、`SkeletonCommentList`、`SkeletonDashboard`、`SkeletonDetail`；動畫由 `primitives.css` 的 `skeleton-block`／`skeleton-card` 統一
+- Skeleton：`ContentCardSkeleton`（提案／公告／設備共用、固定兩張並對齊實際卡片區段）、`SkeletonCommentList`、`SkeletonDashboard`、`SkeletonDetail`（詳情標題固定單行並對齊手機無卡片布局）；動畫由 `primitives.css` 的 `skeleton-block`／`skeleton-card` 統一
 
 ---
 
@@ -112,7 +112,7 @@
 - 留言：`useIssueComments`、`useAnnouncementComments`、`useDiscussionComments`（共用 core，依提案／公告領域權限判斷管理操作）
 - 公告：`useAnnouncements`、`useAnnouncementManagement`、`useAnnouncementDetail`（詳情讀取、快取、Realtime、按讚與刪除流程）
 - 設備：`useFacilities`、`useFacilityDetail`、`useFacilityComposerForm`
-- 通知／推播：`useNotificationBadge`、`useNotifications`、`useNotificationNavigation`、`useNotificationDisplay`（依目前語系組合通知標題、狀態與舊資料內容）、`usePushNotifications`、`usePushPermissionPrompt`
+- 通知／推播：`useNotificationBadge`、`useNotifications`、`useNotificationNavigation`（開啟內容時保留通知 root 來源，詳情返回會 pop 回通知）、`useNotificationDisplay`（依目前語系組合通知標題、狀態與舊資料內容）、`usePushNotifications`、`usePushPermissionPrompt`
 - UI 流程：`useActionFeedback`、`useActiveNavigationRefresh`、`useAuthenticatedDetailState`、`useDetailRouteQuery`、`useContentListRuntime`（三領域共用最短載入、逾時／斷線、重試、無限捲動與導覽重新整理）、`useBodyScrollLock`、`useDialogFocus`、`useDialogThemeColor`、`useDropdownPosition`、`useClickOutside`、`useInfiniteScroll`、`useMinimumLoading`、`useLoadingTimeout`、`useTimedMessage`、`useNetworkStatus`、`useCompactTableLayout`
 - App：`useAppResume`、`useAppStartupGate`、`useAppUpdate`、`useAppInstallPrompt`、`useShareUrl`、`useAuthorAvatar`
 - Markdown／圖：`useMarkdown`、`useResolvedMarkdown`、`useImageUpload`、`useMarkdownImageUpload`、`useMarkdownImageEditor`

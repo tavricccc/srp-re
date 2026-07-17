@@ -6,12 +6,12 @@ export const announcementRoutes: RouteRecordRaw[] = [
     path: '/announcements',
     name: 'announcements',
     component: loadAnnouncementsView,
-    meta: { requiresAuth: true },
+    meta: { navigationDepth: 0, requiresAuth: true },
   },
   {
     path: '/announcements/:announcementId',
     name: 'announcement-detail',
     component: loadAnnouncementDetailView,
-    meta: { requiresAuth: true },
+    meta: { navigationDepth: 1, requiresAuth: true },
   },
 ];

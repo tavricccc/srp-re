@@ -68,6 +68,7 @@ import { FACILITY_STATUS_LABELS, isFacilityClosed } from '@/constants/statuses';
 import { useI18n } from '@/i18n';
 import { formatDate } from '@/lib/format';
 import { resetAppConnection } from '@/lib/reconnect';
+import { returnToNavigationOrigin } from '@/router/navigation-hierarchy';
 import type { FacilityStatus, OperationTimeListItem } from '@/types';
 
 const router = useRouter();
@@ -135,6 +136,7 @@ const status = computed(() => facility.value?.status ?? 'pending');
 const { statusClass } = useStatusStyling(status, 'dialog');
 
 function goBackToFacilities() {
+  if (returnToNavigationOrigin(router)) return;
   void router.replace({ name: 'facilities' });
 }
 

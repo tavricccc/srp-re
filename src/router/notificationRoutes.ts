@@ -7,6 +7,7 @@ export const notificationRoutes: RouteRecordRaw[] = [
     name: 'notifications',
     component: loadNotificationsView,
     meta: {
+      navigationDepth: 0,
       requiresAuth: true,
     },
   },

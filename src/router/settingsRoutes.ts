@@ -7,6 +7,7 @@ export const settingsRoutes: RouteRecordRaw[] = [
     name: 'settings',
     component: loadSettingsView,
     meta: {
+      navigationDepth: 0,
       requiresAuth: true,
     },
   },

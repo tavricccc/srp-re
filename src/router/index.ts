@@ -10,9 +10,12 @@ import { DEFAULT_ISSUE_ROUTE_FILTER } from '@/constants/categories';
 import { resetRouteRequestScope } from '@/lib/route-request';
 import { useSession, waitForRoleReady, waitForSessionReady } from '@/composables/useSession';
 import type { PermissionCode } from '@/services/session-role';
+import { getRouteTransition, type AppRouteTransition } from '@/router/navigation-hierarchy';
 
 declare module 'vue-router' {
   interface RouteMeta {
+    navigationDepth?: number;
+    navigationTransition?: AppRouteTransition;
     publicOnly?: boolean;
     requiresAdmin?: boolean;
     requiresAuth?: boolean;
@@ -54,7 +57,8 @@ function normalizeRedirectPath(value: unknown) {
   return path;
 }
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
+  to.meta.navigationTransition = getRouteTransition(to, from);
   resetRouteRequestScope();
   await waitForSessionReady();
 

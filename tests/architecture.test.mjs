@@ -1228,13 +1228,18 @@ test('entry and comment limits are enforced across UI, Edge, and a new migration
   assert.match(baseStyles, /body\.dialog-open \.action-feedback-viewport \{[\s\S]*top: calc\(env\(safe-area-inset-top\) \+ 6\.75rem\)/u);
 });
 
-test('primary navigation preloads route chunks while shell chrome stays outside route transitions', async () => {
+test('primary navigation keeps desktop chrome while mobile routes use a source-aware hierarchy', async () => {
   const app = await read('src/App.vue');
   const appShell = await read('src/components/AppShell.vue');
+  const detailShell = await read('src/components/ui/DetailPageShell.vue');
+  const detailSkeleton = await read('src/components/ui/SkeletonDetail.vue');
   const issueBoard = await read('src/components/IssueBoard.vue');
   const facilitiesView = await read('src/views/FacilitiesView.vue');
   const routeComponents = await read('src/router/route-components.ts');
+  const hierarchy = await read('src/router/navigation-hierarchy.ts');
+  const notificationNavigation = await read('src/composables/useNotificationNavigation.ts');
   const baseStyles = await read('src/styles/base.css');
+  const navigationStyles = await read('src/styles/navigation.css');
   const responsiveStyles = await read('src/styles/responsive.css');
 
   assert.doesNotMatch(app, /Transition name="page-content"/u);
@@ -1250,9 +1255,22 @@ test('primary navigation preloads route chunks while shell chrome stays outside 
   assert.match(routeComponents, /preloadRequests/u);
   assert.match(routeComponents, /for \(const routeName of routeNames\)/u);
   assert.doesNotMatch(responsiveStyles, /\.page-content-(?:enter|leave)/u);
-  assert.match(app, /class="route-content-frame/u);
-  assert.match(baseStyles, /\.route-content-frame \{[\s\S]*animation: route-content-enter/u);
-  assert.doesNotMatch(baseStyles, /\.route-content-(?:leave|enter-active|enter-from)/u);
+  assert.match(app, /class="route-stage[\s\S]*<Transition :name="viewRoute\.meta\.navigationTransition/u);
+  assert.match(appShell, /:data-bottom-nav="showMobileBottomNavigation/u);
+  assert.match(appShell, /:data-sidebar="isAllowedUser/u);
+  assert.match(appShell, /<Transition name="mobile-nav">[\s\S]*v-if="showMobileBottomNavigation"/u);
+  assert.match(appShell, /getRouteNavigationDepth/u);
+  assert.match(baseStyles, /\.route-push-enter-from,[\s\S]*translateX\(100%\)/u);
+  assert.match(baseStyles, /\.route-pop-enter-from[\s\S]*translateX\(-5%\) scale\(0\.985\)/u);
+  assert.match(baseStyles, /\.app-root\[data-sidebar='false'\] \.app-main-content/u);
+  assert.match(navigationStyles, /\.mobile-nav-enter-from,[\s\S]*translateY\(18px\) scale\(0\.96\)/u);
+  assert.match(hierarchy, /name === 'issue-detail' && isMyProposals[\s\S]*NESTED_DETAIL_NAVIGATION_DEPTH/u);
+  assert.match(hierarchy, /state\?\.navigationOrigin !== 'notifications'[\s\S]*router\.back\(\)/u);
+  assert.match(notificationNavigation, /state: NOTIFICATION_NAVIGATION_STATE/u);
+  assert.match(detailShell, /v-if="isDesktopViewport"[\s\S]*class="panel hidden/u);
+  assert.match(detailShell, /v-else[\s\S]*class="flex h-\[calc\(100dvh-var\(--app-header-height\)/u);
+  assert.doesNotMatch(detailShell, /v-else[\s\S]{0,120}class="panel/u);
+  assert.doesNotMatch(detailSkeleton, /h-7 w-1\/2|h-6 w-1\/2/u);
   assert.match(responsiveStyles, /\.board-controls \{[\s\S]*padding-top: 0\.5rem/u);
 });
 
