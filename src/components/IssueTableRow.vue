@@ -26,7 +26,7 @@
       <div v-if="issue.support_enabled" class="mt-4 rounded-xl bg-ink-50/85 px-3 py-2.5 dark:bg-ink-900/55">
         <div class="flex items-center justify-between gap-3 text-xs">
           <span class="font-semibold tabular-nums text-ink-700 dark:text-ink-300">
-            {{ t('text.5498d9af3630', { count: supportCount, goal: issue.support_goal ?? 0 }) }}
+            {{ t('issue.countGoalSupports', { count: supportCount, goal: issue.support_goal ?? 0 }) }}
           </span>
           <span v-if="supportRemainingLabel" class="text-ink-400 dark:text-ink-500">
             {{ supportRemainingLabel }}
@@ -39,15 +39,15 @@
           ></div>
         </div>
       </div>
-      <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500">{{ t('text.b6642bde95cb') }}</p>
+      <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500">{{ t('issue.thisProposalDoesNotRequireSupport') }}</p>
     </template>
 
     <template #actions>
       <button
         type="button"
         class="button-toolbar h-8 w-8 rounded-full p-0"
-        :title="t('text.888828602ebd')"
-        :aria-label="t('text.888828602ebd')"
+        :title="t('comments.viewComments')"
+        :aria-label="t('comments.viewComments')"
         @click.stop="openDetails('comments')"
       >
         <AppIcon name="comment" />
@@ -68,9 +68,9 @@
     <template #dialogs>
       <ConfirmDialog
         :open="isDeleteDialogOpen"
-        title="text.3bba33b8e1fa"
-        message="text.9e46a9fe15e3"
-        confirm-label="text.1d63b95811eb"
+        title="issue.areYouSureYouWantToDeleteThisProposal"
+        message="issue.onceDeletedThisProposalCannotBeRestored"
+        confirm-label="comments.confirmDeletion"
         :busy="isDeleting"
         @cancel="isDeleteDialogOpen = false"
         @confirm="performDelete"

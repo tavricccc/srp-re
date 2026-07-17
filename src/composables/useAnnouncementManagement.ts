@@ -90,15 +90,15 @@ export function useAnnouncementManagement() {
   async function publishAnnouncement(payload: { title: string; content: string; uploadedImages: UploadedImage[] }) {
     saving.value = true;
     composerError.value = '';
-    const feedbackHandle = start('text.e12c3096882b');
+    const feedbackHandle = start('announcement.publishingAnnouncement');
     try {
       const announcement = await createAnnouncement(payload);
       upsertAnnouncement(announcement);
       composerOpen.value = false;
-      feedbackHandle.succeed('text.96f7a878261c');
+      feedbackHandle.succeed('announcement.announcementHasBeenReleased');
     } catch (caught) {
       await deleteUploadedImages(payload.uploadedImages.map((image) => image.storagePath)).catch(() => undefined);
-      composerError.value = caught instanceof Error ? caught.message : 'text.3b3b2ca1a9c5';
+      composerError.value = caught instanceof Error ? caught.message : 'announcement.announcementPublishingFailed';
       feedbackHandle.fail(composerError.value);
     } finally {
       saving.value = false;
@@ -119,14 +119,14 @@ export function useAnnouncementManagement() {
     if (!announcement) return;
 
     deleting.value = true;
-    const feedbackHandle = start('text.fd96c8ab3b77');
+    const feedbackHandle = start('announcement.announcementBeingDeleted');
     try {
       await deleteAnnouncement(announcement.id);
       removeAnnouncement(announcement.id);
       deletePendingAnnouncement.value = null;
-      feedbackHandle.succeed('text.d775aeaef828');
+      feedbackHandle.succeed('announcement.announcementHasBeenDeleted');
     } catch (caught) {
-      feedbackHandle.fail(caught instanceof Error ? caught.message : 'text.095ecba4f5a7');
+      feedbackHandle.fail(caught instanceof Error ? caught.message : 'announcement.announcementDeletionFailed');
     } finally {
       deleting.value = false;
     }
@@ -135,7 +135,7 @@ export function useAnnouncementManagement() {
   async function handleToggleLike(announcement: AnnouncementRecord | null) {
     if (!announcement) return;
     if (!isAllowedUser.value) {
-      show('text.d5ba2d103edd', 'error');
+      show('announcement.signInToLikeThisAnnouncement', 'error');
       return;
     }
     if (liking.value) return;
@@ -167,7 +167,7 @@ export function useAnnouncementManagement() {
       if (isContentUnavailableError(caught)) {
         handleAnnouncementUnavailable(announcement.id);
       }
-      show(caught instanceof Error ? caught.message : 'text.d624cbb8862d', 'error');
+      show(caught instanceof Error ? caught.message : 'facility.operationFailedPleaseTryAgainLater', 'error');
     } finally {
       liking.value = false;
       likingAnnouncementId.value = '';

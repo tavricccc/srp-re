@@ -9,8 +9,8 @@
         type="button"
         class="button-toolbar h-8 min-h-8 w-8 rounded-full p-0"
         :disabled="submitting || uploading"
-        :title="t('text.bcd1cb611036')"
-        :aria-label="t('text.bcd1cb611036')"
+        :title="t('comments.cancelReply')"
+        :aria-label="t('comments.cancelReply')"
         @click="handleClose"
       >
         <AppIcon name="close" :stroke-width="2.5" />
@@ -24,8 +24,8 @@
           :key="url"
           class="relative h-20 w-20 overflow-hidden rounded-xl bg-ink-50 shadow-note dark:bg-ink-900"
         >
-          <img :src="url" :alt="t('text.afa3c211d6bf')" class="h-full w-full object-cover" />
-          <button type="button" class="button-remove-image" :aria-label="t('text.3e9b6f7dd375')" @click="removeImage(index)">
+          <img :src="url" :alt="t('comments.commentAttachmentPreview')" class="h-full w-full object-cover" />
+          <button type="button" class="button-remove-image" :aria-label="t('comments.removeImage')" @click="removeImage(index)">
             <AppIcon name="close" :size="3" :stroke-width="2.5" />
           </button>
         </div>
@@ -35,7 +35,7 @@
         <img
           v-if="myPhotoUrl"
           :src="myPhotoUrl"
-          :alt="t('text.e90a97b32116')"
+          :alt="t('comments.currentAvatar')"
           class="mb-1.5 h-7 w-7 shrink-0 rounded-full object-cover shadow-note"
         />
 
@@ -47,7 +47,7 @@
           class="max-h-32 min-h-11 min-w-0 flex-1 resize-none border-none bg-transparent px-1 py-3 font-sans text-base leading-5 text-ink-800 outline-none placeholder:text-ink-400 focus:ring-0 dark:text-ink-100 dark:placeholder:text-ink-500 md:text-sm"
           autocomplete="off"
           :maxlength="INPUT_LIMITS.comment"
-          :placeholder="t(parentCommentId ? 'text.b5f7215e6d95' : 'text.cea3ddfb8127')"
+          :placeholder="t(parentCommentId ? 'comments.leaveYourReply' : 'comments.shareYourThoughts')"
           :disabled="submitting"
         ></textarea>
 
@@ -56,11 +56,11 @@
           class="button-toolbar h-10 min-h-10 w-10 shrink-0 rounded-full p-0"
           :disabled="uploading || imageUrls.length >= RATE_LIMITS.imageUploads.commentMaxImages"
           :title="uploading
-            ? t('text.ca1d70f0ffd1')
+            ? t('comments.imageProcessing')
             : imageUrls.length >= RATE_LIMITS.imageUploads.commentMaxImages
               ? t('comments.imageLimit', { count: RATE_LIMITS.imageUploads.commentMaxImages })
-              : t('text.0e33b8155b65')"
-          :aria-label="t('text.83bb99b177f7')"
+              : t('comments.addImage')"
+          :aria-label="t('comments.insertImage')"
           @click="commentFileInputRef?.click()"
         >
           <AppIcon name="image" />
@@ -78,8 +78,8 @@
           type="submit"
           class="button-icon-filled h-10 min-h-10 w-10 shrink-0 bg-ink-900 text-white hover:bg-ink-800 dark:bg-ink-100 dark:text-ink-900 dark:hover:bg-ink-200"
           :disabled="submitting || uploading || (!commentContent.trim() && imageUrls.length === 0)"
-          :title="t(submitting ? 'text.afee476dca7d' : 'text.0fa13e57cf13')"
-          :aria-label="t('text.0fa13e57cf13')"
+          :title="t(submitting ? 'comments.sending' : 'comments.postComment')"
+          :aria-label="t('comments.postComment')"
         >
           <AppIcon name="send" />
         </button>
@@ -153,7 +153,7 @@ async function submit() {
       parentCommentId: props.parentCommentId ?? null,
     });
   } catch {
-    uploadError.value = 'text.236bd93ac440';
+    uploadError.value = 'comments.imageUploadFailedPleaseTryAgainLater';
     show(uploadError.value, 'error');
   }
 }
@@ -167,7 +167,7 @@ async function handleClose() {
     await discardImages();
     emit('close');
   } catch {
-    uploadError.value = 'text.195dfc8d76ad';
+    uploadError.value = 'comments.imageDeletionFailedPleaseTryAgainLater';
     show(uploadError.value, 'error');
   }
 }

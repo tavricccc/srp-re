@@ -3,7 +3,7 @@
     <DetailRouteState
       :allowed="isAllowedUser"
       :loading="sessionLoading || routeIssueLoading"
-      loading-label="text.49b7cc2ac6bd"
+      loading-label="issue.loadingProposals"
       :problem="sessionLoadingHasProblem"
       :problem-title="sessionProblemTitle"
       :problem-description="sessionProblemDescription"
@@ -29,9 +29,9 @@
 
     <ConfirmDialog
       :open="isDeleteDialogOpen"
-      title="text.3bba33b8e1fa"
-      message="text.9e46a9fe15e3"
-      confirm-label="text.1d63b95811eb"
+      title="issue.areYouSureYouWantToDeleteThisProposal"
+      message="issue.onceDeletedThisProposalCannotBeRestored"
+      confirm-label="comments.confirmDeletion"
       :busy="isDeleting"
       @cancel="closeDeleteDialog"
       @confirm="performRouteIssueDelete"

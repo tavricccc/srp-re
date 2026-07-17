@@ -8,7 +8,7 @@
       @click="emit('loadMore')"
     >
       <LoadingSpinner v-if="loading" :size="3.5" />
-      {{ t(loading ? 'text.c38b87dd6ecf' : error ? 'text.39ca7f49ea82' : 'text.0ff983d5aa98') }}
+      {{ t(loading ? 'common.loading' : error ? 'common.retryLoading' : 'common.loadMore') }}
     </button>
   </div>
 </template>

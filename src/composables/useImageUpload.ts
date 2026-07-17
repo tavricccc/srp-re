@@ -51,7 +51,7 @@ export function useImageUpload() {
 
       return { ...processed, previewUrl };
     } catch (error) {
-      reportError(error, 'text.d7b97880eb2b');
+      reportError(error, 'image.imageProcessingFailedPleaseTryAgainLater');
       return null;
     } finally {
       finishOperation();
@@ -64,7 +64,7 @@ export function useImageUpload() {
 
     try {
       const policies = await createImageUploadPolicies(images.map(({ file, height, width }) => ({ file, height, width })));
-      if (policies.length !== images.length) throw new Error('text.3b264ebdfff1');
+      if (policies.length !== images.length) throw new Error('image.theImageUploadIsNotCompletelyCompleted');
       return policies.map(({ uploadId, storagePath, width, height }) => ({
         storagePath,
         uploadId,
@@ -73,7 +73,7 @@ export function useImageUpload() {
         height,
       }));
     } catch (error) {
-      reportError(error, 'text.236bd93ac440');
+      reportError(error, 'comments.imageUploadFailedPleaseTryAgainLater');
       return [];
     } finally {
       finishOperation();

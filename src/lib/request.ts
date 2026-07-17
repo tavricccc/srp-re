@@ -32,7 +32,7 @@ export async function withRequestTimeout<T>(
   operation: (signal: AbortSignal) => Promise<T>,
   options: RequestOptions = {},
 ): Promise<T> {
-  const label = options.label ?? 'text.466c5b7be28e';
+  const label = options.label ?? 'common.request';
   const controller = new AbortController();
   const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   let timedOut = false;
@@ -94,10 +94,10 @@ export function isAbortFailure(error: unknown) {
   return error instanceof RequestFailure && error.code === 'aborted';
 }
 
-export function formatRequestError(error: unknown, fallback = 'text.4cabfb030bb6') {
+export function formatRequestError(error: unknown, fallback = 'common.thereSeemsToBeAProblemWithTheNetworkPleaseTryAgainLater') {
   if (error instanceof RequestFailure) {
     if (error.code === 'aborted') return '';
-    if (error.code === 'timeout') return 'text.ab728a7beea5';
+    if (error.code === 'timeout') return 'common.theNetworkResponseTimeIsTooLongPleaseReload';
     return error.message || fallback;
   }
   return error instanceof Error && error.message ? error.message : fallback;

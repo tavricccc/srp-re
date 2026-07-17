@@ -48,7 +48,7 @@
           <button
             type="button"
             class="button-icon-filled absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] border-white/20 bg-white text-ink-950 hover:bg-white/90"
-            :aria-label="t('text.12ba5816407c')"
+            :aria-label="t('markdown.closeImage')"
             @click="selectedImage = null"
           >
             <AppIcon name="close" :size="5" />

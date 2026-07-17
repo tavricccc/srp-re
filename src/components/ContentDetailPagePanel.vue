@@ -71,7 +71,7 @@ withDefaults(defineProps<{
   authorSecondary: '',
   authorUid: null,
   commentCount: 0,
-  commentsLabel: 'text.2d4dc6e81d39',
+  commentsLabel: 'comments.title',
   initialTab: 'details',
   noticeContent: '',
   noticeFallbackAlt: '',

@@ -118,8 +118,8 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
       if (isAbortFailure(caught)) return;
       if (currentVersion === getVersion(state) && state.announcements.length === 0) {
         state.error = isOnline.value
-          ? 'text.ba8f81bdccef'
-          : 'text.428cef5d3087';
+          ? 'announcement.announcementLoadingFailedPleaseTryAgainLater'
+          : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
       }
     } finally {
       if (currentVersion === getVersion(state)) {
@@ -154,8 +154,8 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
       if (isAbortFailure(caught)) return;
       if (currentVersion === getVersion(state)) {
         state.error = isOnline.value
-          ? 'text.174dbaa4b57c'
-          : 'text.428cef5d3087';
+          ? 'announcement.failedToLoadMoreAnnouncementsPleaseTryAgainLater'
+          : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
       }
     } finally {
       if (currentVersion === getVersion(state)) {

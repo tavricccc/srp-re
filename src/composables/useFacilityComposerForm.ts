@@ -24,46 +24,46 @@ export function useFacilityComposerForm(open: Ref<boolean>, onClose: () => void,
       await images.discardImages();
       onClose();
     } catch {
-      images.uploadError.value = 'text.195dfc8d76ad';
+      images.uploadError.value = 'comments.imageDeletionFailedPleaseTryAgainLater';
       show(images.uploadError.value, 'error');
     }
   }
 
   async function submit() {
     if (!form.title.trim()) {
-      error.value = 'text.25224809f8d7';
+      error.value = 'facility.pleaseEnterAQuestionTitle';
       show(error.value, 'error');
       return;
     }
     if (!form.location.trim()) {
-      error.value = 'text.75b1e5284e31';
+      error.value = 'facility.enterTheFacilityLocation';
       show(error.value, 'error');
       return;
     }
     if (!images.contentWithImages.value.trim()) {
-      error.value = 'text.b42b017e3846';
+      error.value = 'facility.pleaseEnterADetailedDescriptionOrAddAnImage';
       show(error.value, 'error');
       return;
     }
     submitting.value = true;
-    const feedback = start('text.116aec1ac960');
+    const feedback = start('facility.submittingFacilityReport');
     let uploaded: Awaited<ReturnType<typeof images.uploadImagesAndBuildContent>>['uploadedImages'] = [];
     try {
-      if (images.imageUrls.value.length > 0) feedback.update('text.b7cbf062d7cc');
+      if (images.imageUrls.value.length > 0) feedback.update('facility.uploadingImages');
       const result = await images.uploadImagesAndBuildContent();
       uploaded = result.uploadedImages;
-      feedback.update('text.deb253fe6fcd');
+      feedback.update('facility.creatingFacilityReport');
       const facility = await createFacility({ title: form.title.trim(), location: form.location.trim(), content: result.content });
-      reset(); onSubmitted(facility); onClose(); feedback.succeed('text.453ff81884c7');
+      reset(); onSubmitted(facility); onClose(); feedback.succeed('facility.facilityReportSubmitted');
     } catch (caught) {
       if (uploaded.length) await images.deleteUploadedImages(uploaded);
-      error.value = caught instanceof Error ? caught.message : 'text.7a42c57da429';
+      error.value = caught instanceof Error ? caught.message : 'facility.sendingFailed';
       feedback.fail(error.value);
     } finally { submitting.value = false; }
   }
 
   return {
-    editorImages: computed(() => images.imageUrls.value.map((src, index) => ({ src, alt: 'text.fde8a2524ab4', key: `${src}:${index}` }))),
+    editorImages: computed(() => images.imageUrls.value.map((src, index) => ({ src, alt: 'facility.facilityAttachmentPreview', key: `${src}:${index}` }))),
     error,
     form,
     images,

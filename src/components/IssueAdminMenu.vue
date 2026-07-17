@@ -38,8 +38,8 @@
         type="button"
         class="button-toolbar h-8 w-8 rounded-full p-0"
         :class="{ 'text-ink-800 dark:text-ink-100': isDropdownOpen }"
-        :title="t('text.9dc81a5d9869')"
-        :aria-label="t('text.9dc81a5d9869')"
+        :title="t('issue.manageProposals')"
+        :aria-label="t('issue.manageProposals')"
         @click="isDropdownOpen = !isDropdownOpen"
       >
         <AppIcon name="more-horizontal" :size="4.5" :stroke-width="1.8" />
@@ -57,7 +57,7 @@
             @click.stop
             @pointerdown.stop
           >
-            <!-- Under-review state: Show "text.332bad1cbb2b" -->
+            <!-- Under-review state: Show "issue.review" -->
             <button
               v-if="isUnderReview"
               type="button"

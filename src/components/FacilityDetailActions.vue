@@ -1,7 +1,7 @@
 <template>
   <DetailActionGroup
     :compact="compact"
-    delete-title="text.c9db0dfe86a8"
+    delete-title="facility.deleteFacilityReport"
     :operation-time-items="operationTimeItems"
     :show-delete="facility.canManageFacility || (facility.isOwnFacility && facility.status === 'pending')"
     @delete="emit('delete')"
@@ -13,8 +13,8 @@
         :disabled="facility.isOwnFacility || closed || affecting"
         :label="t('facility.affectedCount', { count: facility.affected_count })"
         :compact="compact"
-        :title="facility.isOwnFacility ? 'text.39cf806cd487' : 'text.047423ca10a2'"
-        :aria-label="facility.isOwnFacility ? 'text.3b5b48e6fd84' : 'text.08aa635f855c'"
+        :title="facility.isOwnFacility ? 'facility.theAuthorIsAutomaticallyIncludedInTheAffectedCount' : 'facility.iAlsoEncountered'"
+        :aria-label="facility.isOwnFacility ? 'facility.theAuthorHasAutomaticallyBeenIncludedInTheNumberOfEncounters' : 'facility.iAlsoEncounteredItWhenSwitching'"
         @click="emit('toggleAffected')"
       >
         <AppIcon name="hand" />

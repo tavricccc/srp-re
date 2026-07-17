@@ -7,7 +7,7 @@
       <span class="busy-button-spinner grid place-items-center rounded-full" aria-hidden="true">
         <LoadingSpinner :size="spinnerSize" class="shrink-0" />
       </span>
-      {{ t(busyLabel || label || 'text.ae16f4a52d69') }}
+      {{ t(busyLabel || label || 'facility.processing') }}
     </span>
   </span>
 </template>

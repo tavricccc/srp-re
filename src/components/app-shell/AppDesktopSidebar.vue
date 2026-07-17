@@ -1,14 +1,14 @@
 <template>
   <aside
     class="app-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-0 bg-surface/94 py-4 shadow-elevated backdrop-blur-xl dark:bg-surface/94 md:flex"
-    :aria-label="t('text.eed21e7de0c3')"
+    :aria-label="t('navigation.desktopMainNavigation')"
     @click="handleSidebarClick"
   >
     <div class="app-sidebar__header">
       <RouterLink
         :to="homeRoute"
         class="app-sidebar__brand"
-        :aria-label="t('text.463017e2fe2f')"
+        :aria-label="t('issue.novaeProposalHomePage')"
       >
         <BrandMark />
         <span class="app-sidebar__brand-label">Novae</span>
@@ -16,8 +16,8 @@
       <button
         type="button"
         class="app-sidebar__toggle"
-        :aria-label="t(expanded ? 'text.a3c852c726e3' : 'text.8d22552aadd1')"
-        :title="t(expanded ? 'text.a3c852c726e3' : 'text.8d22552aadd1')"
+        :aria-label="t(expanded ? 'navigation.collapseSidebar' : 'navigation.expandSidebar')"
+        :title="t(expanded ? 'navigation.collapseSidebar' : 'navigation.expandSidebar')"
         :aria-expanded="expanded"
         @click.stop="$emit('toggle')"
       >
@@ -25,7 +25,7 @@
       </button>
     </div>
 
-    <nav class="mt-7 flex w-full flex-1 flex-col gap-2 px-3" :aria-label="t('text.d1e57f345277')">
+    <nav class="mt-7 flex w-full flex-1 flex-col gap-2 px-3" :aria-label="t('navigation.primaryNavigation')">
       <RouterLink
         v-for="item in items"
         :key="item.key"
@@ -44,14 +44,14 @@
         to="/notifications"
         class="app-sidebar__item"
         :class="{ 'app-sidebar__item--active': notificationsActive }"
-        :aria-label="t(hasUnread ? 'text.036eb476b7ab' : 'text.7a66c0d03631')"
-        :data-label="t('text.7a66c0d03631')"
+        :aria-label="t(hasUnread ? 'notification.notificationsUnread' : 'navigation.notify')"
+        :data-label="t('navigation.notify')"
       >
         <span class="relative inline-flex" aria-hidden="true">
           <AppIcon name="bell" :size="5" :stroke-width="1.9" />
           <span v-if="hasUnread" class="app-sidebar__badge"></span>
         </span>
-        <span class="app-sidebar__label">{{ t('text.7a66c0d03631') }}</span>
+        <span class="app-sidebar__label">{{ t('navigation.notify') }}</span>
       </RouterLink>
     </nav>
 
@@ -59,10 +59,10 @@
       to="/settings"
       class="app-sidebar__profile"
       :class="{ 'app-sidebar__item--active': profileActive }"
-      :aria-label="t('text.a82c993d7388')"
-      :data-label="t('text.a82c993d7388')"
+      :aria-label="t('settings.mine')"
+      :data-label="t('settings.mine')"
     >
-      <UserAvatar :photo-url="photoUrl" :name="userName" size="sm" :alt-text="t('text.59dd30bfe0e0')" class="!h-8 !w-8 rounded-full" />
+      <UserAvatar :photo-url="photoUrl" :name="userName" size="sm" :alt-text="t('settings.userAvatar')" class="!h-8 !w-8 rounded-full" />
       <span class="app-sidebar__profile-copy">
         <strong>{{ userName }}</strong>
         <span>{{ schoolLabel }}</span>

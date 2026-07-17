@@ -6,8 +6,8 @@
       v-model:sort-option="sort"
       mode="facility"
       active-filter=""
-      :active-category-label="t('text.a6a61230ffa1')"
-      :create-label="t('text.f6af17a5f622')"
+      :active-category-label="t('facility.facility')"
+      :create-label="t('facility.addFacility')"
       :search-hint="searchHint"
       @create="composerOpen = true"
       @submit-search="submitSearch"
@@ -18,9 +18,9 @@
       <ContentListState
         :empty="facilities.length === 0"
         :empty-description="emptyDescription"
-        empty-title="text.048a5b862623"
+        empty-title="facility.noMatchingFacilities"
         :error="error"
-        error-title="text.a4a8f255b50c"
+        error-title="facility.failedToLoadFacilityTitle"
         :has-more="hasMore"
         :loading="visibleFacilityLoading"
         :loading-has-problem="facilityLoadingHasProblem"
@@ -65,9 +65,9 @@
     />
     <ConfirmDialog
       :open="deleteDialogOpen"
-      title="text.6a09e03ffa6a"
-      message="text.97ac026665a6"
-      confirm-label="text.1d63b95811eb"
+      title="facility.areYouSureYouWantToDeleteThisFacilityReport"
+      message="facility.thisFacilityReportCannotBeRestoredAfterDeletion"
+      confirm-label="comments.confirmDeletion"
       :busy="deleting"
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
@@ -143,14 +143,14 @@ const {
 const searchHint = computed(() => {
   const draft = normalizeSearchText(query.value);
   const committed = normalizeSearchText(committedQuery.value);
-  if (draft !== committed) return t('text.fef60be5996c');
-  if (!committed) return t('text.df27f3893c8e');
-  if (committed.length < 3) return t('text.09b0d5af8e6f');
-  return t('text.7b34130ee24e', { query: committedQuery.value });
+  if (draft !== committed) return t('issue.search.pressEnterToSearch');
+  if (!committed) return t('issue.search.enterTheKeywordAndPressEnterToSearch');
+  if (committed.length < 3) return t('facility.onlyLoadedFacilitiesAreBeingSearchedEnterAtLeast3CharactersToSearchMore');
+  return t('facility.searchForQuery', { query: committedQuery.value });
 });
 const emptyDescription = computed(() => committedQuery.value.trim()
-  ? t('text.d7bff626d69d', { query: committedQuery.value.trim() })
-  : t('text.498dd3a41086', { status: t(bucket.value === 'closed' ? 'text.b496f1ac5289' : 'text.ae16f4a52d69') }));
+  ? t('facility.noFacilityReportsMatchQuery', { query: committedQuery.value.trim() })
+  : t('facility.noFacilityReportsInStatus', { status: t(bucket.value === 'closed' ? 'facility.caseClosed' : 'facility.processing') }));
 
 function openDetails(facility: FacilitySummary) {
   void router.push({ name: 'facility-detail', params: { facilityId: facility.id } });
@@ -164,7 +164,7 @@ async function handleToggleAffected(facility: FacilitySummary) {
   try {
     await toggleAffected(facility);
   } catch (caught) {
-    show(caught instanceof Error ? t(caught.message) : t('text.400748fa9644'), 'error');
+    show(caught instanceof Error ? t(caught.message) : t('facility.theOperationFailedPleaseTryAgainLater'), 'error');
   }
 }
 
@@ -184,7 +184,7 @@ async function submitStatus(status: FacilityStatus, result: string) {
     await changeStatus(selectedFacility.value, status, result);
     statusDialogOpen.value = false;
   } catch (caught) {
-    statusError.value = caught instanceof Error ? t(caught.message) : t('text.e45a87db77dc');
+    statusError.value = caught instanceof Error ? t(caught.message) : t('facility.updateFailedPleaseTryAgainLater');
   } finally {
     statusSaving.value = false;
   }
@@ -203,7 +203,7 @@ async function confirmDelete() {
     await remove(selectedFacility.value);
     deleteDialogOpen.value = false;
   } catch (caught) {
-    show(caught instanceof Error ? t(caught.message) : t('text.c51f84ab04cf'), 'error');
+    show(caught instanceof Error ? t(caught.message) : t('facility.deletionFailedPleaseTryAgainLater'), 'error');
   } finally {
     deleting.value = false;
   }

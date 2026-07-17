@@ -21,7 +21,7 @@
       </div>
       <div class="dialog-actions">
         <button type="button" class="button-primary" :disabled="busy" data-autofocus @click="emit('reload')">
-          <BusyButtonContent :busy="Boolean(busy)" label="text.d9db02d07adb" busy-label="text.111227ad9eb7" />
+          <BusyButtonContent :busy="Boolean(busy)" label="app.update.update" busy-label="app.update.updating" />
         </button>
       </div>
     </section>

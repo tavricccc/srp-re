@@ -3,11 +3,11 @@
     <div class="min-h-0 flex-1">
       <Transition name="panel-switch" mode="out-in">
         <div :key="notificationPanelKey">
-          <SurfacePanel v-if="loading" variant="list" :aria-label="t('text.b14d67383b75')">
+          <SurfacePanel v-if="loading" variant="list" :aria-label="t('notification.notificationsLoading')">
             <div
               v-for="index in 4"
               :key="index"
-              class="flex min-h-[88px] items-start gap-3 bg-white px-3 py-4 dark:bg-surface sm:px-4"
+              class="notification-group-row list-surface-row"
             >
               <div class="h-10 w-10 shrink-0 rounded-2xl bg-ink-100 dark:bg-ink-800 animate-skeleton"></div>
               <div class="min-w-0 flex-1 space-y-2 pt-1">
@@ -20,10 +20,10 @@
 
           <SurfacePanel v-else-if="error && notifications.length === 0" variant="list" class="flex flex-col items-center justify-center px-6 py-10 text-center">
             <AppIcon name="circle-alert" :size="8" class="text-error" />
-            <p class="mt-3 text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('text.24cbc5f45dd6') }}</p>
+            <p class="mt-3 text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('notification.failedToLoadNotifications') }}</p>
             <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">{{ t(error) }}</p>
             <button type="button" class="button-secondary mt-4 h-9 px-4 text-xs font-semibold" @click.stop="retryNotifications">
-              {{ t('text.5387b55bb903') }}
+              {{ t('dashboard.refresh') }}
             </button>
           </SurfacePanel>
 
@@ -31,8 +31,8 @@
             <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-100 text-ink-400 dark:bg-ink-800 dark:text-ink-500" aria-hidden="true">
               <AppIcon name="bell" :size="6" />
             </span>
-            <p class="mt-4 text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('text.df56fa06bad2') }}</p>
-            <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">{{ t('text.aa0eab4109f0') }}</p>
+            <p class="mt-4 text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('notification.noNotificationsYet') }}</p>
+            <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">{{ t('notification.newActivityWillAppearHere') }}</p>
           </SurfacePanel>
 
           <SurfacePanel v-else variant="list">
@@ -40,16 +40,16 @@
               v-for="notification in notifications"
               :key="notification.id"
               type="button"
-              class="notification-group-row"
+              class="notification-group-row list-surface-row list-surface-row--interactive"
               @click.stop="openNotification(notification)"
             >
               <AuthorAvatar
                 v-if="isComment(notification)"
                 :author-uid="notification.actor_uid"
                 :photo-url="notification.actor_photo_url ?? null"
-                :name="notification.actor_name ?? t('text.8fc21a701193')"
+                :name="notification.actor_name ?? t('navigation.user')"
                 size="sm"
-                :alt-text="t('text.371af8106c02', { name: notification.actor_name ?? t('text.8fc21a701193') })"
+                :alt-text="t('notification.nameAvatar', { name: notification.actor_name ?? t('navigation.user') })"
                 class="mt-0.5 shrink-0"
               />
               <span
@@ -66,7 +66,7 @@
                   <span class="line-clamp-2 text-sm font-semibold leading-5 text-ink-950 dark:text-ink-50">
                     {{ title(notification) }}
                   </span>
-                  <span v-if="!notification.is_read" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-info" :aria-label="t('text.f61b989e4838')"></span>
+                  <span v-if="!notification.is_read" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-info" :aria-label="t('notification.unread')"></span>
                 </span>
                 <span class="mt-0.5 line-clamp-2 text-xs leading-5 text-ink-600 dark:text-ink-300">
                   {{ body(notification) }}

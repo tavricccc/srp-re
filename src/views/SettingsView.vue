@@ -2,23 +2,23 @@
   <section class="route-page page-bottom-safe min-h-0 min-w-0 flex-1">
     <div v-if="loading" class="space-y-6 py-4">
       <!-- Account Skeleton -->
-      <div class="flex items-center gap-3 pb-4 border-b border-ink-100 dark:border-ink-800/60">
+      <SurfacePanel variant="list" padding="md" class="flex items-center gap-3">
         <span class="h-10 w-10 shrink-0 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
         <div class="min-w-0 flex-1 space-y-2">
           <span class="block h-4 w-32 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
           <span class="block h-3 w-48 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
         </div>
         <span class="h-10 w-16 rounded-xl bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
-      </div>
+      </SurfacePanel>
 
       <!-- Push Notifications Skeleton -->
-      <div class="pb-4 border-b border-ink-100 dark:border-ink-800/60 space-y-2">
+      <SurfacePanel variant="list" padding="md" class="space-y-2">
         <span class="block h-4 w-24 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
         <span class="block h-3 w-3/4 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
-      </div>
+      </SurfacePanel>
 
       <!-- Notification Types Skeleton -->
-      <div class="space-y-3 pb-4 border-b border-ink-100 dark:border-ink-800/60">
+      <SurfacePanel variant="list" padding="md" class="space-y-3">
         <span class="block h-4 w-20 rounded bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
         <div class="space-y-2">
           <div class="flex items-center justify-between border-b border-ink-100 py-3 dark:border-ink-800/60">
@@ -36,11 +36,11 @@
             <span class="h-6 w-11 rounded-full bg-ink-200/60 dark:bg-ink-700/50 animate-skeleton"></span>
           </div>
         </div>
-      </div>
+      </SurfacePanel>
     </div>
     <SettingsPanelContent
       v-else-if="user"
-      :display-name="user.displayName || t('text.958465555d00')"
+      :display-name="user.displayName || t('settings.nameNotSet')"
       :display-photo-url="displayPhotoUrl"
       :email="user.email || ''"
       :uid="user.uid"
@@ -62,7 +62,7 @@
       @toggle-push="handlePushAction"
     />
     <div v-else class="flex flex-col items-center justify-center p-12 text-center">
-      <p class="text-sm text-ink-500 dark:text-ink-400 mb-4">{{ t('text.344bea305193') }}</p>
+      <p class="text-sm text-ink-500 dark:text-ink-400 mb-4">{{ t('auth.signInToViewSettings') }}</p>
       <GoogleLoginButton :loading="loading" @login="login" />
     </div>
   </section>
@@ -72,6 +72,7 @@
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import GoogleLoginButton from '@/components/ui/GoogleLoginButton.vue';
+import SurfacePanel from '@/components/ui/SurfacePanel.vue';
 import SettingsPanelContent from '@/components/SettingsPanelContent.vue';
 import { usePushNotifications } from '@/composables/usePushNotifications';
 import { useAppUpdate } from '@/composables/useAppUpdate';
@@ -110,34 +111,34 @@ const personalNotificationOptions = computed<Array<{
 }>>(() => [
   {
     key: 'comments',
-    label: t('text.0d9fb2056353'),
-    description: t('text.b5e810141cba'),
+    label: t('notification.commentNotifications'),
+    description: t('notification.receiveNotificationsWhenNewCommentsAreReceivedForAProposalOrAnnouncement'),
   },
   {
     key: 'issueUpdates',
-    label: t('text.36010d7aec28'),
-    description: t('text.5cacedb67db7'),
+    label: t('issue.proposalUpdate'),
+    description: t('notification.receiveNotificationsAboutImportantUpdatesToProposalsYouCreateOrSupport'),
   },
   {
     key: 'facilityUpdates',
-    label: t('text.56a38f584eb6'),
-    description: t('text.3f877e7570bf'),
+    label: t('facility.facilityUpdates'),
+    description: t('notification.receiveNotificationsWhenFacilitiesYouReportOrMarkMeTooAreUpdated'),
   },
 ]);
 
 const pushStatusDescription = computed(() => {
-  if (!pushInitialized.value && pushLoading.value) return t('text.91f9a1b83c5d');
-  if (pushRequiresPwaInstall.value) return t('text.50877fdf94ee');
-  if (!pushSupported.value) return t('text.47a0cc307d22');
-  if (pushPermission.value === 'denied') return t('text.4015cf13848f');
-  if (pushEnabled.value) return t('text.a210dde44bfd');
-  return t('text.25f897cd58df');
+  if (!pushInitialized.value && pushLoading.value) return t('notification.confirmingNotificationStatusForThisDevice');
+  if (pushRequiresPwaInstall.value) return t('app.install.afterJoiningTheHomeScreenYouCanTurnOnPushNotifications');
+  if (!pushSupported.value) return t('notification.yourCurrentBrowserOrDeviceDoesNotSupportPushNotifications');
+  if (pushPermission.value === 'denied') return t('access.notificationPermissionHasBeenTurnedOffPleaseGoToSystemSettingsToAllowItAgain');
+  if (pushEnabled.value) return t('settings.importantUpdatesWillBeDeliveredToThisDeviceAccordingToThePreferencesBelow');
+  return t('settings.onceTurnedOnImportantUpdatesWillBeDeliveredToThisDeviceImmediately');
 });
 
 const pushActionLabel = computed(() => {
-  if (pushRequiresPwaInstall.value) return t('text.11cd98fc0ade');
+  if (pushRequiresPwaInstall.value) return t('app.install.installToHomeScreen');
   if (!pushSupported.value || pushPermission.value === 'denied') return '';
-  return pushEnabled.value ? t('text.f64df8471d40') : t('text.0cf38dc7c7ff');
+  return pushEnabled.value ? t('notification.turnOffPushNotifications') : t('app.install.turnOnPushNotifications');
 });
 
 onMounted(() => {
@@ -169,24 +170,24 @@ async function switchAccount() {
 
 async function handlePushAction() {
   if (!pushActionLabel.value) return;
-  const feedbackHandle = start(t('text.3d45fd9a2cc0'));
+  const feedbackHandle = start(t('settings.updatingPushSettings'));
   const succeeded = pushEnabled.value
     ? await disablePushNotifications()
     : await enablePushNotifications();
   if (succeeded) {
-    feedbackHandle.succeed(t('text.40cfbc9acf60'));
+    feedbackHandle.succeed(t('settings.pushSettingsHaveBeenUpdated'));
   } else {
-    feedbackHandle.fail(pushError.value || t('text.1073b7bdd0ea'));
+    feedbackHandle.fail(pushError.value || t('settings.pushSettingUpdateFailedPleaseTryAgainLater'));
   }
 }
 
 async function handleSetPersonalPushPreference(key: PersonalPushPreferenceKey, value: boolean) {
-  const feedbackHandle = start(t('text.7e8af57c3502'));
+  const feedbackHandle = start(t('notification.savingNotificationSettings'));
   const succeeded = await setPersonalPushPreference(key, value);
   if (succeeded) {
-    feedbackHandle.succeed(t('text.eb44d2e4abab'));
+    feedbackHandle.succeed(t('notification.notificationSettingsSaved'));
   } else {
-    feedbackHandle.fail(pushError.value || t('text.acdf2f6d26e7'));
+    feedbackHandle.fail(pushError.value || t('notification.failedToSaveNotificationSettingsPleaseTryAgainLater'));
   }
 }
 

@@ -48,7 +48,7 @@ async function getPendingRedirectResult(firebaseAuth: Auth) {
   let timeoutId = 0;
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = window.setTimeout(() => {
-      reject(new RequestFailure('text.5c8678c08dbd', 'timeout'));
+      reject(new RequestFailure('auth.loginReplyTimedOut', 'timeout'));
     }, REDIRECT_RECOVERY_TIMEOUT_MS);
   });
 
@@ -103,13 +103,13 @@ export async function loginWithGoogle(state: SessionState, options: { selectAcco
   });
   state.error = '';
   if (!claimLoginAttempt()) {
-    state.error = 'text.d3e3d4992b0f';
+    state.error = 'auth.theLoginOperationIsTooFrequentPleaseTryAgainLater';
     return;
   }
   state.loading = true;
 
   if (!auth) {
-    state.error = 'text.f346c9b8883d';
+    state.error = 'auth.theServiceIsTemporarilyUnavailablePleaseTryAgainLater';
     state.loading = false;
     return;
   }
@@ -177,12 +177,12 @@ export async function recoverPendingGoogleRedirect(state: SessionState, firebase
 
 function getRedirectRecoveryErrorMessage(error: unknown) {
   if (error instanceof RequestFailure && error.code === 'timeout') {
-    return 'text.5c8678c08dbd';
+    return 'auth.loginReplyTimedOut';
   }
-  return getLoginErrorMessage(error, 'text.8307998498b9');
+  return getLoginErrorMessage(error, 'auth.loginReplyFailed');
 }
 
-function getLoginErrorMessage(error: unknown, fallback = 'text.d98f9372b018') {
+function getLoginErrorMessage(error: unknown, fallback = 'auth.loginFailedPleaseTryAgainLater') {
   if (!(error instanceof FirebaseError)) {
     return fallback;
   }
@@ -193,31 +193,31 @@ function getLoginErrorMessage(error: unknown, fallback = 'text.d98f9372b018') {
     || error.code === 'auth/invalid-recaptcha-action'
     || error.code === 'auth/recaptcha-not-enabled'
   ) {
-    return 'text.3e57546f2cb7';
+    return 'auth.loginSecurityVerificationFailedPleaseRefreshThePageAndTryAgain';
   }
 
   if (error.code === 'auth/network-request-failed') {
-    return 'text.6146a5032fcc';
+    return 'auth.loginConnectionFailedPleaseConfirmTheNetworkStatusAndTryAgain';
   }
 
   if (error.code === 'auth/popup-closed-by-user') {
-    return 'text.e75c0c610540';
+    return 'auth.theLoginWindowHasBeenClosedPleaseTryAgain';
   }
 
   if (error.code === 'auth/popup-blocked') {
-    return 'text.5dc9caa90cae';
+    return 'auth.theLoginWindowIsBlockedByTheBrowserPleaseAllowThePopUpWindowAndTryAgain';
   }
 
   if (error.code === 'auth/operation-not-supported-in-this-environment') {
-    return 'text.fc85f5e4ed0a';
+    return 'auth.theCurrentBrowserCannotOpenTheLoginWindowPleaseUseTheSystemBrowserToOpenItInstead';
   }
 
   if (error.code === 'auth/unauthorized-domain') {
-    return 'text.e434bd2a5714';
+    return 'access.theCurrentUrlDoesNotAllowGoogleLoginPleaseContactTheAdministratorToConfirmTheSettings';
   }
 
   if (error.code === 'auth/argument-error') {
-    return 'text.4773c4f16a86';
+    return 'auth.theLoginComponentFailedToInitializePleaseRefreshThePageAndTryAgain';
   }
 
   return fallback;
@@ -233,7 +233,7 @@ export async function logoutFromFirebase(state: SessionState) {
 
   state.loading = true;
   try {
-    await withRequestTimeout(() => signOut(firebaseAuth), { label: 'text.b7fd2c1683eb' });
+    await withRequestTimeout(() => signOut(firebaseAuth), { label: 'auth.signOutLabel' });
   } finally {
     state.loading = false;
   }

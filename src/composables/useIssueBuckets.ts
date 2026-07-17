@@ -148,8 +148,8 @@ export function useIssueBuckets(deps: BucketDeps) {
       if (isAbortFailure(caught)) return;
       if (bucket.issues.length === 0 || options.append) {
         bucket.error = isOnline.value
-          ? options.append ? 'text.08d3b4ac7120' : 'text.d2420979db9a'
-          : 'text.428cef5d3087';
+          ? options.append ? 'issue.failedToLoadMoreProposalsPleaseTryAgainLater' : 'issue.proposalLoadingFailedPleaseTryAgainLater'
+          : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
       }
     } finally {
       if (version === getBucketVersion(bucket)) {

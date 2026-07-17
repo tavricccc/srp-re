@@ -19,12 +19,12 @@
         </div>
         <div class="min-w-0 flex-1">
           <h2 id="push-permission-title" class="dialog-title !mt-0">
-            {{ t(mode === 'repair' ? 'text.e97f7d648ee4' : 'text.0cf38dc7c7ff') }}
+            {{ t(mode === 'repair' ? 'app.install.reEnablePushNotifications' : 'app.install.turnOnPushNotifications') }}
           </h2>
           <p id="push-permission-description" class="dialog-description">
             {{ t(mode === 'repair'
-              ? 'text.22a9593ee148'
-              : 'text.a0d6c51c7e0b') }}
+              ? 'app.install.deviceNotificationLinkRequiresRefresh'
+              : 'app.install.proposalNotificationBenefits') }}
           </p>
         </div>
       </div>
@@ -47,8 +47,8 @@
         >
           <BusyButtonContent
             :busy="busy"
-            :label="mode === 'repair' ? 'text.689d7b18ef51' : 'text.2bb8793f7a92'"
-            busy-label="text.77009c7a9c68"
+            :label="mode === 'repair' ? 'app.install.reEnable' : 'app.install.turnOnNotifications'"
+            busy-label="app.install.processing"
           />
         </button>
       </div>

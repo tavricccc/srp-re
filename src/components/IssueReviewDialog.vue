@@ -11,12 +11,12 @@
       tabindex="-1"
     >
       <h3 id="review-dialog-title" class="dialog-title">
-        {{ t(step === 1 ? 'text.f0aa1c13f393' : 'text.a406c683ad32') }}
+        {{ t(step === 1 ? 'issue.reviewThisProposal' : 'issue.fillInTheReasonForFailure') }}
       </h3>
       <p class="dialog-description">
         {{ t(step === 1
-          ? 'text.d2d0735257c7'
-          : 'text.3bfe71bf8704') }}
+          ? 'issue.reviewTheProposalAndDecideWhetherToApproveItOnceApprovedItWillBecomePublicAndOpenForSupport'
+          : 'notification.pleaseBrieflyDescribeTheReasonForRejectionANotificationWillBeSentToTheProposer') }}
       </p>
 
       <div class="mt-5 space-y-4">
@@ -52,7 +52,7 @@
               v-model="rejectionReason"
               class="block min-h-36 w-full resize-none bg-transparent px-4 py-3 text-base leading-6 text-ink-800 outline-none placeholder:text-ink-400 disabled:cursor-not-allowed disabled:text-ink-500 dark:text-ink-100 dark:placeholder:text-ink-500 md:text-sm"
               maxlength="500"
-              :placeholder="t('text.bef43d2d0c39')"
+              :placeholder="t('notification.rejectionReasonHelp')"
               :disabled="saving"
             ></textarea>
             <div class="control-footer justify-end text-xs font-medium text-ink-500 dark:text-ink-400">
@@ -66,7 +66,7 @@
 
       <div class="dialog-actions">
         <button type="button" class="button-secondary" :disabled="saving" @click="handleSecondaryClick">
-          {{ t(step === 1 ? 'text.4d0b4688c787' : 'text.11d024154013') }}
+          {{ t(step === 1 ? 'issue.cancel' : 'issue.return') }}
         </button>
         <button
           type="button"
@@ -74,7 +74,7 @@
           :disabled="saving"
           @click="handlePrimaryClick"
         >
-          <BusyButtonContent :busy="saving" :label="idlePrimaryLabel" busy-label="text.111227ad9eb7" />
+          <BusyButtonContent :busy="saving" :label="idlePrimaryLabel" busy-label="app.update.updating" />
         </button>
       </div>
     </section>
@@ -109,13 +109,13 @@ useBodyScrollLock(toRef(props, 'open'));
 const reviewOptions = [
   {
     value: 'approved' as const,
-    label: 'text.2a7d3dc76d00',
-    description: 'text.e2fdc898f6cb',
+    label: 'issue.approved',
+    description: 'issue.theProposalWillBeMadePublicAndOpenToUserSupport',
   },
   {
     value: 'rejected' as const,
-    label: 'text.23946da527f3',
-    description: 'text.2e9f2aab11c3',
+    label: 'issue.failureToPassTheReview',
+    description: 'issue.theProposalWillNotBeMadePublicAndTheProposerMustBeNotifiedOfTheReasonsForRejection',
   },
 ];
 
@@ -128,9 +128,9 @@ const { start } = useActionFeedback();
 
 const idlePrimaryLabel = computed(() => {
   if (step.value === 1) {
-    return reviewDecision.value === 'approved' ? 'text.86a07295c547' : 'text.ea0ef2ae7245';
+    return reviewDecision.value === 'approved' ? 'issue.confirm' : 'issue.nextStep';
   }
-  return 'text.5a9ed7ff7086';
+  return 'issue.confirmAuditResults';
 });
 
 function handleClose() {
@@ -166,28 +166,28 @@ function handleSecondaryClick() {
 async function submitReview() {
   saving.value = true;
   errorMsg.value = '';
-  const feedbackHandle = start('text.569f092b9e9f');
+  const feedbackHandle = start('issue.updatingProposalReview');
   try {
     if (reviewDecision.value === 'approved') {
       const updated = await moderateIssueStatus(props.issue.id, 'pending');
       emit('success', updated);
-      feedbackHandle.succeed('text.2cc1e46367a5');
+      feedbackHandle.succeed('issue.proposalReviewPassed');
       emit('close');
     } else {
       const reason = rejectionReason.value.replace(/\s+/g, ' ').trim();
       if (!reason) {
-        errorMsg.value = 'text.9d9f3b798668';
+        errorMsg.value = 'issue.pleaseEnterTheReasonWhyTheReviewFailed';
         feedbackHandle.fail(errorMsg.value);
         saving.value = false;
         return;
       }
       const updated = await moderateIssueStatus(props.issue.id, 'review-rejected', reason);
       emit('success', updated);
-      feedbackHandle.succeed('text.4cf4d3a7ddd2');
+      feedbackHandle.succeed('issue.proposalReviewUpdated');
       emit('close');
     }
   } catch (caught) {
-    errorMsg.value = caught instanceof Error ? caught.message : 'text.7afbe972550e';
+    errorMsg.value = caught instanceof Error ? caught.message : 'issue.reviewProcessingFailedPleaseTryAgainLater';
     feedbackHandle.fail(errorMsg.value);
   } finally {
     saving.value = false;

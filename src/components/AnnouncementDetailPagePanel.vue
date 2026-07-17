@@ -1,19 +1,19 @@
 <template>
   <ContentDetailPagePanel
     v-if="announcement"
-    back-label="text.c12e8b61ecde"
+    back-label="announcement.returnToAnnouncementList"
     :author-name="announcement.author_name"
     :author-photo-url="announcement.author_photo_url"
     :author-uid="announcement.author_uid"
     :comment-count="announcement.comment_count"
     :content="announcement.content"
-    details-label="text.1bb7c8022090"
+    details-label="announcement.announcementContent"
     :initial-tab="initialTab"
     :title="announcement.title"
     @back="emit('back')"
   >
     <template #header>
-      <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">{{ t('text.3f9569532847') }}</span>
+      <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">{{ t('announcement.announcement') }}</span>
     </template>
 
     <template #actions="{ compact }">

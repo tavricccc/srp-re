@@ -43,12 +43,12 @@ export function useIssueSearch(options: {
   );
   const searchResultCount = computed(() => searchState.issues.length);
   const searchHint = computed(() => {
-    if (normalizedSearchQuery.value !== normalizedCommittedSearchQuery.value) return 'text.fef60be5996c';
-    if (!isSearching.value) return 'text.df27f3893c8e';
+    if (normalizedSearchQuery.value !== normalizedCommittedSearchQuery.value) return 'issue.search.pressEnterToSearch';
+    if (!isSearching.value) return 'issue.search.enterTheKeywordAndPressEnterToSearch';
     if (normalizedCommittedSearchQuery.value.length < MIN_GLOBAL_SEARCH_LENGTH) {
-      return 'text.285db2de10ab';
+      return 'issue.search.currentlyOnlySearchingForLoadedProposalsEnterAtLeast3WordsToSearchForMore';
     }
-    if (searchState.loading) return 'text.185435b7f1bd';
+    if (searchState.loading) return 'issue.search.searching';
     if (searchState.limited) return t('issue.search.limitedResults', { count: searchResultCount.value });
     return t('issue.search.results', { count: searchResultCount.value });
   });
@@ -192,7 +192,7 @@ export function useIssueSearch(options: {
       } catch (caught) {
         if (isAbortFailure(caught)) return;
         if (currentToken !== requestToken) return;
-        searchState.error = 'text.04110b344242';
+        searchState.error = 'issue.search.searchFailedPleaseTryAgainLater';
       } finally {
         if (currentToken === requestToken) {
           searchState.loading = false;
@@ -245,7 +245,7 @@ export function useIssueSearch(options: {
       applySearchFilter(titleQuery);
     } catch (caught) {
       if (isAbortFailure(caught)) return;
-      searchState.error = 'text.2c2bfb2fcec2';
+      searchState.error = 'issue.search.failedToLoadMoreSearchResultsPleaseTryAgainLater';
     } finally {
       if (currentToken === requestToken) searchState.loadingMore = false;
       if (requestController === controller) requestController = null;

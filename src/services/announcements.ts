@@ -53,7 +53,7 @@ function normalizeAnnouncementRecord(data: Record<string, unknown>): Announcemen
     title: String(data.title ?? ''),
     content: String(data.content ?? ''),
     author_uid: String(data.author_uid ?? ''),
-    author_name: String(data.author_name ?? 'text.23580fb13d9d'),
+    author_name: String(data.author_name ?? 'access.administrator'),
     author_photo_url: data.author_photo_url ? String(data.author_photo_url) : null,
     published_at: dateFromMs(data.published_at_ms ?? data.published_at),
     like_count: Number(data.like_count ?? 0),
@@ -70,7 +70,7 @@ function normalizeAnnouncementComment(data: Record<string, unknown>): Announceme
     parent_comment_id: typeof data.parent_comment_id === 'string' ? data.parent_comment_id : null,
     content: String(data.content ?? ''),
     author_uid: String(data.author_uid ?? ''),
-    author_name: String(data.author_name ?? 'text.23580fb13d9d'),
+    author_name: String(data.author_name ?? 'access.administrator'),
     author_photo_url: data.author_photo_url ? String(data.author_photo_url) : null,
     created_at: dateFromMs(data.created_at_ms ?? data.created_at),
     replies: Array.isArray(data.replies)
@@ -142,7 +142,7 @@ export async function fetchAnnouncementRecordById(
     return announcement;
   } catch (error) {
     if (error instanceof RequestFailure) throw error;
-    throw new Error('text.3e9026a86990', { cause: error });
+    throw new Error('announcement.thisAnnouncementCannotBeFound', { cause: error });
   }
 }
 

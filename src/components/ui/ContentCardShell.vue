@@ -24,7 +24,7 @@
           :photo-url="authorPhotoUrl"
           :name="authorName"
           size="sm"
-          :alt-text="t('text.371af8106c02', { name: authorName })"
+          :alt-text="t('notification.nameAvatar', { name: authorName })"
           class="shrink-0"
         />
         <div class="min-w-0 flex-1">

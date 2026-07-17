@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<{
   altText?: string;
 }>(), {
   size: 'md',
-  altText: 'text.59dd30bfe0e0',
+  altText: 'settings.userAvatar',
 });
 const { t } = useI18n();
 
@@ -49,6 +49,6 @@ const textSizeClass = computed(() => {
 });
 
 const fallbackText = computed(() => {
-  return props.name ? props.name.slice(0, 1) : t('text.4e0a3caa2257');
+  return props.name ? props.name.slice(0, 1) : t('common.hide');
 });
 </script>

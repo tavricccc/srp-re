@@ -58,7 +58,7 @@ export function useIssueItemController(
 
   function confirmDelete() {
     if (!isAdmin.value) {
-      show('text.3a94fc408996', 'error');
+      show('access.youDoNotHavePermissionToDeleteThisProposal', 'error');
       return;
     }
     openDeleteDialog();

@@ -57,7 +57,7 @@ function browserPermission(): PushNotificationPermission {
 }
 
 function readableError(value: unknown) {
-  return value instanceof Error ? value.message : 'text.c6cbaf12a4b2';
+  return value instanceof Error ? value.message : 'notification.pushNotificationsCannotBeSetAtTheMomentPleaseTryAgainLater';
 }
 
 async function resolveMessaging() {
@@ -80,12 +80,12 @@ async function resolveMessaging() {
 
 async function waitForPushServiceWorker() {
   if (!('serviceWorker' in navigator)) {
-    throw new Error('text.b5a8ac597903');
+    throw new Error('notification.thisBrowserOrDeviceCannotReceivePushNotifications');
   }
 
   return withRequestTimeout(
     () => navigator.serviceWorker.ready,
-    { label: 'text.f5778658da2a', timeoutMs: PUSH_SERVICE_TIMEOUT_MS },
+    { label: 'notification.pushServiceStarted', timeoutMs: PUSH_SERVICE_TIMEOUT_MS },
   );
 }
 
@@ -96,14 +96,14 @@ async function getPushToken(bundle: NonNullable<Awaited<ReturnType<typeof loadFi
       vapidKey: firebaseVapidKey,
       serviceWorkerRegistration: registration,
     }),
-    { label: 'text.a703bb26a0be', timeoutMs: PUSH_TOKEN_TIMEOUT_MS },
+    { label: 'notification.pushNotificationSettings', timeoutMs: PUSH_TOKEN_TIMEOUT_MS },
   );
 }
 
 async function deletePushToken(bundle: NonNullable<Awaited<ReturnType<typeof loadFirebaseMessaging>>>) {
   return withRequestTimeout(
     () => bundle.sdk.deleteToken(bundle.messaging),
-    { label: 'text.f64df8471d40', timeoutMs: PUSH_TOKEN_TIMEOUT_MS },
+    { label: 'notification.turnOffPushNotifications', timeoutMs: PUSH_TOKEN_TIMEOUT_MS },
   );
 }
 
@@ -207,7 +207,7 @@ export function usePushNotifications() {
       ) {
         const messaging = await resolveMessaging();
         currentToken = messaging ? await getPushToken(messaging) : '';
-        if (!currentToken) throw new Error('text.72be855806e9');
+        if (!currentToken) throw new Error('notification.unableToGetAPushNotificationIdentifierForThisDeviceTryAgainLater');
         const registrationKey = `${user.value.uid}:${currentToken}`;
         if (synchronizedRegistrationKey !== registrationKey) {
           const synchronizedPreference = await registerCurrentPushToken(currentToken);
@@ -237,12 +237,12 @@ export function usePushNotifications() {
 
   async function enablePushNotifications() {
     if (!user.value) {
-      error.value = 'text.b514a4510637';
+      error.value = 'notification.pleaseLogInFirstBeforeTurningOnPushNotifications';
       return false;
     }
 
     if (requiresPwaInstall.value) {
-      error.value = 'text.04d3deec7d5f';
+      error.value = 'app.install.addTheAppToTheHomeScreenThenEnableNotificationsFromTheInstalledApp';
       requestAppInstallPrompt('notifications');
       return false;
     }
@@ -269,7 +269,7 @@ export function usePushNotifications() {
       currentToken = await getPushToken(messaging);
 
       if (!currentToken) {
-        throw new Error('text.72be855806e9');
+        throw new Error('notification.unableToGetAPushNotificationIdentifierForThisDeviceTryAgainLater');
       }
 
       const preference = await registerCurrentPushToken(currentToken);
@@ -280,7 +280,7 @@ export function usePushNotifications() {
 
       if (!foregroundUnsubscribe) {
         foregroundUnsubscribe = messaging.sdk.onMessage(messaging.messaging, (payload) => {
-          const title = payload.data?.title ?? 'text.9be3d7800193';
+          const title = payload.data?.title ?? 'notification.newNotificationReceived';
           const body = payload.data?.body ?? '';
           show(body ? `${title}：${body}` : title, 'info');
         });
@@ -383,11 +383,11 @@ export function usePushNotifications() {
     requiresPwaInstall: readonly(requiresPwaInstall),
     supported: readonly(supported),
     statusLabel: computed(() => {
-      if (requiresPwaInstall.value) return 'text.cc4de3ad4f2e';
-      if (!supported.value) return 'text.fe95c81b47e7';
-      if (permission.value === 'denied') return 'text.d551a25323ba';
-      if (deviceEnabled.value) return 'text.2c48f8165d3f';
-      return 'text.9af9cfcce4dd';
+      if (requiresPwaInstall.value) return 'app.install.addToHomeScreenFirst';
+      if (!supported.value) return 'notification.thisDeviceDoesNotCurrentlySupportPushNotifications';
+      if (permission.value === 'denied') return 'notification.theBrowserHasBlockedPushNotifications';
+      if (deviceEnabled.value) return 'notification.pushNotificationIsEnabledForThisDevice';
+      return 'notification.pushNotificationsCanBeTurnedOn';
     }),
     disablePushNotifications,
     enablePushNotifications,

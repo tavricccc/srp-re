@@ -42,8 +42,8 @@ withDefaults(defineProps<{
   title?: string;
 }>(), {
   deleteDisabled: false,
-  deleteLabel: 'text.1316a91ba454',
-  title: 'text.4989b5cf9483',
+  deleteLabel: 'announcement.deleteAnnouncement',
+  title: 'common.manage',
 });
 
 const emit = defineEmits<{

@@ -42,8 +42,8 @@ export function useIssueDisplay(issue: Ref<IssueRecord> | (() => IssueRecord)) {
 
   const primaryTimeLabel = computed(() => {
     const i = resolvedIssue.value;
-    if (isClosed.value) return t('text.ac75f83f5caa');
-    return t(issueRequiresReview(i.category) && i.review_approved_at ? 'text.d4d2cf96d71b' : 'text.10f550ff4416');
+    if (isClosed.value) return t('issue.caseClosingTime');
+    return t(issueRequiresReview(i.category) && i.review_approved_at ? 'issue.approvalTime' : 'issue.proposalTime');
   });
   const primaryTimeValue = computed(() => {
     const i = resolvedIssue.value;

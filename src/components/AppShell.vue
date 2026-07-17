@@ -41,7 +41,7 @@
       v-if="isAllowedUser"
       type="button"
       class="app-sidebar__scrim"
-      :aria-label="t('text.a3c852c726e3')"
+      :aria-label="t('navigation.collapseSidebar')"
       @click="closeSidebar"
     ></button>
 
@@ -106,27 +106,27 @@ const primaryRouteNavItems = computed(() => [
     icon: 'comment' as const,
     isActive: isIssueRouteActive.value && activeFilter.value !== 'my-proposals',
     key: 'issues',
-    label: t('text.b9a2f9c03506'),
+    label: t('issue.proposal'),
     to: homeRoute,
   },
   {
     icon: 'wrench' as const,
     isActive: isFacilityRouteActive.value,
     key: 'facilities',
-    label: t('text.a6a61230ffa1'),
+    label: t('facility.facility'),
     to: { name: 'facilities' },
   },
   {
     icon: 'megaphone' as const,
     isActive: isAnnouncementRouteActive.value,
     key: 'announcements',
-    label: t('text.3f9569532847'),
+    label: t('announcement.announcement'),
     to: { name: 'announcements' },
   },
 ]);
 const displayPhotoUrl = computed(() => customPhotoUrl.value || user.value?.photoURL || null);
-const userName = computed(() => user.value?.displayName || t('text.4a7f444ac58d'));
-const schoolLabel = computed(() => SCHOOL_NAME || t('text.b27599fc9b84'));
+const userName = computed(() => user.value?.displayName || t('navigation.user'));
+const schoolLabel = computed(() => SCHOOL_NAME || t('navigation.theSchoolHasNotBeenSet'));
 const mobileCategoryFilter = computed<IssueFilter | undefined>(() =>
   route.name === 'issues' && isIssueCategory(activeFilter.value) ? activeFilter.value : undefined
 );
@@ -146,27 +146,27 @@ const activeMobileNavKey = computed(() => {
   return '';
 });
 const mobileHeaderTitle = computed(() => {
-  if (route.name === 'issue-detail') return t(isMyProposalsRouteActive.value ? 'text.16441dd78ebf' : 'text.6822d1ef16bf');
-  if (route.name === 'facility-detail') return t('text.a6a61230ffa1');
-  if (route.name === 'announcement-detail') return t('text.1bb7c8022090');
-  if (route.name === 'dashboard') return t('text.baa4b36d8a77');
-  if (route.name === 'access-management') return t('text.3d0d88d5d438');
-  if (route.name === 'notifications') return t('text.7a66c0d03631');
-  if (route.name === 'settings') return t('text.a82c993d7388');
-  if (isAnnouncementRouteActive.value) return t('text.3f9569532847');
-  if (isFacilityRouteActive.value) return t('text.a6a61230ffa1');
-  if (isMyProposalsRouteActive.value) return t('text.16441dd78ebf');
-  return t('text.b9a2f9c03506');
+  if (route.name === 'issue-detail') return t(isMyProposalsRouteActive.value ? 'issue.myProposal' : 'issue.proposalContent');
+  if (route.name === 'facility-detail') return t('facility.facility');
+  if (route.name === 'announcement-detail') return t('announcement.announcementContent');
+  if (route.name === 'dashboard') return t('dashboard.statistics');
+  if (route.name === 'access-management') return t('access.roleManagement');
+  if (route.name === 'notifications') return t('navigation.notify');
+  if (route.name === 'settings') return t('settings.mine');
+  if (isAnnouncementRouteActive.value) return t('announcement.announcement');
+  if (isFacilityRouteActive.value) return t('facility.facility');
+  if (isMyProposalsRouteActive.value) return t('issue.myProposal');
+  return t('issue.proposal');
 });
 const showMobileBackButton = computed(() => ['issue-detail', 'facility-detail', 'announcement-detail', 'dashboard', 'access-management'].includes(route.name as string) || isMyProposalsRouteActive.value);
 const mobileBackLabel = computed(() => {
-  if (route.name === 'dashboard') return t('text.ae7b94951d50');
-  if (route.name === 'access-management') return t('text.ae7b94951d50');
-  if (route.name === 'issue-detail' && isMyProposalsRouteActive.value) return t('text.afd35ebaa9f0');
-  if (isMyProposalsRouteActive.value) return t('text.ae7b94951d50');
-  if (route.name === 'announcement-detail') return t('text.c12e8b61ecde');
-  if (route.name === 'facility-detail') return t('text.326fa994df51');
-  return t('text.f3688932d28d');
+  if (route.name === 'dashboard') return t('navigation.returnMy');
+  if (route.name === 'access-management') return t('navigation.returnMy');
+  if (route.name === 'issue-detail' && isMyProposalsRouteActive.value) return t('issue.returnToMyProposal');
+  if (isMyProposalsRouteActive.value) return t('navigation.returnMy');
+  if (route.name === 'announcement-detail') return t('announcement.returnToAnnouncementList');
+  if (route.name === 'facility-detail') return t('facility.backToFacilityList');
+  return t('issue.returnToProposalList');
 });
 
 function handleNavigationClick(isActive: boolean) {

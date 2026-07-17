@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-0.5" :aria-label="t('text.037e5f62eb12')" aria-busy="true">
+  <div class="space-y-0.5" :aria-label="t('comments.loadingComments')" aria-busy="true">
     <div
       v-for="index in count"
       :key="index"

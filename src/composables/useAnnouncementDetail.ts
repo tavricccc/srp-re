@@ -76,14 +76,14 @@ export function useAnnouncementDetail(canLoad: Ref<boolean>) {
   async function confirmDelete() {
     if (!announcement.value) return;
     deleting.value = true;
-    const feedback = start('text.fd96c8ab3b77');
+    const feedback = start('announcement.announcementBeingDeleted');
     try {
       await deleteAnnouncement(announcement.value.id);
       deleteDialogOpen.value = false;
-      feedback.succeed('text.d775aeaef828');
+      feedback.succeed('announcement.announcementHasBeenDeleted');
       goBack();
     } catch (caught) {
-      feedback.fail(caught instanceof Error ? caught.message : 'text.095ecba4f5a7');
+      feedback.fail(caught instanceof Error ? caught.message : 'announcement.announcementDeletionFailed');
     } finally {
       deleting.value = false;
     }
@@ -126,7 +126,7 @@ export function useAnnouncementDetail(canLoad: Ref<boolean>) {
           like_count: previousLikeCount,
         };
       }
-      show(caught instanceof Error ? caught.message : 'text.d624cbb8862d', 'error');
+      show(caught instanceof Error ? caught.message : 'facility.operationFailedPleaseTryAgainLater', 'error');
     } finally {
       liking.value = false;
     }
@@ -158,7 +158,7 @@ export function useAnnouncementDetail(canLoad: Ref<boolean>) {
       markContentRealtimeReliable();
     } catch (caught) {
       if (currentRequestId !== requestId) return;
-      show(caught instanceof Error ? caught.message : 'text.c10c4c6fca0b', 'error');
+      show(caught instanceof Error ? caught.message : 'announcement.thisAnnouncementCannotBeFoundMessage', 'error');
       goBack();
     }
   }
@@ -196,7 +196,7 @@ export function useAnnouncementDetail(canLoad: Ref<boolean>) {
         if (currentRequestId === requestId) announcement.value = fetched;
       } catch (caught) {
         if (currentRequestId !== requestId) return;
-        show(caught instanceof Error ? caught.message : 'text.c10c4c6fca0b', 'error');
+        show(caught instanceof Error ? caught.message : 'announcement.thisAnnouncementCannotBeFoundMessage', 'error');
         goBack();
       } finally {
         if (currentRequestId === requestId) loading.value = false;

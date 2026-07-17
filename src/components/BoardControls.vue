@@ -10,7 +10,7 @@
           @select="handleCategoryChange"
         />
         <h2 v-else class="shrink-0 text-xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:text-2xl">
-          {{ activeFilter === 'my-proposals' ? t('text.16441dd78ebf') : boardTitle }}
+          {{ activeFilter === 'my-proposals' ? t('issue.myProposal') : boardTitle }}
         </h2>
       </div>
 
@@ -27,8 +27,8 @@
             type="button"
             class="button-toolbar flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
             :class="{ 'button-toolbar--active': isSortOpen || sortOption !== 'latest' }"
-            :title="t('text.4f50d0573a80', { board: boardTitle })"
-            :aria-label="t('text.4f50d0573a80', { board: boardTitle })"
+            :title="t('common.filterBoard', { board: boardTitle })"
+            :aria-label="t('common.filterBoard', { board: boardTitle })"
             :aria-expanded="isSortOpen"
             @click="toggleSort"
           >
@@ -41,7 +41,7 @@
               class="absolute z-[100] mt-2 max-md:left-[var(--app-viewport-gutter)] max-md:right-[var(--app-viewport-gutter)] max-md:w-auto md:right-0 md:left-auto md:w-max md:min-w-[10rem]"
               size="default"
             >
-              <div class="dropdown-label mb-1.5 whitespace-nowrap">{{ t('text.3bf3689a6916') }}</div>
+              <div class="dropdown-label mb-1.5 whitespace-nowrap">{{ t('common.sortBy') }}</div>
               <div class="space-y-0.5">
                 <button
                   v-for="option in visibleSortOptions"
@@ -64,8 +64,8 @@
             type="button"
             class="button-toolbar flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
             :class="{ 'button-toolbar--active': isSearchOpen || searchQuery }"
-            :title="t('text.99324ddac86c', { board: boardTitle })"
-            :aria-label="t('text.99324ddac86c', { board: boardTitle })"
+            :title="t('common.searchBoard', { board: boardTitle })"
+            :aria-label="t('common.searchBoard', { board: boardTitle })"
             :aria-expanded="isSearchOpen"
             @click="toggleSearch"
           >
@@ -85,7 +85,7 @@
                   :value="searchQuery"
                   type="search"
                   autocomplete="off"
-                  :aria-label="t('text.2d5dc9ec6262', { board: boardTitle })"
+                  :aria-label="t('common.searchBoard', { board: boardTitle })"
                   class="field appearance-none !h-8 !py-1 !pl-8 !pr-8 text-xs placeholder:text-ink-400 dark:placeholder:text-ink-500"
                   :placeholder="searchPlaceholder"
                   @input="(e) => emit('update:searchQuery', (e.target as HTMLInputElement).value)"
@@ -94,7 +94,7 @@
                   v-if="searchQuery"
                   type="button"
                   class="button-toolbar absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full p-0"
-                  :aria-label="t('text.59b34bfa1182')"
+                  :aria-label="t('common.clearSearch')"
                   @click="emit('clearSearch')"
                 >
                   <AppIcon name="close" :size="3" />
@@ -162,16 +162,16 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const issueSortOptions = [
-  { value: 'latest', label: 'text.7e805a1230c0' },
-  { value: 'most-supported', label: 'text.1f3967d3e048' },
-  { value: 'ending-soon', label: 'text.9ede398940fd' },
+  { value: 'latest', label: 'common.upToDate' },
+  { value: 'most-supported', label: 'common.mostSupported' },
+  { value: 'ending-soon', label: 'common.endingSoon' },
 ] as const;
 
 const route = useRoute();
 const router = useRouter();
 const facilitySortOptions = [
-  { value: 'latest', label: 'text.7e805a1230c0' },
-  { value: 'most-affected', label: 'text.d2b6269ac378' },
+  { value: 'latest', label: 'common.upToDate' },
+  { value: 'most-affected', label: 'common.mostPeopleEncountered' },
 ] as const;
 const visibleSortOptions = computed(() => props.mode === 'facility'
   ? facilitySortOptions
@@ -179,14 +179,14 @@ const visibleSortOptions = computed(() => props.mode === 'facility'
     ? issueSortOptions.filter((option) => option.value === 'latest')
     : issueSortOptions);
 
-const boardTitle = computed(() => t(props.mode === 'facility' ? 'text.a6a61230ffa1' : 'text.b9a2f9c03506'));
-const searchPlaceholder = computed(() => t(props.mode === 'facility' ? 'text.240c0ba2be8d' : 'text.4c054c877b2d'));
+const boardTitle = computed(() => t(props.mode === 'facility' ? 'facility.facility' : 'issue.proposal'));
+const searchPlaceholder = computed(() => t(props.mode === 'facility' ? 'common.searchForATitleOrLocation' : 'common.searchSiteWideTitles'));
 const issueCategoryFilter = computed<IssueFilter>(() =>
   isIssueCategory(props.activeFilter) ? props.activeFilter : DEFAULT_ISSUE_CATEGORY
 );
 const statusOptions = computed(() => [
-  { value: 'active' as const, label: t(props.mode === 'facility' ? 'text.ae16f4a52d69' : 'text.c573867b5fca'), icon: 'list' as const, title: t('text.644d1a924aa1', { status: t(props.mode === 'facility' ? 'text.ae16f4a52d69' : 'text.c573867b5fca'), board: boardTitle.value }) },
-  { value: 'closed' as const, label: t('text.b496f1ac5289'), icon: 'inbox' as const, title: t('text.644d1a924aa1', { status: t('text.b496f1ac5289'), board: boardTitle.value }) },
+  { value: 'active' as const, label: t(props.mode === 'facility' ? 'facility.processing' : 'issue.inProgress'), icon: 'list' as const, title: t('common.showStatusInBoard', { status: t(props.mode === 'facility' ? 'facility.processing' : 'issue.inProgress'), board: boardTitle.value }) },
+  { value: 'closed' as const, label: t('facility.caseClosed'), icon: 'inbox' as const, title: t('common.showStatusInBoard', { status: t('facility.caseClosed'), board: boardTitle.value }) },
 ]);
 const isSearchOpen = ref(false);
 const isSortOpen = ref(false);

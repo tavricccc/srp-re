@@ -52,7 +52,7 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
-        reject(new Error('text.f9419fb405ce'));
+        reject(new Error('image.imgCanvasTheBrowserCannotOutputTheImage'));
         return;
       }
       resolve(blob);
@@ -108,7 +108,7 @@ export async function processImageForUpload(file: File): Promise<ProcessedImage>
   const sourceWidth = image.naturalWidth;
   const sourceHeight = image.naturalHeight;
   if (!sourceWidth || !sourceHeight) {
-    throw new Error('text.348acc628b4d');
+    throw new Error('image.unableToReadImageDimensions');
   }
   if (
     file.size <= maxImageUploadBytes
@@ -121,7 +121,7 @@ export async function processImageForUpload(file: File): Promise<ProcessedImage>
 
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('text.7a14e5b3a1e7');
+  if (!context) throw new Error('image.thisBrowserCannotHandleImages');
 
   try {
     for (const scale of outputScales) {

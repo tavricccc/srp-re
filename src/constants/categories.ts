@@ -30,7 +30,7 @@ export const ISSUE_FILTER_OPTIONS: CategoryOption<IssueFilter>[] = [...ISSUE_CAT
 
 const ISSUE_ROUTE_FILTER_OPTIONS: CategoryOption<IssueRouteFilter>[] = [
   ...ISSUE_FILTER_OPTIONS,
-  { value: 'my-proposals', label: 'text.16441dd78ebf' },
+  { value: 'my-proposals', label: 'issue.myProposal' },
 ];
 
 const ISSUE_ROUTE_FILTER_VALUES = ISSUE_ROUTE_FILTER_OPTIONS.map((option) => option.value);

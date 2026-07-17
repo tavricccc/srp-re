@@ -16,7 +16,7 @@
     <LoadingSpinner :size="8" />
   </div>
 
-  <div v-else-if="!allowed" class="sr-only" role="status">{{ t('text.d81feafadc82') }}</div>
+  <div v-else-if="!allowed" class="sr-only" role="status">{{ t('auth.redirectingToSignIn') }}</div>
 
   <PageLoadFailure
     v-else-if="error"
@@ -47,7 +47,7 @@ withDefaults(defineProps<{
   problemTitle: string;
 }>(), {
   error: '',
-  errorTitle: 'text.8209685a5797',
+  errorTitle: 'common.contentReadFailed',
   problemRetryDisabled: false,
 });
 

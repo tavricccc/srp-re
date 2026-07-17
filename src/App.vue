@@ -14,7 +14,7 @@
             <Suspense>
               <component :is="Component" />
               <template #fallback>
-                <div class="flex min-h-[40dvh] items-center justify-center" :aria-label="t('text.1b2b9615c62b')" aria-busy="true">
+                <div class="flex min-h-[40dvh] items-center justify-center" :aria-label="t('common.switchingPages')" aria-busy="true">
                   <LoadingSpinner :size="8" />
                 </div>
               </template>
@@ -135,22 +135,22 @@ function scheduleRoutePreload() {
 }
 
 const reloadingText = computed(() => {
-  return t(reloading.value === 'restart' ? 'text.113af2e66ab8' : 'text.87c1bc6fe617');
+  return t(reloading.value === 'restart' ? 'common.restarting' : 'common.updating');
 });
 
 const reloadingAriaLabel = computed(() => {
-  return t(reloading.value === 'restart' ? 'text.113af2e66ab8' : 'text.87c1bc6fe617');
+  return t(reloading.value === 'restart' ? 'common.restarting' : 'common.updating');
 });
 
 const startupAriaLabel = computed(() => {
-  if (reloading.value === 'restart') return t('text.3db9b0015819');
-  if (reloading.value === 'update') return t('text.cab966da53cd');
-  return t('text.8ee16c627bc9');
+  if (reloading.value === 'restart') return t('common.restartingApp');
+  if (reloading.value === 'update') return t('common.updatingApp');
+  return t('common.startingApp');
 });
 
 const startupMessage = computed(() => {
-  if (reloading.value === 'restart') return t('text.113af2e66ab8');
-  if (reloading.value === 'update') return t('text.87c1bc6fe617');
+  if (reloading.value === 'restart') return t('common.restarting');
+  if (reloading.value === 'update') return t('common.updating');
   return '';
 });
 
@@ -248,7 +248,7 @@ watch(
 
       if (completedPendingUpdate || (isNewVersion && !pendingUpdateVersion)) {
         if (!installPromptMode.value) {
-          show(t('text.4da74ac6db5e'), 'success');
+          show(t('common.theVersionHasBeenUpdated'), 'success');
         }
       }
       if (completedPendingUpdate) {

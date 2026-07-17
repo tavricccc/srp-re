@@ -19,7 +19,7 @@ export function usePlatformDashboard() {
       if (currentVersion === requestVersion) dashboard.value = nextDashboard;
     } catch (caught) {
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
-        error.value = formatRequestError(caught, 'text.7ddf899f6d4d');
+        error.value = formatRequestError(caught, 'dashboard.dashboardFailedToLoadPleaseTryAgainLater');
       }
     } finally {
       if (currentVersion === requestVersion) loading.value = false;

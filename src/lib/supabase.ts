@@ -10,7 +10,7 @@ let supabaseClient: SupabaseAppClient | null = null;
 
 export function getSupabaseClient() {
   if (!supabaseUrl || !supabasePublishableKey) {
-    throw new Error('text.4694a65c8485');
+    throw new Error('settings.supabaseSettingsHaveNotBeenCompleted');
   }
 
   const client = supabaseClient ?? createClient<any, 'app_api'>(supabaseUrl, supabasePublishableKey, {

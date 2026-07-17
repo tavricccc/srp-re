@@ -26,18 +26,18 @@
       <EmptyStatePanel
         v-else-if="error"
         class="!px-3 !py-7"
-        title="text.0f756ed2bcdc"
+        title="comments.failedToLoadComments"
         :description="error"
         icon="warning"
         tone="danger"
-        action-label="text.5387b55bb903"
+        action-label="dashboard.refresh"
         @action="onRetry"
       />
 
       <EmptyStatePanel
         v-else-if="loaded && comments.length === 0"
         class="!px-3 !py-7"
-        title="text.16d63bb860b6"
+        title="comments.noCommentsYet"
         icon="comment"
       />
 
@@ -88,9 +88,9 @@
 
     <ConfirmDialog
       :open="Boolean(commentPendingDelete)"
-      title="text.5d74c06324e9"
-      message="text.a37bdf3c45ec"
-      confirm-label="text.1d63b95811eb"
+      title="comments.areYouSureYouWantToDeleteThisComment"
+      message="comments.thisCommentCannotBeRestoredAfterDeletion"
+      confirm-label="comments.confirmDeletion"
       :busy="Boolean(commentPendingDelete) && deletingId === commentPendingDelete"
       @cancel="closeDeleteDialog"
       @confirm="confirmDeleteComment"
@@ -136,7 +136,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   canCompose: true,
   compactHeader: false,
-  disabledComposerLabel: 'text.7edc07b76e30',
+  disabledComposerLabel: 'comments.commentsAreCurrentlyDisabled',
   focusCommentId: '',
   hasMore: false,
   loadingMore: false,

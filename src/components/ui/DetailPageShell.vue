@@ -114,8 +114,8 @@ const props = withDefaults(defineProps<{
   showMobileBackButton?: boolean;
   showComments?: boolean;
 }>(), {
-  backLabel: 'text.11d024154013',
-  commentsLabel: 'text.2d4dc6e81d39',
+  backLabel: 'issue.return',
+  commentsLabel: 'comments.title',
   commentCount: 0,
   initialTab: 'details',
   showMobileBackButton: true,
@@ -141,12 +141,12 @@ const isDesktopViewport = ref(
 let desktopMediaQuery: MediaQueryList | null = null;
 
 const tabOptions = computed(() => [
-  { value: 'details' as const, label: t(props.detailsLabel), icon: 'list' as const, title: t('text.55f86a1a1fe8', { label: t(props.detailsLabel) }) },
+  { value: 'details' as const, label: t(props.detailsLabel), icon: 'list' as const, title: t('common.viewLabel', { label: t(props.detailsLabel) }) },
   {
     value: 'comments' as const,
-    label: t('text.548d04eaecd6', { count: props.commentCount }),
+    label: t('comments.countComments', { count: props.commentCount }),
     icon: 'comment' as const,
-    title: t('text.bb7c7224ee21', { label: t(props.commentsLabel), count: props.commentCount }),
+    title: t('comments.viewLabelCountComments', { label: t(props.commentsLabel), count: props.commentCount }),
   },
 ]);
 

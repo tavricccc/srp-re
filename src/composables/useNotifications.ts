@@ -39,8 +39,8 @@ function isOnline() {
 
 function notificationLoadFailureMessage() {
   return isOnline()
-    ? 'text.f499674d9583'
-    : 'text.428cef5d3087';
+    ? 'notification.notificationFailedToLoadPleaseTryAgainLater'
+    : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
 }
 
 const { user, isAdmin, roleLoading } = useSession();
@@ -163,8 +163,8 @@ function startSubscriptions() {
     if (currentVersion !== subscriptionVersion) return;
     loading.value = false;
     error.value = isOnline()
-      ? 'text.6e7e270b1f9d'
-      : 'text.428cef5d3087';
+      ? 'notification.theNetworkResponseTimeIsTooLongPleaseTryAgain'
+      : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
   }, 5_000);
 
   void fetchNotificationSnapshot(activeSources.value, uid, controller.signal)
@@ -217,7 +217,7 @@ function startSubscriptions() {
         currentVersion === subscriptionVersion
         && notifications.value.length === 0
       ) {
-        error.value = 'text.8eb3289f954f';
+        error.value = 'notification.failedToLoadNotificationStatusPleaseTryAgainLater';
       }
     }, false,
   ));

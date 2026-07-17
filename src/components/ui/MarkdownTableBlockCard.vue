@@ -18,7 +18,7 @@
           class="text-xs text-error hover:opacity-80"
           @click="emit('delete')"
         >
-          {{ t('text.1d63b95811eb') }}
+          {{ t('comments.confirmDeletion') }}
         </button>
       </div>
     </div>

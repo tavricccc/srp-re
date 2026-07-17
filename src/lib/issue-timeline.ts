@@ -74,12 +74,12 @@ export function sortMixedStatusIssuesByOption(
 
 export function getIssueOperationTimeItems(issue: IssueRecord): RawIssueTimeItem[] {
   const items: Array<{ label: string; shortLabel: string; value: Date | null | undefined }> = [
-    { label: 'text.39692140965c', shortLabel: 'text.b9a2f9c03506', value: issue.created_at },
-    { label: 'text.d4d2cf96d71b', shortLabel: 'text.2a7d3dc76d00', value: issue.review_approved_at },
-    { label: 'text.edc1e85307a5', shortLabel: 'text.0d5da2cd9330', value: issue.support_deadline_at },
-    { label: 'text.3298b0ffbcf9', shortLabel: 'text.a6bd6c0ed7b8', value: issue.support_met_at },
-    { label: 'text.d7efd6e096b5', shortLabel: 'text.d7efd6e096b5', value: issue.response_deadline_at },
-    { label: 'text.ac75f83f5caa', shortLabel: 'text.6ed85f581df1', value: issue.closed_at },
+    { label: 'issue.proposalSubmitted', shortLabel: 'issue.proposal', value: issue.created_at },
+    { label: 'issue.approvalTime', shortLabel: 'issue.approved', value: issue.review_approved_at },
+    { label: 'issue.supportDeadlineLabel', shortLabel: 'issue.supportDeadline', value: issue.support_deadline_at },
+    { label: 'issue.timeToReachTheStandard', shortLabel: 'issue.meetTheStandard', value: issue.support_met_at },
+    { label: 'comments.replyDeadline', shortLabel: 'comments.replyDeadline', value: issue.response_deadline_at },
+    { label: 'issue.caseClosingTime', shortLabel: 'issue.closeTheCase', value: issue.closed_at },
   ];
 
   return items.filter((item): item is RawIssueTimeItem => item.value instanceof Date);

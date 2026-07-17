@@ -12,27 +12,27 @@
 
     <EmptyStatePanel
       v-else-if="!isAdmin"
-      title="text.07b36dbdf72a"
-      description="text.25cdf3c3cfd8"
+      title="dashboard.unableToViewDashboard"
+      description="dashboard.thisPageIsForAdministratorsOnly"
       icon="lock"
     />
 
     <EmptyStatePanel
       v-else-if="error"
-      title="text.6a918b2d8e1e"
+      title="dashboard.statisticsReadFailed"
       :description="error"
       icon="warning"
       tone="danger"
-      action-label="text.5387b55bb903"
+      action-label="dashboard.refresh"
       @action="retryDashboard"
     />
 
     <div v-else-if="stats && operations" class="space-y-5">
       <header class="pb-2">
         <div class="min-w-0">
-          <h2 class="hidden text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:block sm:text-3xl">{{ t('text.baa4b36d8a77') }}</h2>
+          <h2 class="hidden text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:block sm:text-3xl">{{ t('dashboard.statistics') }}</h2>
           <p class="max-w-2xl text-sm leading-6 text-ink-500 dark:text-ink-400 md:mt-2">
-            {{ t('text.bd15b0cbfe9d') }}
+            {{ t('dashboard.operationsStatusSummary') }}
           </p>
         </div>
       </header>
@@ -56,8 +56,8 @@
           <SurfacePanel as="section" padding="lg">
             <div class="dashboard-section-head">
               <div>
-                <h3 class="dashboard-section-title">{{ t('text.b532f9845fed') }}</h3>
-                <p class="dashboard-section-subtitle">{{ t('text.21e071f73fca') }}</p>
+                <h3 class="dashboard-section-title">{{ t('dashboard.maintenanceStatus') }}</h3>
+                <p class="dashboard-section-subtitle">{{ t('dashboard.quicklyUnderstandWhetherSynchronizationCleaningAndSchedulingNeedProcessing') }}</p>
               </div>
               <span class="dashboard-total">{{ t(operationsStatus.label) }}</span>
             </div>
@@ -80,17 +80,17 @@
           <SurfacePanel as="section" padding="lg">
             <div class="dashboard-section-head">
               <div>
-                <h3 class="dashboard-section-title">{{ t('text.7e9e770b740f') }}</h3>
-                <p class="dashboard-section-subtitle">{{ t('text.fa2f726e3913') }}</p>
+                <h3 class="dashboard-section-title">{{ t('dashboard.categoryUsageOverview') }}</h3>
+                <p class="dashboard-section-subtitle">{{ t('dashboard.viewTheDistributionOfProposalsAndDiscussionsInEachCategory') }}</p>
               </div>
-              <span class="dashboard-total">{{ t('text.ac96863cf5d7', { count: stats.total_issues_created + stats.total_comments_created }) }}</span>
+              <span class="dashboard-total">{{ t('dashboard.countItems', { count: stats.total_issues_created + stats.total_comments_created }) }}</span>
             </div>
             <div class="mt-4 overflow-hidden rounded-[var(--radius-inner)] bg-ink-50/60 shadow-inner dark:bg-ink-800/35">
               <div class="grid grid-cols-[1fr_5rem_5rem_4rem] gap-3 border-b border-ink-200/35 px-4 py-2.5 text-xs font-semibold tracking-[0.02em] text-ink-500 dark:border-ink-700/30 dark:text-ink-400">
-                <span>{{ t('text.7c6fd760fe28') }}</span>
-                <span class="text-right">{{ t('text.b9a2f9c03506') }}</span>
-                <span class="text-right">{{ t('text.f6f477a9c9f4') }}</span>
-                <span class="text-right">{{ t('text.380a2fed3ffe') }}</span>
+                <span>{{ t('dashboard.category') }}</span>
+                <span class="text-right">{{ t('issue.proposal') }}</span>
+                <span class="text-right">{{ t('dashboard.comment') }}</span>
+                <span class="text-right">{{ t('dashboard.proportion') }}</span>
               </div>
               <div
                 v-for="row in categoryComparisonRows"
@@ -115,8 +115,8 @@
           <SurfacePanel as="section" padding="lg">
             <div class="dashboard-section-head">
               <div>
-                <h3 class="dashboard-section-title">{{ t('text.c2f14f41286d') }}</h3>
-                <p class="dashboard-section-subtitle">{{ t('text.5a98ea713729') }}</p>
+                <h3 class="dashboard-section-title">{{ t('dashboard.platformAchievements') }}</h3>
+                <p class="dashboard-section-subtitle">{{ t('dashboard.anOverallSummaryOfPlatformUsage') }}</p>
               </div>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
@@ -137,8 +137,8 @@
           <SurfacePanel as="section" padding="lg">
             <div class="dashboard-section-head">
               <div>
-                <h3 class="dashboard-section-title">{{ t('text.d81edb4504da') }}</h3>
-                <p class="dashboard-section-subtitle">{{ t('text.063a2b695bda') }}</p>
+                <h3 class="dashboard-section-title">{{ t('dashboard.recentIssues') }}</h3>
+                <p class="dashboard-section-subtitle">{{ t('dashboard.useTheTrackingCodeToCheckTheEdgeFunctionLogForCompleteErrors') }}</p>
               </div>
             </div>
             <div v-if="recentFailureRows.length > 0" class="mt-4 space-y-3">
@@ -152,12 +152,12 @@
                   <p class="text-xs font-semibold text-ink-400 dark:text-ink-500">{{ failure.updatedLabel }}</p>
                 </div>
                 <p class="mt-2 break-all text-xs font-semibold text-error">
-                  {{ t('text.4e50fb39c767', { code: failure.trackingCode }) }}
+                  {{ t('dashboard.trackingCodeCode', { code: failure.trackingCode }) }}
                 </p>
               </div>
             </div>
             <p v-else class="mt-4 rounded-xl bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-500 dark:bg-ink-950/50 dark:text-ink-400">
-              {{ t('text.7cbe8c85328e') }}
+              {{ t('dashboard.thereAreCurrentlyNoFailedEventsDetectedByQuickscan') }}
             </p>
           </SurfacePanel>
         </aside>
@@ -166,8 +166,8 @@
 
     <EmptyStatePanel
       v-else
-      title="text.2c10e9c1a283"
-      description="text.9f0f8457202a"
+      title="dashboard.noStatisticsYet"
+      description="dashboard.thereAreCurrentlyNoPlatformResultsToDisplay"
       icon="chart"
     />
   </section>

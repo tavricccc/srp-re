@@ -259,7 +259,7 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
         error.value = isOnline.value
           ? formatRequestError(caught, adapters.loadErrorMessage)
-          : 'text.428cef5d3087';
+          : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
         if (isContentUnavailableError(caught)) {
           adapters.onContentUnavailable?.(id);
         }
@@ -293,7 +293,7 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
       if (currentVersion === requestVersion && !isAbortFailure(caught)) {
         error.value = isOnline.value
           ? formatRequestError(caught, adapters.loadErrorMessage)
-          : 'text.428cef5d3087';
+          : 'notification.itIsCurrentlyOfflinePleaseRestoreTheInternetConnectionAndRefreshIt';
       }
     } finally {
       if (currentVersion === requestVersion) loading.value = false;
@@ -358,8 +358,8 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
           return;
         }
         loadMoreError.value = isOnline.value
-          ? 'text.f9ba5c08e5c7'
-          : 'text.d72e0c6815b2';
+          ? 'comments.unableToLoadMoreComments'
+          : 'comments.currentlyOfflinePleaseRestoreYourInternetConnectionAndTryAgain';
         show(
           loadMoreError.value,
           'error',
@@ -384,19 +384,19 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
 
     if (adapters.validateSubmit) {
       if (!user.value?.email || !user.value.displayName) {
-        submitError.value = 'text.14b38ee89ffc';
+        submitError.value = 'auth.fullSchoolGoogleAccountRequired';
         show(submitError.value, 'error');
         return false;
       }
       if (content.trim().length === 0) {
-        submitError.value = 'text.abf2af6ab0b6';
+        submitError.value = 'comments.commentContentCannotBeEmpty';
         show(submitError.value, 'error');
         return false;
       }
     }
 
     isSubmitting.value = true;
-    const feedbackHandle = start(parentCommentId ? 'text.b0b5539a51c3' : 'text.633adbce4da3');
+    const feedbackHandle = start(parentCommentId ? 'comments.sendingReply' : 'comments.postingComment');
     try {
       const result = await adapters.create(id, content, parentCommentId);
       ignoredRealtimeCommentIds.add(result.comment.id);
@@ -408,10 +408,10 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
       if (typeof result.commentCount === 'number') {
         adapters.onCommentCountChanged?.({ targetId: id, commentCount: result.commentCount });
       }
-      feedbackHandle.succeed(parentCommentId ? 'text.e5f21caf46d9' : 'text.68fb1ea10feb');
+      feedbackHandle.succeed(parentCommentId ? 'comments.replySent' : 'comments.commentPosted');
       return true;
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : 'text.e735e33e68b3';
+      const message = caught instanceof Error ? caught.message : 'comments.failedToPostComment';
       if (adapters.validateSubmit) submitError.value = message;
       else error.value = message;
       feedbackHandle.fail(message);
@@ -428,7 +428,7 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
     deletingId.value = commentId;
     submitError.value = '';
     error.value = '';
-    const feedbackHandle = start('text.71ddeed7f06b');
+    const feedbackHandle = start('comments.deletingComment');
     try {
       const result = await adapters.remove(commentId);
       ignoredRealtimeCommentIds.add(commentId);
@@ -444,9 +444,9 @@ export function useDiscussionComments<TComment extends DiscussionCommentRecord>(
           commentCount: result.commentCount,
         });
       }
-      feedbackHandle.succeed(adapters.deletedFeedback ?? 'text.3a95bced2a30');
+      feedbackHandle.succeed(adapters.deletedFeedback ?? 'comments.commentDeleted');
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : 'text.bf2256717f48';
+      const message = caught instanceof Error ? caught.message : 'comments.failedToDeleteComment';
       if (adapters.validateSubmit) submitError.value = message;
       else error.value = message;
       feedbackHandle.fail(message);

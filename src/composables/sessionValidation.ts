@@ -20,19 +20,19 @@ function getGoogleIdentityCount(token: IdTokenResult) {
 }
 
 export function validateBasicUser(user: User | null): ValidationResult {
-  const expectedDomain = allowedDomain || 'text.96e1f44afd7c';
+  const expectedDomain = allowedDomain || 'auth.designateAnOnCampusDomain';
 
   if (!user?.email) {
     return {
       ok: false,
-      reason: 'text.fbc0a00d4342',
+      reason: 'auth.theCurrentLoginAccountCannotPassTheSchoolIdentityVerification',
     };
   }
 
   if (!user.emailVerified) {
     return {
       ok: false,
-      reason: 'text.dadbc80ca7ef',
+      reason: 'auth.pleaseCompleteTheSchoolAccountVerificationBeforeLoggingIn',
     };
   }
 
@@ -47,11 +47,11 @@ export function validateBasicUser(user: User | null): ValidationResult {
 }
 
 export async function validateUserAgainstToken(user: User) {
-  const token = await withRequestTimeout(() => user.getIdTokenResult(), { label: 'text.01298e2370eb' });
+  const token = await withRequestTimeout(() => user.getIdTokenResult(), { label: 'auth.loginVerification' });
   const email = String(token.claims.email ?? user.email ?? '').trim().toLowerCase();
   const signInProvider = String(token.claims.firebase?.sign_in_provider ?? '');
   const emailVerified = Boolean(token.claims.email_verified ?? user.emailVerified);
-  const expectedDomain = allowedDomain || 'text.96e1f44afd7c';
+  const expectedDomain = allowedDomain || 'auth.designateAnOnCampusDomain';
 
   debugLog('token snapshot', {
     uid: user.uid,
@@ -68,7 +68,7 @@ export async function validateUserAgainstToken(user: User) {
   if (!email) {
     return {
       ok: false,
-      reason: 'text.fbc0a00d4342',
+      reason: 'auth.theCurrentLoginAccountCannotPassTheSchoolIdentityVerification',
     };
   }
 
@@ -82,14 +82,14 @@ export async function validateUserAgainstToken(user: User) {
   if (!emailVerified) {
     return {
       ok: false,
-      reason: 'text.dadbc80ca7ef',
+      reason: 'auth.pleaseCompleteTheSchoolAccountVerificationBeforeLoggingIn',
     };
   }
 
   if (signInProvider !== 'google.com' && getGoogleIdentityCount(token) === 0) {
     return {
       ok: false,
-      reason: 'text.8497ae443998',
+      reason: 'auth.pleaseUseTheDesignatedSchoolAccountToLogIn',
     };
   }
 

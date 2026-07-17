@@ -5,7 +5,7 @@
     class="button-toolbar shrink-0"
     :disabled="disabled"
     :title="buttonTitle"
-    :aria-label="t('text.83bb99b177f7')"
+    :aria-label="t('comments.insertImage')"
     @click="emit('pick-image')"
   >
     <AppIcon name="image" />
@@ -34,10 +34,10 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const buttonTitle = computed(() => {
-  if (props.uploading) return t('text.ca1d70f0ffd1');
+  if (props.uploading) return t('comments.imageProcessing');
   if (props.imageCount >= props.maxImages) {
     return `${t(props.maxImagesLabel)}${t('upload.imageLimit', { count: props.maxImages })}`;
   }
-  return t('text.0e33b8155b65');
+  return t('comments.addImage');
 });
 </script>

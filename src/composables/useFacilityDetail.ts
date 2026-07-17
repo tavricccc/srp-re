@@ -26,7 +26,7 @@ export function useFacilityDetail(canLoad: Ref<boolean>) {
     } catch (caught) {
       if (version === requestVersion) {
         if (!options.silent || !facility.value) {
-          error.value = caught instanceof Error ? caught.message : 'text.53fbde7469ea';
+          error.value = caught instanceof Error ? caught.message : 'facility.failedToLoadFacility';
         }
       }
     } finally {

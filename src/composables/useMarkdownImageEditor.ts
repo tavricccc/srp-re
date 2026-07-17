@@ -43,7 +43,7 @@ export interface MarkdownImageEditorEmit {
   (e: 'update:showPreview', showPreview: boolean): void;
 }
 
-const DEFAULT_HELPER_TEXT = 'text.59b7d9560810';
+const DEFAULT_HELPER_TEXT = 'markdown.youCanEnterTextOrAddImagesAndUseTheToolbarToInsertFormats';
 
 export function useMarkdownImageEditor(
   props: MarkdownImageEditorProps,

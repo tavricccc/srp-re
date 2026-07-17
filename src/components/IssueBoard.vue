@@ -17,9 +17,9 @@
       <ContentListState
         :empty="currentIssues.length === 0"
         :empty-description="emptyStateDescription"
-        empty-title="text.2fe7a69dbaa6"
+        empty-title="issue.noEligibleProposals"
         :error="currentError"
-        error-title="text.2aac0a2632d0"
+        error-title="issue.proposalReadingFailed"
         :has-more="hasMoreCurrentData"
         :loading="visibleContentLoading"
         :loading-has-problem="contentLoadingHasProblem"
@@ -137,7 +137,7 @@ const {
 } = useIssueBoardData();
 const isAdmin = computed(() => activeFilter.value !== 'my-proposals' && canManageIssueCategory(activeFilter.value));
 const createLabel = computed(() => isIssueCategory(activeFilter.value)
-  ? t('text.049a485046af', { category: t(activeCategoryLabel.value) })
+  ? t('issue.addToCategory', { category: t(activeCategoryLabel.value) })
   : undefined);
 
 const showAuthorCol = computed(() => isAdmin.value || !issueStoresAuthorPrivately(activeFilter.value));
@@ -170,21 +170,21 @@ const {
   loadingTrigger: contentContextKey,
   refresh: refreshCurrentData,
   refreshFeedback: {
-    error: 'text.752f37f88d9a',
-    loading: 'text.4186b7ec044f',
-    success: 'text.2ee94d08bf78',
+    error: 'issue.proposalUpdateFailedPleaseTryAgainLater',
+    loading: 'issue.updatingProposal',
+    success: 'issue.proposalUpdated',
   },
   scrollRoot: boardScrollRef,
 });
 const emptyStateDescription = computed(() => {
   if (showEmptySearchResult.value) {
-    return t('text.afce950c6daa', { query: committedSearchQuery.value });
+    return t('issue.noProposalsMatchQuery', { query: committedSearchQuery.value });
   }
   if (issueIsPrivateToOwner(activeFilter.value) && !isAdmin.value) {
-    return t('text.dfa2c5ebf508', { category: t(activeCategoryLabel.value) });
+    return t('issue.onlyYouCanViewYourProposalsInCategory', { category: t(activeCategoryLabel.value) });
   }
-  const statusLabel = t(statusTab.value === 'active' ? 'text.c573867b5fca' : 'text.b496f1ac5289');
-  return t('text.2cc8a6b2736f', {
+  const statusLabel = t(statusTab.value === 'active' ? 'issue.inProgress' : 'facility.caseClosed');
+  return t('issue.noCategoryProposalsInStatus', {
     category: t(activeCategoryLabel.value),
     status: statusLabel,
   });

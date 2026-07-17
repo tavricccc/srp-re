@@ -14,7 +14,7 @@
       <button
         type="button"
         class="button-remove-image cursor-pointer"
-        :aria-label="t('text.3e9b6f7dd375')"
+        :aria-label="t('comments.removeImage')"
         @click="emit('remove-image', image.key)"
       >
         <AppIcon name="close" :size="3" :stroke-width="2.5" />

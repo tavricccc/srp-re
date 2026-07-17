@@ -106,7 +106,7 @@ export function useMarkdownImageUpload(content: Ref<string>, options: MarkdownIm
 
     if (uploadedImages.length !== imageAttachments.value.length) {
       await deleteUploadedImages(uploadedImages);
-      throw new Error('text.044569760912');
+      throw new Error('markdown.imageUploadFailed');
     }
 
     return {

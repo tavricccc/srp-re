@@ -23,10 +23,10 @@ withDefaults(defineProps<{
   retryDisabled?: boolean;
   title?: string;
 }>(), {
-  actionLabel: 'text.5387b55bb903',
-  description: 'text.89e4b1d19f7e',
+  actionLabel: 'dashboard.refresh',
+  description: 'common.theDataWaitingTimeIsTooLongPleaseCheckTheNetworkAndTryAgain',
   retryDisabled: false,
-  title: 'text.8554357b1379',
+  title: 'common.thereSeemsToBeAProblemWithTheNetwork',
 });
 
 const emit = defineEmits<{

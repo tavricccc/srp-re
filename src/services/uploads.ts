@@ -78,15 +78,15 @@ async function createCloudinaryUploadError(response: Response) {
 
   if (response.status === 401) {
     if (/stale|expired|timestamp.{0,40}(?:too old|out of range)|(?:too old|out of range).{0,40}timestamp/i.test(providerMessage)) {
-      return new Error('text.7b6e43892c97');
+      return new Error('image.theImageUploadVerificationHasTimedOutPleaseSelectAnotherImageAndTryAgain');
     }
-    return new Error('text.c27ce4f743dc');
+    return new Error('access.imageServiceVerificationFailedPleaseContactTheAdministratorToCheckTheCloudinaryKeySettings');
   }
   if (response.status === 413 || /file size|too large/i.test(providerMessage)) {
-    return new Error('text.bf54849c23e3');
+    return new Error('image.imageSizeExceedsUploadLimit');
   }
   if (response.status === 400 && /format|allowed_formats/i.test(providerMessage)) {
-    return new Error('text.a084c43171f6');
+    return new Error('image.theImageFormatIsNotSupportedPleaseSelectAnotherImage');
   }
   return new Error(t('upload.httpFailed', { status: response.status }));
 }
@@ -112,13 +112,13 @@ async function uploadToCloudinary(file: File, session: ImageUploadSession) {
     );
     if (!response.ok) throw await createCloudinaryUploadError(response);
     return await response.json() as CloudinaryUploadResponse;
-  }, { label: 'text.d90d2f7e9ed8', timeoutMs: LONG_REQUEST_TIMEOUT_MS });
+  }, { label: 'dashboard.imageUpload', timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 }
 
 export async function createImageUploadPolicies(inputs: ImageUploadInput[]): Promise<ImageUploadPolicy[]> {
   if (inputs.length === 0) return [];
   if (inputs.some(({ file }) => file.type !== 'image/webp')) {
-    throw new Error('text.62c6e4c3e41a');
+    throw new Error('image.imagesMustBeConvertedToWebpBeforeUploading');
   }
 
   try {
@@ -135,7 +135,7 @@ export async function createImageUploadPolicies(inputs: ImageUploadInput[]): Pro
       })),
       requestId: createRequestId(),
     });
-    if (sessions.length !== inputs.length) throw new Error('text.a1c1f4fa28fe');
+    if (sessions.length !== inputs.length) throw new Error('image.theImageUploadJobIsNotSetUpCompletely');
     const uploadResponses = await Promise.all(
       inputs.map(({ file }, index) => uploadToCloudinary(file, sessions[index]!)),
     );

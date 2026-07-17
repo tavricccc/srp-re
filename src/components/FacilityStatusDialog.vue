@@ -6,15 +6,15 @@
     :error="error"
     :options="availableOptions"
     :initial-status="availableOptions[0]?.value ?? ''"
-    select-title="text.c73fda418c26"
-    result-title="text.51930ab090b0"
-    result-description="text.e68b6d5dfc78"
+    select-title="facility.admin.changeStatus"
+    result-title="facility.addFacilityResult"
+    result-description="facility.describeTheResultSoUsersUnderstandWhatHappened"
     result-input-id="facility-result-content"
-    result-label="text.acf9101e8dc4"
+    result-label="issue.result"
     :result-max-length="INPUT_LIMITS.resultContent"
     :result-warning-length="1800"
-    result-placeholder="text.5576c3bfdec1"
-    result-required-error="text.be8cd119f44e"
+    result-placeholder="facility.describeHowTheFacilityReportWasHandled"
+    result-required-error="facility.enterTheFacilityResult"
     :result-statuses="['completed', 'unable-to-handle']"
     @close="emit('close')"
     @submit="submit"
@@ -43,9 +43,9 @@ const emit = defineEmits<{
 }>();
 
 const options = [
-  { value: 'processing', label: 'text.ae16f4a52d69', description: 'text.f199014cac6d' },
-  { value: 'completed', label: 'text.e99b48a29bdf', description: 'text.7c9a4aa731f5' },
-  { value: 'unable-to-handle', label: 'text.900950604945', description: 'text.c49fea15cfb7' },
+  { value: 'processing', label: 'facility.processing', description: 'facility.workHasStartedOnThisFacilityIssueButThereIsNoFinalOutcomeYet' },
+  { value: 'completed', label: 'facility.completed', description: 'facility.thisFacilityIssueHasBeenResolvedEnterTheOutcome' },
+  { value: 'unable-to-handle', label: 'facility.cannotBeResolved', description: 'facility.ifItCannotBeProcessedAfterEvaluationTheReasonsMustBeExplained' },
 ] satisfies Array<{ value: FacilityStatus; label: string; description: string }>;
 
 const availableOptions = computed(() =>

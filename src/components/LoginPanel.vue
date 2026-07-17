@@ -8,11 +8,11 @@
       </span>
 
       <div class="space-y-3">
-        <h2 class="text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 sm:text-3xl">{{ t('text.22ad94fff413') }}</h2>
+        <h2 class="text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 sm:text-3xl">{{ t('auth.signInWithASchoolAccount') }}</h2>
         <p class="text-sm leading-relaxed text-ink-500 dark:text-ink-400">
-          {{ t('text.490637afd3dc') }}
-          <span class="font-semibold text-ink-800 dark:text-ink-100">{{ t('text.8f1afd011072') }} (@{{ allowedDomain || t('text.9b84024108b0') }})</span>
-          {{ t('text.55a07ea518af') }}
+          {{ t('auth.useYour') }}
+          <span class="font-semibold text-ink-800 dark:text-ink-100">{{ t('auth.schoolGoogleAccount') }} (@{{ allowedDomain || t('auth.configuredSchoolDomain') }})</span>
+          {{ t('auth.toContinue') }}
         </p>
       </div>
 

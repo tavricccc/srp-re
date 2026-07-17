@@ -4,22 +4,22 @@
     v-model:content="content"
     v-model:show-preview="showPreview"
     :open="open"
-    eyebrow="text.fc9381d7a5eb"
-    title="text.1bb7c8022090"
+    eyebrow="announcement.postNewCampusAnnouncements"
+    title="announcement.announcementContent"
     title-input-id="announcement-title"
-    title-label="text.8c8b7e8131af"
+    title-label="announcement.announcementTitle"
     :title-max-length="INPUT_LIMITS.title"
     :title-warning-length="27"
-    title-placeholder="text.0a0191b9e94a"
+    title-placeholder="announcement.pleaseEnterTheAnnouncementTitle"
     title-required
     editor-textarea-id="announcement-content"
-    editor-label="text.cbe9c747c7b2"
-    editor-placeholder="text.26d02da90c40"
+    editor-label="announcement.contentDescription"
+    editor-placeholder="announcement.enterAnnouncementDetailsHere"
     :images="editorImages"
     :max-images="maxImages"
-    max-images-label="text.3f9569532847"
-    hint="text.f45f61d9b008"
-    submit-label="text.927ad1afca75"
+    max-images-label="announcement.announcement"
+    hint="announcement.announcementsWillBePostedToAllUsersImmediately"
+    submit-label="announcement.publishAnnouncement"
     :busy="submitting"
     :uploading="uploading"
     :error="error || uploadError"
@@ -71,7 +71,7 @@ const {
 
 const editorImages = computed(() =>
   imageUrls.value.map((src, index) => ({
-    alt: t('text.b3bf14c68491'),
+    alt: t('announcement.announcementAttachmentPreview'),
     index,
     key: `new:${src}:${index}`,
     src,

@@ -16,7 +16,7 @@
           :photo-url="comment.author_photo_url"
           :name="comment.author_name"
           size="sm"
-          :alt-text="t('text.742dab1d2053', { name: comment.author_name })"
+          :alt-text="t('comments.nameSAvatar', { name: comment.author_name })"
         />
       </div>
 
@@ -34,7 +34,7 @@
             <div class="comment-content-compact mt-0.5 max-w-none text-sm leading-5 text-ink-800 dark:text-ink-200">
               <MarkdownMediaContent
                 :content="comment.content"
-                :fallback-alt="t('text.c5a30e352ff4', { name: comment.author_name })"
+                :fallback-alt="t('comments.nameSCommentImage', { name: comment.author_name })"
                 plain-text
               />
             </div>
@@ -44,8 +44,8 @@
               v-if="!isReply && canReply"
               type="button"
               class="button-toolbar h-8 w-8 rounded-full p-0 opacity-80 transition-opacity group-hover:opacity-100"
-              :aria-label="t('text.a4e7808a49f8')"
-              :title="t('text.a4e7808a49f8')"
+              :aria-label="t('comments.replyToComment')"
+              :title="t('comments.replyToComment')"
               @click="emit('reply')"
             >
               <AppIcon name="reply" :size="4" :stroke-width="2" />
@@ -54,8 +54,8 @@
               v-if="canDelete"
               class="shrink-0 opacity-80 transition-opacity group-hover:opacity-100"
               :delete-disabled="deleting"
-              :delete-label="t(deleting ? 'text.c987873ff725' : 'text.66aba32f0d74')"
-              :title="t('text.591c5fc87675')"
+              :delete-label="t(deleting ? 'comments.deleting' : 'comments.deleteComment')"
+              :title="t('comments.manageComments')"
               @delete="emit('delete')"
             />
           </div>
@@ -143,7 +143,7 @@ const shouldExpandForFocusedReply = computed(() =>
 );
 const repliesToggleLabel = computed(() => (
   isRepliesExpanded.value
-    ? t('text.c008ac4dec55')
+    ? t('comments.hideReply')
     : t('comments.replies', { count: props.comment.replies.length })
 ));
 

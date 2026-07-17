@@ -49,7 +49,7 @@ export function useVoteSupport(options: VoteSupportOptions) {
 
   async function toggle() {
     if (!user.value) {
-      show('text.bf20e0da3353', 'error');
+      show('issue.logInToSupportThisProposal', 'error');
       return;
     }
 
@@ -61,7 +61,7 @@ export function useVoteSupport(options: VoteSupportOptions) {
     const previousSupported = optimisticSupported.value;
     optimisticSupported.value = nextSupported;
     busy.value = true;
-    const feedbackHandle = start(nextSupported ? 'text.b67db3599ffb' : 'text.340fde67b81c');
+    const feedbackHandle = start(nextSupported ? 'common.addingSupport' : 'common.removingSupport');
 
     try {
       const result = nextSupported
@@ -73,21 +73,21 @@ export function useVoteSupport(options: VoteSupportOptions) {
         supported: result.supported,
         supportCount: result.support_count,
       });
-      feedbackHandle.succeed(result.supported ? 'text.d999eb051cdb' : 'text.36f4986ab543');
+      feedbackHandle.succeed(result.supported ? 'common.supportAdded' : 'common.supportRemoved');
     } catch (err) {
       optimisticSupported.value = previousSupported;
       const errMsg = err instanceof Error ? err.message : '';
       if (isContentUnavailableError(err)) {
-        feedbackHandle.fail(errMsg || 'text.12ce5ad1f08e');
+        feedbackHandle.fail(errMsg || 'issue.theProposalHasBeenDeletedAndCannotBeOperated');
         options.onContentUnavailable?.(options.issueId.value);
       } else if (errMsg.includes('permission-denied') || errMsg.toLowerCase().includes('permission denied')) {
         feedbackHandle.fail(
           options.statusLabel.value
             ? t('issue.support.closedStatus', { status: options.statusLabel.value })
-            : 'text.e10f653fd4ad',
+            : 'issue.thisProposalSCurrentStatusDoesNotAllowSupport',
         );
       } else {
-        feedbackHandle.fail('text.e24894729060');
+        feedbackHandle.fail('common.failedToAddSupportTryAgainLater');
       }
     } finally {
       busy.value = false;

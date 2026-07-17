@@ -15,7 +15,7 @@
 
       <div class="mt-5 space-y-4">
         <div v-if="step === 1">
-          <p class="field-label mb-2">{{ t('text.d2b22e5cd9de') }}</p>
+          <p class="field-label mb-2">{{ t('common.chooseTheNextStatus') }}</p>
           <div class="grid gap-2">
             <SelectionOptionButton
               v-for="option in options"
@@ -61,10 +61,10 @@
 
       <div class="dialog-actions">
         <button type="button" class="button-secondary" :disabled="saving" @click="handleSecondary">
-          {{ t(step === 1 ? 'text.4d0b4688c787' : 'text.11d024154013') }}
+          {{ t(step === 1 ? 'issue.cancel' : 'issue.return') }}
         </button>
         <button type="button" class="button-primary" :disabled="saving || !status" @click="handlePrimary">
-          <BusyButtonContent :busy="saving" :label="primaryLabel" :busy-label="t('text.111227ad9eb7')" />
+          <BusyButtonContent :busy="saving" :label="primaryLabel" :busy-label="t('app.update.updating')" />
         </button>
       </div>
     </section>
@@ -110,7 +110,7 @@ const props = withDefaults(defineProps<{
   error: '',
   initialResult: '',
   saving: false,
-  selectDescription: 'text.7787dc881c57',
+  selectDescription: 'common.pleaseSelectTheNextStatus',
   statusWarnings: () => ({}),
 });
 
@@ -124,7 +124,7 @@ const result = ref('');
 const localError = ref('');
 const step = ref(1);
 const requiresResult = computed(() => props.resultStatuses.includes(status.value));
-const primaryLabel = computed(() => step.value === 1 && requiresResult.value ? 'text.ea0ef2ae7245' : 'text.86a07295c547');
+const primaryLabel = computed(() => step.value === 1 && requiresResult.value ? 'issue.nextStep' : 'issue.confirm');
 const { t } = useI18n();
 const isOpen = toRef(props, 'open');
 

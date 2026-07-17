@@ -17,7 +17,7 @@ export function useNotificationDisplay() {
   function title(notification: NotificationRecord) {
     if (isComment(notification)) {
       return t('notification.commentTitle', {
-        name: notification.actor_name?.trim() || t('text.8fc21a701193'),
+        name: notification.actor_name?.trim() || t('navigation.user'),
       });
     }
     if (notification.type === 'announcement_created') return t('notification.announcementCreated');

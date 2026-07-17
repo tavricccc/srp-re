@@ -1,8 +1,8 @@
 <template>
   <ContentCardCollection
     :empty="announcements.length === 0"
-    empty-label="text.d7891c601fb6"
-    list-label="text.e7019331230b"
+    empty-label="announcement.noAnnouncementsYet"
+    list-label="announcement.announcementList"
   >
     <AnnouncementTableRow
       v-for="announcement in announcements"

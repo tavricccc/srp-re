@@ -3,7 +3,7 @@
     <p class="text-[10px] font-bold text-ink-400 dark:text-ink-500 mb-2 text-center whitespace-nowrap">
       {{ hoveredRow >= 0
         ? t('markdown.createTable', { rows: hoveredRow + 1, columns: hoveredCol + 1 })
-        : t('text.027a654f7fc9') }}
+        : t('markdown.selectTableSize') }}
     </p>
     <div class="grid grid-cols-5 gap-1.5" @mouseleave="resetTableHover">
       <div

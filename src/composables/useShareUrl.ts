@@ -34,10 +34,10 @@ export function useShareUrl() {
   async function copyShareUrl(url: string) {
     try {
       await copyText(url);
-      show('text.dbeb65765bf6', 'success');
+      show('common.sharingLinkCopied', 'success');
       return true;
     } catch {
-      show('text.9f8b0bfa2f62', 'error');
+      show('common.unableToCopyLinkPleaseTryAgainLater', 'error');
       return false;
     }
   }

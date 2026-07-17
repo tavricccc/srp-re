@@ -6,8 +6,8 @@
         size="sm"
         class="w-8 rounded-full p-0"
         :class="{ 'text-ink-800 dark:text-ink-100': open }"
-        :title="t('text.8bcfae4c02d9')"
-        :aria-label="t('text.8bcfae4c02d9')"
+        :title="t('facility.manageFacilities')"
+        :aria-label="t('facility.manageFacilities')"
         @click="toggle"
       >
         <AppIcon name="more-horizontal" :size="4.5" :stroke-width="1.8" />

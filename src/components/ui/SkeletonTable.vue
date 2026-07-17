@@ -1,6 +1,6 @@
 <template>
-  <div class="issue-card-grid" :aria-label="t('text.f9fccfee8032')" aria-busy="true">
-    <div v-for="i in rows" :key="i" class="issue-card">
+  <div class="issue-card-grid" :aria-label="t('issue.proposalLoading')" aria-busy="true">
+    <SurfacePanel v-for="i in rows" :key="i" class="issue-card">
       <div class="flex items-center justify-between gap-3">
         <span class="h-5 w-14 rounded-full bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>
         <span class="h-3 w-20 rounded bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>
@@ -21,12 +21,13 @@
         <span class="h-8 w-12 rounded-full bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>
         <span v-if="isAdmin" class="h-8 w-8 rounded-full bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>
       </div>
-    </div>
+    </SurfacePanel>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from '@/i18n';
+import SurfacePanel from '@/components/ui/SurfacePanel.vue';
 
 const { t } = useI18n();
 withDefaults(defineProps<{

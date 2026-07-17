@@ -4,21 +4,21 @@
     v-model:content="form.content"
     v-model:show-preview="showPreview"
     :open="open"
-    eyebrow="text.271568f2eda5"
-    :title="t('text.c6ba0918f29e', { category: t(categoryLabel) })"
+    eyebrow="issue.startANewProposal"
+    :title="t('issue.addToCategory', { category: t(categoryLabel) })"
     title-input-id="issue-title"
-    title-label="text.6baa727f1716"
+    title-label="issue.proposalTitle"
     :title-max-length="INPUT_LIMITS.title"
     :title-warning-length="27"
-    title-placeholder="text.64eb8c7aefed"
+    title-placeholder="issue.giveYourProposalAClearTitle"
     editor-textarea-id="issue-content"
-    editor-label="text.b085db5ec3bb"
-    editor-placeholder="text.cf1d2913a469"
+    editor-label="common.detailedDescription"
+    editor-placeholder="issue.enterDetailedDescriptionHere"
     :images="editorImages"
     :max-images="RATE_LIMITS.imageUploads.issueMaxImages"
-    max-images-label="text.b9a2f9c03506"
-    hint="text.66de893e1e35"
-    submit-label="text.ea3ea494dd98"
+    max-images-label="issue.proposal"
+    hint="issue.itIsRecommendedToMakePreciseProposals"
+    submit-label="common.confirmPublish"
     :busy="submitting"
     :uploading="uploading"
     :error="error || uploadError"
@@ -70,7 +70,7 @@ const {
 
 const editorImages = computed(() =>
   imageUrls.value.map((src, index) => ({
-    alt: t('text.c549f291eee2'),
+    alt: t('issue.proposalAttachedImagePreview'),
     key: `${src}:${index}`,
     src,
   })),

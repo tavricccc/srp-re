@@ -1,13 +1,13 @@
 <template>
   <section class="route-page space-y-5">
     <div class="flex items-center justify-end gap-3 md:justify-between">
-      <h2 class="hidden shrink-0 text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:block">{{ t('text.3f9569532847') }}</h2>
+      <h2 class="hidden shrink-0 text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:block">{{ t('announcement.announcement') }}</h2>
       <button
         v-if="isAdmin"
         type="button"
         class="button-contextual h-8 w-8 min-w-8 shrink-0 p-0"
-        :aria-label="t('text.e9cf7e935c45')"
-        :title="t('text.e9cf7e935c45')"
+        :aria-label="t('announcement.newAnnouncement')"
+        :title="t('announcement.newAnnouncement')"
         @click="openComposer"
       >
         <AppIcon name="plus" :size="4" />
@@ -16,11 +16,11 @@
 
     <ContentListState
       :empty="announcements.length === 0"
-      empty-description="text.0e2feb058100"
+      empty-description="announcement.announcementsWillAppearHereAsTheyArePublished"
       empty-icon="chart"
-      empty-title="text.ed642d8a7837"
+      empty-title="announcement.thereAreCurrentlyNoAnnouncements"
       :error="error"
-      error-title="text.865ab62b6ac2"
+      error-title="announcement.announcementReadingFailed"
       :has-more="hasMore"
       :loading="visibleAnnouncementLoading"
       :loading-has-problem="announcementLoadingHasProblem"
@@ -31,8 +31,8 @@
       :retry-disabled="!announcementOnline"
       spacing-class="space-y-3"
       :unavailable="!isAllowedUser"
-      unavailable-description="text.4feee24a57f9"
-      unavailable-title="text.928ccceeceec"
+      unavailable-description="announcement.pleaseLogInWithYourSchoolAccountFirst"
+      unavailable-title="announcement.unableToViewAnnouncements"
       @load-more="loadMoreAnnouncements"
       @retry="retryAnnouncements"
     >
@@ -65,9 +65,9 @@
 
     <ConfirmDialog
       :open="Boolean(deletePendingAnnouncement)"
-      title="text.06c04e55b00b"
-      message="text.1beff74e806c"
-      confirm-label="text.1d63b95811eb"
+      title="announcement.areYouSureYouWantToDeleteThisAnnouncement"
+      message="announcement.onceDeletedThisAnnouncementCannotBeRestored"
+      confirm-label="comments.confirmDeletion"
       :busy="deleting"
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
@@ -134,9 +134,9 @@ const {
   loadingMore,
   refresh: refreshAnnouncements,
   refreshFeedback: {
-    error: 'text.a5226452666e',
-    loading: 'text.82410863c281',
-    success: 'text.a31f733e2c84',
+    error: 'announcement.announcementUpdateFailedPleaseTryAgainLater',
+    loading: 'announcement.announcementIsBeingUpdated',
+    success: 'announcement.announcementHasBeenUpdated',
   },
 });
 </script>

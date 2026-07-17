@@ -18,7 +18,7 @@
           :photo-url="authorPhotoUrl"
           :name="authorName"
           :size="compact ? 'sm' : 'md'"
-          :alt-text="t('text.371af8106c02', { name: authorName })"
+          :alt-text="t('notification.nameAvatar', { name: authorName })"
         />
         <div class="min-w-0">
           <p class="truncate text-sm font-semibold text-ink-900 dark:text-ink-100">{{ authorName }}</p>
@@ -42,7 +42,7 @@
           <MarkdownMediaContent
             v-if="noticeMarkdown"
             :content="noticeContent"
-            :fallback-alt="noticeFallbackAlt || t('text.ed57f4931ea0', { title })"
+            :fallback-alt="noticeFallbackAlt || t('image.resultImageForTitle', { title })"
           />
           <p v-else>{{ noticeContent }}</p>
         </div>

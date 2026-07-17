@@ -2,7 +2,7 @@
   <nav
     class="app-bottom-nav viewport-floating-inline fixed z-40 mx-auto max-w-md rounded-full border-0 bg-surface/94 px-3 py-1.5 shadow-floating backdrop-blur-xl dark:bg-surface/94 md:hidden"
     :style="{ bottom: `${bottomGap}px` }"
-    :aria-label="t('text.9a55147d6bf6')"
+    :aria-label="t('navigation.primaryNavigation')"
   >
     <div ref="navRef" class="app-bottom-nav__inner relative mx-auto grid grid-cols-5 gap-1">
       <div
@@ -30,14 +30,14 @@
         to="/notifications"
         class="app-bottom-nav__item"
         :class="{ 'app-bottom-nav__item--active': activeKey === 'notifications' }"
-        :aria-label="t(hasUnread ? 'text.036eb476b7ab' : 'text.7a66c0d03631')"
+        :aria-label="t(hasUnread ? 'notification.notificationsUnread' : 'navigation.notify')"
         @click="$emit('navigate', activeKey === 'notifications')"
       >
         <span class="app-bottom-nav__icon relative" aria-hidden="true">
           <AppIcon name="bell" :size="4.5" :stroke-width="1.9" />
           <span v-if="hasUnread" class="app-bottom-nav__badge absolute h-2 w-2 rounded-full bg-error"></span>
         </span>
-        <span class="app-bottom-nav__label">{{ t('text.7a66c0d03631') }}</span>
+        <span class="app-bottom-nav__label">{{ t('navigation.notify') }}</span>
       </RouterLink>
 
       <RouterLink
@@ -47,9 +47,9 @@
         :class="{ 'app-bottom-nav__item--active': profileActive }"
       >
         <span class="app-bottom-nav__icon overflow-hidden rounded-full" aria-hidden="true">
-          <UserAvatar :photo-url="photoUrl" :name="userName" size="sm" :alt-text="t('text.59dd30bfe0e0')" class="!h-5 !w-5 rounded-full" />
+          <UserAvatar :photo-url="photoUrl" :name="userName" size="sm" :alt-text="t('settings.userAvatar')" class="!h-5 !w-5 rounded-full" />
         </span>
-        <span class="app-bottom-nav__label">{{ t('text.a82c993d7388') }}</span>
+        <span class="app-bottom-nav__label">{{ t('settings.mine') }}</span>
       </RouterLink>
     </div>
   </nav>

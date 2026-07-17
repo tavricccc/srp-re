@@ -23,7 +23,7 @@ export function useNotificationNavigation() {
   async function openNotificationTarget(notification: NotificationRecord) {
     const currentVersion = ++navigationVersion;
     if (notification.type === 'issue_deleted') {
-      show('text.532e5021780a', 'info');
+      show('notification.thisProposalHasBeenDeleted', 'info');
       if (route.name !== 'notifications') {
         await router.push({ name: 'notifications' });
       }
@@ -61,7 +61,7 @@ export function useNotificationNavigation() {
       return true;
     } catch {
       if (currentVersion === navigationVersion) {
-        show('text.6b7b1d9fab28', 'error');
+        show('notification.thisContentDoesNotExistOrCannotBeViewed', 'error');
       }
       return false;
     }

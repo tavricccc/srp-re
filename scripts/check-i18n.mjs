@@ -160,6 +160,15 @@ function checkVueTemplate(source, relativePath) {
 
 for (const [locale, catalog] of [['zh-TW', zh], ['en', en]]) {
   for (const key of catalog.duplicateKeys) errors.push(`${locale} has duplicate key: ${key}`);
+  for (const [key, value] of catalog.messages) {
+    if (!/^[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)+$/u.test(key)) {
+      errors.push(`${locale} has a non-semantic or invalid key: ${key}`);
+    }
+    if (/^text\.[0-9a-f]{8,}$/u.test(key)) {
+      errors.push(`${locale} still has an opaque generated key: ${key}`);
+    }
+    if (!value.trim()) errors.push(`${locale} has an empty message: ${key}`);
+  }
 }
 for (const key of zh.messages.keys()) {
   if (!en.messages.has(key)) errors.push(`English catalog is missing: ${key}`);
@@ -169,6 +178,9 @@ for (const key of en.messages.keys()) {
 }
 for (const [key, value] of en.messages) {
   if (/\p{Script=Han}/u.test(value)) errors.push(`English message still contains Han characters: ${key}`);
+  if (!value.trimStart().startsWith('{') && /^[\s"'“‘([\-—]*[a-z]/u.test(value)) {
+    errors.push(`English message must start with a capital letter: ${key}`);
+  }
 }
 for (const category of issueCategoryConfig.categories ?? []) {
   if (typeof category.labelKey !== 'string' || !zh.messages.has(category.labelKey)) {
@@ -202,8 +214,14 @@ for (const [key, zhValue] of zh.messages) {
   }
 }
 
-const usedOpaqueKeys = new Set();
+const usedLocaleKeys = new Set();
 const directlyTranslatedKeys = new Set();
+const localeNamespaces = [...new Set([...zh.messages.keys()].map((key) => key.split('.')[0]))];
+const escapedNamespaces = localeNamespaces.map((namespace) => namespace.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'));
+const localeReferencePattern = new RegExp(
+  `(['"])((?:${escapedNamespaces.join('|')})\\.[a-z][A-Za-z0-9]*(?:\\.[a-z][A-Za-z0-9]*)*)\\1`,
+  'gu',
+);
 const nativeTags = /<(?:a|article|button|div|form|img|input|main|nav|p|section|span|textarea)\b[\s\S]*?>/giu;
 const localizedPropertyPattern = /\b(?:caption|description|detail|label|message|shortLabel|statusLabel|subtitle|title)\s*:\s*(['"])([^'"]+)\1/gu;
 for (const file of sourceFiles) {
@@ -212,8 +230,8 @@ for (const file of sourceFiles) {
   const relativePath = path.relative(root, file);
   if (file.endsWith('.vue')) checkVueTemplate(source, relativePath);
 
-  for (const match of runtimeSource.matchAll(/text\.[0-9a-f]{12}/gu)) {
-    usedOpaqueKeys.add(match[0]);
+  for (const match of runtimeSource.matchAll(localeReferencePattern)) {
+    if (isLocaleKey(match[2])) usedLocaleKeys.add(match[2]);
   }
   for (const match of runtimeSource.matchAll(/\bt\(\s*(['"])([^'"]+)\1/gu)) {
     directlyTranslatedKeys.add(match[2]);
@@ -226,26 +244,28 @@ for (const file of sourceFiles) {
   if (/\p{Script=Han}/u.test(runtimeSource)) {
     errors.push(`${relativePath} contains a hard-coded Han string outside the locale catalogs`);
   }
-  if (/:[\w-]+="text\.[0-9a-f]{12}"/gu.test(runtimeSource)) {
-    errors.push(`${relativePath} binds a locale key as a JavaScript property instead of a string or t(...)`);
-  }
   for (const tag of runtimeSource.matchAll(nativeTags)) {
-    if (/(?:aria-label|alt|placeholder|title)="text\.[0-9a-f]{12}"/u.test(tag[0])) {
-      errors.push(`${relativePath} exposes a locale key through a native element attribute`);
+    for (const attribute of tag[0].matchAll(/(?:aria-label|alt|placeholder|title)=(['"])([^'"]+)\1/gu)) {
+      if (isLocaleKey(attribute[2])) {
+        errors.push(`${relativePath} exposes a locale key through a native element attribute`);
+      }
     }
-    if (/:(?:aria-label|alt|placeholder|title)="[^"]*text\.[0-9a-f]{12}[^"]*"/u.test(tag[0])
-      && !/:(?:aria-label|alt|placeholder|title)="[^"]*\bt\(/u.test(tag[0])) {
-      errors.push(`${relativePath} exposes an untranslated locale key through a bound native attribute`);
+    for (const attribute of tag[0].matchAll(/:(?:aria-label|alt|placeholder|title)=(['"])([\s\S]*?)\1/gu)) {
+      const localeKeys = [...attribute[2].matchAll(localeReferencePattern)].map((match) => match[2]);
+      if (localeKeys.some(isLocaleKey) && !/\bt\(/u.test(attribute[2])) {
+        errors.push(`${relativePath} exposes an untranslated locale key through a bound native attribute`);
+      }
     }
   }
   for (const interpolation of runtimeSource.matchAll(/\{\{[\s\S]*?\}\}/gu)) {
-    if (/text\.[0-9a-f]{12}/u.test(interpolation[0]) && !/\bt\(/u.test(interpolation[0])) {
+    const localeKeys = [...interpolation[0].matchAll(localeReferencePattern)].map((match) => match[2]);
+    if (localeKeys.some(isLocaleKey) && !/\bt\(/u.test(interpolation[0])) {
       errors.push(`${relativePath} renders a locale key without t(...)`);
     }
   }
 }
 
-for (const key of usedOpaqueKeys) {
+for (const key of usedLocaleKeys) {
   if (!zh.messages.has(key)) errors.push(`Referenced locale key is missing from both catalogs: ${key}`);
 }
 for (const key of directlyTranslatedKeys) {
@@ -259,5 +279,5 @@ if (errors.length) {
 
 console.log(
   `i18n check passed: ${zh.messages.size} messages, `
-  + `${usedOpaqueKeys.size} opaque and ${directlyTranslatedKeys.size} direct references.`,
+  + `${usedLocaleKeys.size} semantic and ${directlyTranslatedKeys.size} direct references.`,
 );

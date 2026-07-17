@@ -113,10 +113,10 @@
     <ConfirmDialog
       :danger="false"
       :open="isSkipConfirmOpen"
-      title="text.61b315a25ec4"
-      message="text.297ed5c9ccb7"
-      cancel-label="text.00554cd5f39f"
-      confirm-label="text.7954e3c3e2bf"
+      title="app.install.areYouSureYouWantToSkipItFirst"
+      message="app.install.areYouSureYouWantToSkipThisStepYouCanStillTurnOnTheInstallationPromptLater"
+      cancel-label="app.install.continueToView"
+      confirm-label="app.install.confirmSkip"
       @cancel="isSkipConfirmOpen = false"
       @confirm="confirmSkip"
     />
@@ -175,14 +175,14 @@ const { t } = useI18n();
 const contentKeys = computed<InstallContent>(() => {
   const isNotificationInstall = props.reason === 'notifications';
   const installDescription = isNotificationInstall
-    ? 'text.20d9d35cb7ac'
-    : 'text.d77c1cedb965';
+    ? 'app.install.forReliableNotificationsAddTheAppToTheHomeScreenAndOpenItFromThere'
+    : 'app.install.homeScreenAppBenefit';
 
   if (props.mode === 'in-app-browser') {
     return {
-      actionDescription: 'text.b834b0e59a04',
-      actionTitle: 'text.354bb637b5c9',
-      badge: isNotificationInstall ? 'text.79d47bb75ab4' : 'text.1c3288f51d68',
+      actionDescription: 'app.install.openThisPageInTheSystemBrowserThenFollowItsStepsToAddTheAppToTheHomeScreen',
+      actionTitle: 'app.install.switchTheOpeningMethodFirst',
+      badge: isNotificationInstall ? 'app.install.notificationsRequireHomeScreenMode' : 'app.install.itIsRecommendedToSwitchBrowsers',
       description: t(
         isNotificationInstall
           ? 'app.install.inAppBrowser.notifications'
@@ -191,27 +191,27 @@ const contentKeys = computed<InstallContent>(() => {
       ),
       icon: 'warning',
       iconToneClass: 'text-warning',
-      notes: ['text.07b6916da009'],
+      notes: ['app.install.notificationsRequireInstalledApp'],
       primaryLabel: null,
       secondaryBadge: props.browserName
         ? t('app.install.inAppBrowser.badge', { browser: props.browserName })
         : '',
-      secondaryLabel: 'text.57c83de9548c',
+      secondaryLabel: 'app.install.maybeLater',
       steps: [
-        { title: 'text.ba60b70d8051', description: 'text.84f2cae93218' },
-        { title: 'text.16404569d75c', description: 'text.b39005ebdaf8' },
-        { title: 'text.e458ba87b679', description: 'text.de1df3d416de' },
+        { title: 'app.install.clickTheMenuButton', description: 'app.install.clickTheMenuIconInTheUpperRightOrLowerRightCornerUsuallyTheThreeDotsShareOrCompassIcon' },
+        { title: 'app.install.selectOpenWithBrowser', description: 'app.install.clickOpenInSafariOpenInDefaultBrowserOrOpenInOtherApplicationInTheMenu' },
+        { title: 'app.install.followTheStepsToAddItToTheHomeScreen', description: 'app.install.systemBrowserGuidedInstall' },
       ],
-      title: isNotificationInstall ? 'text.eb8a295f579b' : 'text.b501d337f4e6',
+      title: isNotificationInstall ? 'app.install.installUsingTheSystemBrowser' : 'app.install.itIsRecommendedToUseTheSystemBrowserInstead',
     };
   }
 
   if (props.mode === 'ios-open-safari') {
     const browserName = props.iosBrowserGuide === 'Google' ? 'Google App' : 'Chrome';
     return {
-      actionDescription: 'text.de6eee25f7e2',
-      actionTitle: 'text.7b7b0cb15287',
-      badge: 'text.b38601ee551f',
+      actionDescription: 'app.install.openCurrentUrlInSafari',
+      actionTitle: 'app.install.firstMoveTheUrlToSafari',
+      badge: 'app.install.needToUseSafariInstead',
       description: t(
         isNotificationInstall
           ? 'app.install.safari.notifications'
@@ -220,63 +220,63 @@ const contentKeys = computed<InstallContent>(() => {
       ),
       icon: 'share',
       iconToneClass: 'text-secondary',
-      notes: ['text.d6a0d263c77e'],
-      primaryLabel: props.installing ? 'text.cd854030ad1b' : 'text.d7a8821e0c8f',
+      notes: ['app.install.safariNotificationLaunchReminder'],
+      primaryLabel: props.installing ? 'app.install.copying' : 'app.install.copyUrl',
       secondaryBadge: browserName,
-      secondaryLabel: 'text.64674bd6a67e',
+      secondaryLabel: 'app.install.skipItFirst',
       steps: [
-        { title: 'text.b2b37ed7ecdf', description: 'text.8cc2d46782e5' },
-        { title: 'text.6b5473be7d4d', description: 'text.2ac6c4b9cc77' },
-        { title: 'text.57a47ce871d4', description: 'text.ae0247dc6bff' },
-        { title: 'text.707799e43b73', description: 'text.6df11c376765' },
-        { title: 'text.c4cf82296d21', description: 'text.255763edbfe4' },
+        { title: 'app.install.clickCopyUrl', description: 'app.install.firstSaveTheUrlOfTheCurrentPageToTheClipboard' },
+        { title: 'app.install.changeToSafariToEnable', description: 'app.install.pasteTheUrlAndGoToTheSamePage' },
+        { title: 'app.install.longPressOnTheAddressBar', description: 'app.install.longPressTheAddressBarAboveInSafariToCallOutRelatedOperations' },
+        { title: 'app.install.selectShareButton', description: 'app.install.selectShareFromTheActionThatPopsUp' },
+        { title: 'app.install.installedAsApp', description: 'app.install.scrollDownAndSelectAddToHomeScreenThenFollowTheOnScreenInstructions' },
       ],
-      title: 'text.4b555dc3c04c',
+      title: 'app.install.pleaseUseSafariToOpenItInstead',
     };
   }
 
   if (props.mode === 'ios-install') {
     return {
       actionDescription: '',
-      actionTitle: 'text.d84bc2920ece',
-      badge: isNotificationInstall ? 'text.3b238ddf17b4' : 'text.3d3759936956',
+      actionTitle: 'app.install.followTheSteps',
+      badge: isNotificationInstall ? 'app.install.installFirstToEnableNotifications' : 'app.install.safariInstallationProcess',
       description: '',
       icon: 'share',
       iconToneClass: 'text-primary',
-      notes: [installDescription, 'text.379319979a6e', 'text.1539dee4c25b'],
+      notes: [installDescription, 'app.install.ifAddToHomeScreenIsNotShownEditTheActionsAtTheBottomOfTheShareMenuThenTryAgain', 'app.install.afterTheInstallationIsCompletePleaseReEnterThePlatformFromTheDesktopIcon'],
       primaryLabel: null,
       secondaryBadge: 'Safari',
-      secondaryLabel: 'text.57c83de9548c',
+      secondaryLabel: 'app.install.maybeLater',
       steps: [
-        { title: 'text.57a47ce871d4', description: 'text.e84b8ce39b40' },
-        { title: 'text.707799e43b73', description: 'text.ef19fca190ce' },
-        { title: 'text.c4cf82296d21', description: 'text.410fe0aa977c' },
-        { title: 'text.a9d6c6f07937', description: 'text.c5c199738e29' },
-        { title: 'text.56c83be3b07a', description: 'text.6c0f864746e8' },
+        { title: 'app.install.longPressOnTheAddressBar', description: 'app.install.firstLongPressTheAddressBarOfTheCurrentPageAboveSafari' },
+        { title: 'app.install.selectShareButton', description: 'app.install.selectShareFromTheActionsThatAppear' },
+        { title: 'app.install.installedAsApp', description: 'app.install.scrollDownTheSharingMenuFindAndClickAddToHomeScreen' },
+        { title: 'app.install.confirmHowTheAppOpens', description: 'app.install.ifYouSeeOpenAsWebAppPleaseKeepItOpen' },
+        { title: 'app.install.clickAddToCompleteTheInstallation', description: 'app.install.returnToTheHomeScreenAndReopenTheAppFromItsNewIcon' },
       ],
-      title: isNotificationInstall ? 'text.326ed05c2fc2' : 'text.c4cf82296d21',
+      title: isNotificationInstall ? 'app.install.installTheAppToUseNotifications' : 'app.install.installedAsApp',
     };
   }
 
   return {
     actionDescription: '',
-    actionTitle: props.canInstallNatively ? 'text.6593450d3877' : '',
-    badge: isNotificationInstall ? 'text.81787184f4ac' : 'text.725b6a130e3a',
+    actionTitle: props.canInstallNatively ? 'app.install.theSystemWillTakeOverTheInstallation' : '',
+    badge: isNotificationInstall ? 'app.install.turnOnNotificationsAfterInstallation' : 'app.install.installOnAndroidHomeScreen',
     description: installDescription,
     icon: 'download',
     iconToneClass: 'text-primary',
     notes: props.canInstallNatively
-      ? ['text.93414f31e7c1']
-      : ['text.65bc3f7d476d'],
-    primaryLabel: props.canInstallNatively ? (props.installing ? 'text.b05e9209ee8a' : 'text.ff3642105d92') : null,
-    secondaryBadge: props.canInstallNatively ? 'text.f0822c8d61e1' : 'text.35819075a002',
-    secondaryLabel: 'text.64674bd6a67e',
+      ? ['app.install.installationPromptAvailableLater']
+      : ['app.install.ifTheSystemInstallPromptDoesNotAppearChooseInstallAppOrAddToHomeScreenFromTheBrowserMenu'],
+    primaryLabel: props.canInstallNatively ? (props.installing ? 'app.install.opening' : 'app.install.installApp') : null,
+    secondaryBadge: props.canInstallNatively ? 'app.install.systemInstallationWindow' : 'app.install.browserMenu',
+    secondaryLabel: 'app.install.skipItFirst',
     steps: [
-      { title: props.canInstallNatively ? 'text.10284a5d2048' : 'text.3220cfd40b06', description: props.canInstallNatively ? 'text.ac576dcb8fc7' : 'text.76c6f3461a22' },
-      { title: 'text.c4cf82296d21', description: props.canInstallNatively ? 'text.e9fbec8fabde' : 'text.6a1167250b01' },
-      { title: 'text.1491307043e4', description: isNotificationInstall ? 'text.4615d1a39bfb' : 'text.b743ffecf337' },
+      { title: props.canInstallNatively ? 'app.install.clickInstallApp' : 'app.install.openBrowserMenu', description: props.canInstallNatively ? 'app.install.theSystemWillOpenTheAndroidNativeInstallationPrompt' : 'app.install.lookForTheInstallationOptionInYourCurrentBrowserSMenu' },
+      { title: 'app.install.installedAsApp', description: props.canInstallNatively ? 'app.install.followTheSystemDialogBoxToCompleteTheInstallationOrAddAShortcut' : 'app.install.selectInstallAppOrAddToHomeScreenToFinish' },
+      { title: 'app.install.openThePlatformFromTheHomeScreen', description: isNotificationInstall ? 'app.install.turnItBackOnAndGoBackToNotificationSettings' : 'app.install.afterThatYouCanEnterDirectlyLikeNormalApp' },
     ],
-    title: isNotificationInstall ? 'text.326ed05c2fc2' : 'text.ff3642105d92',
+    title: isNotificationInstall ? 'app.install.installTheAppToUseNotifications' : 'app.install.installApp',
   };
 });
 

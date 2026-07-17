@@ -1,7 +1,7 @@
 <template>
   <section class="route-page py-2 md:py-6">
     <form class="panel panel-pad" @submit.prevent="findUser">
-      <label for="access-user-lookup" class="field-label">{{ t('text.e0c7ae4d3953') }}</label>
+      <label for="access-user-lookup" class="field-label">{{ t('access.findAUser') }}</label>
       <div class="mt-2 flex gap-2">
         <input
           id="access-user-lookup"
@@ -9,17 +9,17 @@
           class="field min-w-0 flex-1"
           autocomplete="off"
           inputmode="email"
-          :placeholder="t('text.2eec6e0cd83d')"
+          :placeholder="t('access.enterYourCampusEmailOrUid')"
           :disabled="loading || Boolean(savingUid)"
         />
         <button type="submit" class="button-primary shrink-0" :disabled="loading || Boolean(savingUid) || !lookup.trim()">
-          <BusyButtonContent :busy="loading" :label="t('text.6cb005a629ef')" :busy-label="t('text.869da583f988')" />
+          <BusyButtonContent :busy="loading" :label="t('access.find')" :busy-label="t('access.searching')" />
         </button>
       </div>
-      <p class="mt-2 text-xs leading-5 text-ink-500">{{ t('text.b5c6f212affb') }}</p>
+      <p class="mt-2 text-xs leading-5 text-ink-500">{{ t('access.enterAFullSchoolEmailAddressOrUid') }}</p>
     </form>
 
-    <EmptyStatePanel v-if="error" class="mt-4" title="text.0131cbcc8142" :description="error" icon="warning" />
+    <EmptyStatePanel v-if="error" class="mt-4" title="access.unableToFindUser" :description="error" icon="warning" />
 
     <article v-if="user" class="panel panel-pad mt-4">
       <div class="flex items-center gap-3 border-b border-ink-100 pb-4 dark:border-ink-800">
@@ -33,10 +33,10 @@
 
       <div class="mt-5 space-y-5">
         <div>
-          <p class="field-label mb-2">{{ t('text.80689bdfa318') }}</p>
+          <p class="field-label mb-2">{{ t('access.platformAccess') }}</p>
           <SelectionOptionButton
-            label="text.4410f33bf262"
-            description="text.c29f1821320f"
+            label="access.platformAdministrator"
+            description="access.hasAccessToAllCategoriesFacilitiesAnnouncementsRolesAndStatistics"
             :selected="isPlatformAdmin"
             :disabled="Boolean(savingUid)"
             @select="togglePlatformAdmin"
@@ -44,13 +44,13 @@
         </div>
 
         <div>
-          <p class="field-label mb-2">{{ t('text.c83bfe63458d') }}</p>
+          <p class="field-label mb-2">{{ t('access.proposalCategoryAccess') }}</p>
           <div class="grid gap-2">
             <SelectionOptionButton
               v-for="category in ISSUE_CATEGORIES"
               :key="category.id"
-              :label="t('text.497b9c20dad2', { category: t(category.label) })"
-              :description="t('text.1234b3e2cc90', { category: t(category.label) })"
+              :label="t('access.manageCategory', { category: t(category.label) })"
+              :description="t('access.reviewAndManageProposalsInCategory', { category: t(category.label) })"
               :selected="isPlatformAdmin || user.managedIssueCategoryIds.includes(category.id)"
               :disabled="Boolean(savingUid) || isPlatformAdmin"
               @select="toggleCategory(category.id)"
@@ -59,18 +59,18 @@
         </div>
 
         <div>
-          <p class="field-label mb-2">{{ t('text.93c1e7d7563c') }}</p>
+          <p class="field-label mb-2">{{ t('access.featureAccess') }}</p>
           <div class="grid gap-2">
             <SelectionOptionButton
-              label="text.f2502113d1fe"
-              description="text.30ae21746b81"
+              label="access.facilityAdministrator"
+              description="access.handleAndManageFacilityReportsOnly"
               :selected="isPlatformAdmin || user.roles.includes('general-affairs')"
               :disabled="Boolean(savingUid) || isPlatformAdmin"
               @select="toggleScopedRole('general-affairs')"
             />
             <SelectionOptionButton
-              label="text.a08ec25036d1"
-              description="text.562312555aca"
+              label="access.announcementManagement"
+              description="access.publishAndDeleteAnnouncements"
               :selected="isPlatformAdmin || user.roles.includes('announcement-manager')"
               :disabled="Boolean(savingUid) || isPlatformAdmin"
               @select="toggleScopedRole('announcement-manager')"
@@ -110,9 +110,9 @@ async function findUser() {
   try {
     const matches = await listRoleAssignments(query);
     user.value = matches[0] ?? null;
-    if (!user.value) error.value = t('text.d54871389f11');
+    if (!user.value) error.value = t('access.theUserCannotBeFoundTheOtherPartyNeedsToLogInFirstOrPleaseConfirmWhetherTheEmailUidIsCorrect');
   } catch (caught) {
-    error.value = caught instanceof Error ? t(caught.message) : t('text.6f3994a24eab');
+    error.value = caught instanceof Error ? t(caught.message) : t('access.theSearchFailed');
   } finally {
     loading.value = false;
   }
@@ -127,7 +127,7 @@ async function saveAccess(roles: RoleCode[], categories: string[]) {
     user.value.roles = result.roles;
     user.value.managedIssueCategoryIds = result.managedIssueCategoryIds;
   } catch (caught) {
-    error.value = caught instanceof Error ? t(caught.message) : t('text.a1e132f24139');
+    error.value = caught instanceof Error ? t(caught.message) : t('access.saveFailed');
   } finally {
     savingUid.value = '';
   }

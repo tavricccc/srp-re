@@ -61,39 +61,39 @@ export function useIssueComposerForm(open: Ref<boolean>, options: IssueComposerF
       await discardImages();
       options.onClose();
     } catch {
-      uploadError.value = 'text.195dfc8d76ad';
+      uploadError.value = 'comments.imageDeletionFailedPleaseTryAgainLater';
       show(uploadError.value, 'error');
     }
   }
 
   async function submit() {
     if (!user.value?.email || !user.value.displayName) {
-      error.value = 'text.14b38ee89ffc';
+      error.value = 'auth.fullSchoolGoogleAccountRequired';
       show(error.value, 'error');
       return;
     }
 
     if (form.title.trim().length === 0) {
-      error.value = 'text.d50a13a21100';
+      error.value = 'issue.pleaseEnterAProposalTitle';
       show(error.value, 'error');
       return;
     }
 
     if (!contentWithImages.value.trim()) {
-      error.value = 'text.cbfd309fc22a';
+      error.value = 'issue.pleaseEnterProposalContentOrAddImages';
       show(error.value, 'error');
       return;
     }
 
     submitting.value = true;
-    const feedbackHandle = start('text.e41fe2167793');
+    const feedbackHandle = start('issue.sendingProposal');
     let uploadedImages: Awaited<ReturnType<typeof uploadImagesAndBuildContent>>['uploadedImages'] = [];
 
     try {
-      if (imageUrls.value.length > 0) feedbackHandle.update('text.b7cbf062d7cc');
+      if (imageUrls.value.length > 0) feedbackHandle.update('facility.uploadingImages');
       const uploadResult = await uploadImagesAndBuildContent();
       uploadedImages = uploadResult.uploadedImages;
-      feedbackHandle.update('text.bbd6fe26137f');
+      feedbackHandle.update('issue.buildingProposal');
 
       const issue = await createIssue({
         title: form.title,
@@ -104,12 +104,12 @@ export function useIssueComposerForm(open: Ref<boolean>, options: IssueComposerF
       resetForm();
       options.onSubmitted(issue);
       options.onClose();
-      feedbackHandle.succeed('text.393716462fa8');
+      feedbackHandle.succeed('issue.proposalHasBeenSent');
     } catch (caught) {
       if (uploadedImages.length) {
         await deleteUploadedImages(uploadedImages);
       }
-      error.value = caught instanceof Error ? caught.message : 'text.3ba6ae927336';
+      error.value = caught instanceof Error ? caught.message : 'issue.sendingFailedPleaseTryAgainLater';
       feedbackHandle.fail(error.value);
     } finally {
       submitting.value = false;

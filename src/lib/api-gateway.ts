@@ -5,6 +5,6 @@ export function hasApiGatewayConfig() {
 }
 
 export function apiGatewayUrl(path: string) {
-  if (!apiBaseUrl) throw new Error('text.215f3cc291aa');
+  if (!apiBaseUrl) throw new Error('settings.apiGatewaySettingsHaveNotBeenCompleted');
   return `${apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
 }

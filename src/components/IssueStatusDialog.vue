@@ -7,15 +7,15 @@
     :options="availableStatusOptions"
     :initial-status="initialStatus"
     :initial-result="issue.result_content ?? ''"
-    select-title="text.14fef4c9eed9"
-    result-title="text.ef52fa81d983"
-    result-description="text.e68b6d5dfc78"
+    select-title="issue.changeProposalStatus"
+    result-title="issue.addProposalResult"
+    result-description="facility.describeTheResultSoUsersUnderstandWhatHappened"
     result-input-id="closed-result-content"
-    result-label="text.80e35eb7a87d"
+    result-label="issue.result"
     :result-max-length="INPUT_LIMITS.resultContent"
     :result-warning-length="1800"
-    result-placeholder="text.3e2f995b82d5"
-    result-required-error="text.96b4ec356613"
+    result-placeholder="issue.describeTheProposalResult"
+    result-required-error="issue.enterTheProposalResult"
     :result-statuses="['completed', 'infeasible']"
     :status-warnings="statusWarnings"
     @close="emit('close')"
@@ -47,9 +47,9 @@ const emit = defineEmits<{
 }>();
 
 const statusOptions = [
-  { value: 'processing', label: 'text.ae16f4a52d69', description: 'text.a411327a1156' },
-  { value: 'completed', label: 'text.e99b48a29bdf', description: 'text.e7d2dc0fb5c6' },
-  { value: 'infeasible', label: 'text.1cd1905f072b', description: 'text.3e88ab95f91f' },
+  { value: 'processing', label: 'facility.processing', description: 'issue.theProposalHasBeenProcessedButHasNotYetBeenFinalized' },
+  { value: 'completed', label: 'facility.completed', description: 'issue.theProposalHasBeenImplementedOrHasClearCompletionResults' },
+  { value: 'infeasible', label: 'issue.notFeasible', description: 'issue.ifTheProposalCannotBeProcessedAfterEvaluationTheReasonsMustBeExplained' },
 ] satisfies Array<{ value: EditableStatus; label: string; description: string }>;
 
 const availableStatusOptions = computed(() =>
@@ -70,7 +70,7 @@ const initialStatus = computed<EditableStatus>(() => {
 const statusWarnings = computed<Record<string, string>>(() => {
   const warnings: Record<string, string> = {};
   if (props.issue.result_content) {
-    warnings.processing = 'text.5a56e4966f62';
+    warnings.processing = 'issue.changingToProcessingWillClearTheCurrentProposalResultDescription';
   }
   return warnings;
 });
@@ -82,7 +82,7 @@ async function save(rawStatus: string, resultContent: string) {
   const nextStatus = rawStatus as EditableStatus;
   saving.value = true;
   errorMsg.value = '';
-  const feedback = start('text.555a7eb791d2');
+  const feedback = start('issue.updatingProposalStatus');
   try {
     if (nextStatus === 'processing') {
       let finalIssue = await moderateIssueStatus(props.issue.id, nextStatus);
@@ -90,16 +90,16 @@ async function save(rawStatus: string, resultContent: string) {
         finalIssue = await updateIssueResult(props.issue.id, '');
       }
       emit('success', finalIssue);
-      feedback.succeed('text.d74a0cbcc531');
+      feedback.succeed('issue.proposalStatusUpdated');
     } else {
       const updated = await moderateIssueStatus(props.issue.id, nextStatus);
       const finalIssue = await updateIssueResult(props.issue.id, resultContent);
       emit('success', finalIssue);
-      feedback.succeed('text.f277935949a2');
+      feedback.succeed('issue.proposalStatusAndResultsUpdated');
     }
     emit('close');
   } catch (caught) {
-    errorMsg.value = caught instanceof Error ? caught.message : 'text.e45a87db77dc';
+    errorMsg.value = caught instanceof Error ? caught.message : 'facility.updateFailedPleaseTryAgainLater';
     feedback.fail(errorMsg.value);
   } finally {
     saving.value = false;

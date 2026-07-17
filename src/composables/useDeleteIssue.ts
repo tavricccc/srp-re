@@ -25,15 +25,15 @@ export function useDeleteIssue(issueId: MaybeRef<string>) {
   async function performDelete() {
     isDeleting.value = true;
     const targetIssueId = unref(issueId);
-    const feedbackHandle = start('text.ff45c4b29e59');
+    const feedbackHandle = start('issue.deletingProposal');
 
     try {
       const result = await deleteIssue(targetIssueId);
       isDeleteDialogOpen.value = false;
-      feedbackHandle.succeed('text.4a51a0c6bad2');
+      feedbackHandle.succeed('issue.proposalDeleted');
       return result.issueId;
     } catch {
-      actionError.value = 'text.c51f84ab04cf';
+      actionError.value = 'facility.deletionFailedPleaseTryAgainLater';
       feedbackHandle.fail(actionError.value);
       return '';
     } finally {

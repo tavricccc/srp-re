@@ -3,13 +3,13 @@
     <DetailRouteState
       :allowed="isAllowedUser"
       :loading="sessionLoading || loading"
-      loading-label="text.33bd01546f0c"
+      loading-label="facility.loadingFacility"
       :problem="sessionLoadingHasProblem"
       :problem-title="sessionProblemTitle"
       :problem-description="sessionProblemDescription"
       :problem-retry-disabled="!sessionOnline"
       :error="error"
-      error-title="text.a4a8f255b50c"
+      error-title="facility.failedToLoadFacilityTitle"
       @retry-problem="reloadPage"
       @retry-error="retryFacility"
     >
@@ -42,9 +42,9 @@
 
     <ConfirmDialog
       :open="deleteDialogOpen"
-      title="text.6a09e03ffa6a"
-      message="text.97ac026665a6"
-      confirm-label="text.1d63b95811eb"
+      title="facility.areYouSureYouWantToDeleteThisFacilityReport"
+      message="facility.thisFacilityReportCannotBeRestoredAfterDeletion"
+      confirm-label="comments.confirmDeletion"
       :busy="deleting"
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
@@ -102,30 +102,30 @@ const deleteDialogOpen = ref(false);
 const deleting = ref(false);
 const closed = computed(() => facility.value ? isFacilityClosed(facility.value.status) : false);
 const nextStatusActionLabel = computed(() =>
-  facility.value?.status === 'pending' ? 'text.fe9a26f3f1a6' : 'text.e6206856f534',
+  facility.value?.status === 'pending' ? 'facility.startProcessing' : 'facility.completeCannotResolve',
 );
 const operationTimeItems = computed<OperationTimeListItem[]>(() => {
   if (!facility.value) return [];
   const items: OperationTimeListItem[] = [];
   if (facility.value.created_at) {
     items.push({
-      label: 'text.7a149ac0b37c',
-      shortLabel: 'text.11ba133668d8',
+      label: 'facility.waitingTime',
+      shortLabel: 'facility.toBeAccepted',
       valueLabel: formatDate(facility.value.created_at),
     });
   }
   if (facility.value.started_at) {
     items.push({
-      label: 'text.e4e4bfef2b0e',
-      shortLabel: 'text.fda275e0bcc3',
+      label: 'facility.startProcessingTime',
+      shortLabel: 'facility.processingText',
       valueLabel: formatDate(facility.value.started_at),
     });
   }
   if (facility.value.closed_at) {
     const unable = facility.value.status === 'unable-to-handle';
     items.push({
-      label: unable ? 'text.ed8904acabca' : 'text.96cd624b9223',
-      shortLabel: unable ? 'text.900950604945' : 'text.33246f6a5e5b',
+      label: unable ? 'facility.markedUnresolved' : 'facility.completionTime',
+      shortLabel: unable ? 'facility.cannotBeResolved' : 'facility.finish',
       valueLabel: formatDate(facility.value.closed_at),
     });
   }
@@ -150,7 +150,7 @@ async function handleToggleAffected() {
   try {
     await toggleAffected();
   } catch (caught) {
-    show(caught instanceof Error ? caught.message : 'text.d624cbb8862d', 'error');
+    show(caught instanceof Error ? caught.message : 'facility.operationFailedPleaseTryAgainLater', 'error');
   }
 }
 
@@ -165,13 +165,13 @@ async function submitStatus(nextStatus: FacilityStatus, result: string) {
   if (statusSaving.value) return;
   statusSaving.value = true;
   statusError.value = '';
-  const feedback = start('text.25575ef1477d');
+  const feedback = start('facility.updatingFacilityStatus');
   try {
     await changeStatus(nextStatus, result);
     statusOpen.value = false;
-    feedback.succeed('text.b4b0f8ae9dca');
+    feedback.succeed('facility.facilityStatusUpdated');
   } catch (caught) {
-    statusError.value = caught instanceof Error ? caught.message : 'text.e45a87db77dc';
+    statusError.value = caught instanceof Error ? caught.message : 'facility.updateFailedPleaseTryAgainLater';
     feedback.fail(statusError.value);
   } finally {
     statusSaving.value = false;
@@ -189,14 +189,14 @@ function closeDeleteDialog() {
 async function confirmDelete() {
   if (!facility.value || deleting.value) return;
   deleting.value = true;
-  const feedback = start('text.6dc42c349e2a');
+  const feedback = start('facility.deletingFacilityReport');
   try {
     await remove();
     deleteDialogOpen.value = false;
-    feedback.succeed('text.43d22c84476a');
+    feedback.succeed('facility.facilityReportDeleted');
     goBackToFacilities();
   } catch (caught) {
-    feedback.fail(caught instanceof Error ? caught.message : 'text.eef3c65bda12');
+    feedback.fail(caught instanceof Error ? caught.message : 'facility.failedToDeleteFacility');
   } finally {
     deleting.value = false;
   }

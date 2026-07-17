@@ -155,7 +155,7 @@ export function useUserIssuesData(
     } catch (caught) {
       if (isAbortFailure(caught)) return;
       if (currentToken === requestToken && userIssuesState.allIssues.length === 0) {
-        userIssuesState.error = 'text.d2420979db9a';
+        userIssuesState.error = 'issue.proposalLoadingFailedPleaseTryAgainLater';
       }
     } finally {
       if (currentToken === requestToken) {
@@ -194,7 +194,7 @@ export function useUserIssuesData(
       saveSnapshot();
     } catch (caught) {
       if (isAbortFailure(caught)) return;
-      userIssuesState.error = 'text.08d3b4ac7120';
+      userIssuesState.error = 'issue.failedToLoadMoreProposalsPleaseTryAgainLater';
     } finally {
       if (currentToken === requestToken) userIssuesState.loadingMore = false;
       if (requestController === controller) requestController = null;

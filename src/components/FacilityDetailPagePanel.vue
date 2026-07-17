@@ -4,19 +4,19 @@
     :author-photo-url="facility.author_photo_url"
     :author-secondary="facility.location"
     :author-uid="facility.author_uid"
-    back-label="text.326fa994df51"
+    back-label="facility.backToFacilityList"
     :content="facility.content"
-    details-label="text.61ad921351ac"
+    details-label="facility.facilityDetails"
     :notice-content="facility.result_content"
     :notice-fallback-alt="t('facility.resultImage', { title: facility.title })"
-    notice-title="text.acf9101e8dc4"
+    notice-title="issue.result"
     notice-markdown
     :show-comments="false"
     :title="facility.title"
     @back="emit('back')"
   >
     <template #header>
-      <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">{{ t('text.a6a61230ffa1') }}</span>
+      <span class="tag border-ink-200 bg-ink-100/50 dark:border-ink-800 dark:bg-ink-950/50">{{ t('facility.facility') }}</span>
       <span class="tag font-semibold shadow-note" :class="statusClass">{{ statusLabel }}</span>
     </template>
 

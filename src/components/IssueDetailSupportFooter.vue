@@ -1,7 +1,7 @@
 <template>
   <DetailActionGroup
     :compact="compact"
-    delete-title="text.0a0ba8eb57f8"
+    delete-title="issue.admin.delete"
     :operation-time-items="operationTimeItems"
     :separate-operation-times="issue.support_enabled"
     :show-delete="canManage"
@@ -44,10 +44,10 @@
 
     <DetailActionButton
       v-if="isAdmin && !isClosed"
-      :label="isUnderReview ? 'text.332bad1cbb2b' : 'text.7b3712783bc1'"
+      :label="isUnderReview ? 'issue.review' : 'issue.changeStatusResult'"
       :compact="compact"
-      :title="isUnderReview ? 'text.332bad1cbb2b' : 'text.7b3712783bc1'"
-      :aria-label="isUnderReview ? 'text.332bad1cbb2b' : 'text.7b3712783bc1'"
+      :title="isUnderReview ? 'issue.review' : 'issue.changeStatusResult'"
+      :aria-label="isUnderReview ? 'issue.review' : 'issue.changeStatusResult'"
       @click="isUnderReview ? emit('moderate') : emit('edit-result')"
     >
       <AppIcon name="edit" />

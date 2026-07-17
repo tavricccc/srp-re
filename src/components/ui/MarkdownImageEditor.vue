@@ -11,7 +11,7 @@
           autocomplete="off"
           class="hidden"
           multiple
-          :aria-label="t('text.a4f0c2aa2572')"
+          :aria-label="t('markdown.selectImage')"
           @change="emit('image-picked', $event)"
         >
         
@@ -418,10 +418,10 @@ const props = withDefaults(defineProps<{
   warningLength: number;
   split?: boolean;
 }>(), {
-  busyLabel: 'text.ca1d70f0ffd1',
+  busyLabel: 'comments.imageProcessing',
   disabled: false,
   editorClass: '',
-  helperText: 'text.59b7d9560810',
+  helperText: 'markdown.youCanEnterTextOrAddImagesAndUseTheToolbarToInsertFormats',
   maxImagesLabel: '',
   placeholder: '',
   previewClass: '',

@@ -40,7 +40,7 @@ withDefaults(defineProps<{
 }>(), {
   autofocus: false,
   disabled: false,
-  helperText: 'text.32945d3e36d3',
+  helperText: 'common.required',
   placeholder: '',
   required: false,
 });

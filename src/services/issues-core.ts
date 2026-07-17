@@ -49,6 +49,6 @@ export async function fetchIssueRecordById(
     return issue;
   } catch (error) {
     if (error instanceof RequestFailure) throw error;
-    throw new Error('text.1fbef2c8651c', { cause: error });
+    throw new Error('issue.thisProposalCannotBeFound', { cause: error });
   } });
 }

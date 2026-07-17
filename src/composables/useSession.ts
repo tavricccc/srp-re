@@ -75,7 +75,7 @@ function markAppReady() {
 function recoverFromSessionStartupTimeout() {
   if (state.initialized) return;
   debugLog('session startup timed out; continuing without blocking the app');
-  state.error = 'text.b87b6d13b972';
+  state.error = 'auth.signInStatusIsTakingLongerThanExpectedTheAppHasOpenedWhileItContinuesLoading';
   markAppReady();
 }
 
@@ -129,13 +129,13 @@ function observeAuthState(firebaseAuth: NonNullable<typeof auth>) {
       acceptCurrentUser(user);
     } catch (error) {
       debugLog('auth state processing failed', error);
-      state.error = 'text.c33314730d97';
+      state.error = 'auth.loginStatusCheckTimedOutPleaseReload';
     } finally {
       markAppReady();
     }
   }, (error) => {
     debugLog('auth state observer failed', error);
-    state.error = 'text.d7962461867e';
+    state.error = 'auth.failedToLoadLoginStatusPleaseTryAgainLater';
     if (!state.initialized) {
       markAppReady();
     }
@@ -156,7 +156,7 @@ async function rejectCurrentUser(reason: string) {
   state.roleLoading = false;
   state.error = reason;
   try {
-    await withRequestTimeout(() => signOut(firebaseAuth), { label: 'text.b7fd2c1683eb' });
+    await withRequestTimeout(() => signOut(firebaseAuth), { label: 'auth.signOutLabel' });
   } finally {
     resolveRoleReadyWaiters();
     markAppReady();
@@ -206,7 +206,7 @@ async function refreshVerifiedSession(user: NonNullable<SessionState['user']>, v
       if (!isCurrentVerification(user, verificationId)) return;
     } catch (error) {
       debugLog('background supabase auth initialization failed', error);
-      await rejectCurrentUser('text.a24318a8270b');
+      await rejectCurrentUser('auth.loginInitializationFailedPleaseLogInAgainAndTryAgain');
       return;
     }
 
@@ -239,7 +239,7 @@ export function initializeSession() {
   booted = true;
   if (!auth) {
     state.user = null;
-    state.error = 'text.f346c9b8883d';
+    state.error = 'auth.theServiceIsTemporarilyUnavailablePleaseTryAgainLater';
     markAppReady();
     return;
   }

@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<{
   photoUrl?: string | null;
   size?: 'sm' | 'md' | 'lg';
 }>(), {
-  altText: 'text.59dd30bfe0e0',
+  altText: 'settings.userAvatar',
   authorUid: null,
   photoUrl: null,
   size: 'md',

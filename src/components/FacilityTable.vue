@@ -1,8 +1,8 @@
 <template>
   <ContentCardCollection
     :empty="facilities.length === 0"
-    empty-label="text.36dab298501f"
-    list-label="text.2640ca8c10c8"
+    empty-label="facility.noFacilityReportsYet"
+    list-label="facility.facilityList"
     :loading="loading"
   >
     <template #loading>

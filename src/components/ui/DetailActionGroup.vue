@@ -10,10 +10,10 @@
 
       <DetailActionButton
         v-if="showShare"
-        label="text.7a9243411482"
+        label="common.share"
         :compact="compact"
-        title="text.fccd05c589fa"
-        aria-label="text.fccd05c589fa"
+        title="common.shareLink"
+        aria-label="common.shareLink"
         @click="emit('share')"
       >
         <AppIcon name="share" />
@@ -59,8 +59,8 @@ withDefaults(defineProps<{
   showShare?: boolean;
 }>(), {
   compact: false,
-  deleteLabel: 'text.a48f5d05a68f',
-  deleteTitle: 'text.a48f5d05a68f',
+  deleteLabel: 'common.delete',
+  deleteTitle: 'common.delete',
   operationTimeItems: () => [],
   separateOperationTimes: false,
   showDelete: false,

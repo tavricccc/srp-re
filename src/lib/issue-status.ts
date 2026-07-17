@@ -54,10 +54,10 @@ export function getSupportRemainingLabel(remainingDays: number | null): string {
     return '';
   }
   if (remainingDays < 0) {
-    return 'text.411aa0778a48';
+    return 'issue.submissionsHaveEnded';
   }
   if (remainingDays === 0) {
-    return 'text.995326f534a7';
+    return 'issue.deadlineToday';
   }
   return t('issue.support.daysRemaining', { count: remainingDays });
 }

@@ -6,8 +6,8 @@
       :class="variant === 'mobile-header'
         ? 'h-10 gap-1 text-2xl font-semibold leading-tight tracking-[0.015em]'
         : 'gap-1.5 text-2xl font-semibold tracking-[0.015em]'"
-      :title="t('text.079bbf26fc0a')"
-      :aria-label="t('text.b2cd1e9f5cad', { label: t(label) })"
+      :title="t('issue.chooseProposalCategory')"
+      :aria-label="t('issue.currentCategoryLabel', { label: t(label) })"
       :aria-expanded="open"
       @click="open = !open"
     >
@@ -26,7 +26,7 @@
         class="absolute left-0 z-[100] mt-2 w-max min-w-[11rem] max-w-[calc(100vw-2rem)]"
         size="default"
       >
-        <div class="dropdown-label mb-1.5 whitespace-nowrap">{{ t('text.c83bfe63458d') }}</div>
+        <div class="dropdown-label mb-1.5 whitespace-nowrap">{{ t('access.proposalCategoryAccess') }}</div>
         <div class="space-y-0.5">
           <button
             v-for="option in options"

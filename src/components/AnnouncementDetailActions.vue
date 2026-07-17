@@ -1,7 +1,7 @@
 <template>
   <DetailActionGroup
     :compact="compact"
-    delete-title="text.1316a91ba454"
+    delete-title="announcement.deleteAnnouncement"
     :show-delete="canManage"
     @delete="emit('delete')"
     @share="emit('share')"
@@ -12,8 +12,8 @@
         :disabled="liking"
         :label="String(announcement.like_count)"
         :compact="compact"
-        :title="announcement.currentUserLiked ? 'text.f4843575c10a' : 'text.48a72e6a669a'"
-        :aria-label="announcement.currentUserLiked ? 'text.f4843575c10a' : 'text.48a72e6a669a'"
+        :title="announcement.currentUserLiked ? 'announcement.removeLike' : 'announcement.unlikeAnnouncement'"
+        :aria-label="announcement.currentUserLiked ? 'announcement.removeLike' : 'announcement.unlikeAnnouncement'"
         @click="emit('toggleLike')"
       >
         <AppIcon name="thumbs-up" />

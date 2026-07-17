@@ -37,14 +37,14 @@ export function useIssueBoardData() {
 
   const filterOptions = computed(() => [
     ...ISSUE_FILTER_OPTIONS,
-    { value: 'my-proposals' as const, label: 'text.16441dd78ebf' },
+    { value: 'my-proposals' as const, label: 'issue.myProposal' },
   ]);
 
   const activeCategoryLabel = computed(() => {
     if (activeFilter.value === 'my-proposals') {
-      return 'text.16441dd78ebf';
+      return 'issue.myProposal';
     }
-    return filterOptions.value.find((option) => option.value === activeFilter.value)?.label ?? 'text.b9a2f9c03506';
+    return filterOptions.value.find((option) => option.value === activeFilter.value)?.label ?? 'issue.proposal';
   });
 
   const { restoreDocumentTitle } = useDocumentTitle(activeCategoryLabel, defaultDocumentTitle);
@@ -205,7 +205,7 @@ export function useIssueBoardData() {
   }
 
   function handleIssueSubmitted(issue: IssueRecord) {
-    showComposerMessage('text.d279aa312544');
+    showComposerMessage('issue.proposalHasBeenSentMessage');
     addIssueToBucket(issue);
     addSearchIssue(issue);
     addUserIssue(issue);

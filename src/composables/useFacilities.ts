@@ -61,7 +61,7 @@ export function useFacilities() {
       }
     } catch (caught) {
       if (isAbortFailure(caught)) return;
-      if (version === requestVersion) error.value = caught instanceof Error ? caught.message : 'text.53fbde7469ea';
+      if (version === requestVersion) error.value = caught instanceof Error ? caught.message : 'facility.failedToLoadFacility';
     } finally {
       if (version === requestVersion) (append ? loadingMore : loading).value = false;
       if (requestController === controller) requestController = null;
@@ -107,12 +107,12 @@ export function useFacilities() {
 
   const statusOptions = computed(() => bucket.value === 'closed'
     ? [
-      { value: '', label: 'text.778fc8f99453' },
+      { value: '', label: 'facility.all' },
       { value: 'completed', label: FACILITY_STATUS_LABELS.completed },
       { value: 'unable-to-handle', label: FACILITY_STATUS_LABELS['unable-to-handle'] },
     ]
     : [
-      { value: '', label: 'text.778fc8f99453' },
+      { value: '', label: 'facility.all' },
       { value: 'pending', label: FACILITY_STATUS_LABELS.pending },
       { value: 'processing', label: FACILITY_STATUS_LABELS.processing },
     ]);

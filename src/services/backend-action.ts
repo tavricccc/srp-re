@@ -54,7 +54,7 @@ function withStableRequestId<TRequest>(name: BackendActionName, payload: TReques
 }
 
 function formatEnvelopeError(envelope: BackendActionErrorEnvelope) {
-  const message = envelope.error?.message?.trim() || 'text.a536dc73985a';
+  const message = envelope.error?.message?.trim() || 'common.theServiceIsTemporarilyUnableToProcessTheRequestPleaseTryAgainLater';
   const requestId = envelope.requestId?.trim();
   return requestId ? t('service.errorTrackingCode', { message: t(message), requestId }) : message;
 }
@@ -69,7 +69,7 @@ export function invokeBackendAction<TRequest = Record<string, unknown>, TRespons
       const requestUid = auth?.currentUser?.uid ?? '';
       const token = await getFirebaseIdToken();
       if (!token || !requestUid || auth?.currentUser?.uid !== requestUid) {
-        throw new Error('text.1d48f6a23b35');
+        throw new Error('common.pleaseLogInFirstBeforeProceeding');
       }
 
       const response = await fetch(apiGatewayUrl('/v1/actions'), {
@@ -82,7 +82,7 @@ export function invokeBackendAction<TRequest = Record<string, unknown>, TRespons
         signal,
       });
       if (auth?.currentUser?.uid !== requestUid) {
-        throw new Error('text.323576571b94');
+        throw new Error('auth.loginStatusChangedPreviousResponseIgnored');
       }
       let envelope: BackendActionEnvelope<TResponse> | null = null;
       try {
@@ -91,7 +91,7 @@ export function invokeBackendAction<TRequest = Record<string, unknown>, TRespons
         // The response status below supplies the useful fallback.
       }
       if (!envelope) {
-        throw new Error('text.64f299a8bc48');
+        throw new Error('common.theServiceDidNotReturnAnyData');
       }
       if (!response.ok || envelope.success !== true) {
         throw new Error(envelope.success === false

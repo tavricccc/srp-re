@@ -8,7 +8,7 @@
       @retry="reloadPage"
     />
 
-    <div v-else-if="sessionLoading" class="space-y-6" :aria-label="t('text.49b7cc2ac6bd')" aria-busy="true">
+    <div v-else-if="sessionLoading" class="space-y-6" :aria-label="t('issue.loadingProposals')" aria-busy="true">
       <div class="flex items-center justify-between border-b border-ink-200/80 pb-4 dark:border-ink-800/80">
         <span class="h-7 w-16 rounded bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>
         <div class="flex gap-2">
@@ -23,7 +23,7 @@
       />
     </div>
 
-    <div v-else-if="!isAllowedUser" class="sr-only" role="status">{{ t('auth.redirectingToLogin') }}</div>
+    <div v-else-if="!isAllowedUser" class="sr-only" role="status">{{ t('auth.redirectingToSignIn') }}</div>
 
     <IssueBoard
       v-if="isAllowedUser"

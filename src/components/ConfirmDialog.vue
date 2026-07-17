@@ -41,7 +41,7 @@
           :disabled="busy"
           @click="emit('confirm')"
         >
-          <BusyButtonContent :busy="busy" :label="t(confirmLabel)" :busy-label="t('text.ae16f4a52d69')" />
+          <BusyButtonContent :busy="busy" :label="t(confirmLabel)" :busy-label="t('facility.processing')" />
         </button>
       </div>
     </section>
@@ -68,8 +68,8 @@ const props = withDefaults(defineProps<{
 }>(), {
   title: '',
   eyebrow: '',
-  cancelLabel: 'text.4d0b4688c787',
-  confirmLabel: 'text.86a07295c547',
+  cancelLabel: 'issue.cancel',
+  confirmLabel: 'issue.confirm',
   busy: false,
   danger: true,
 });

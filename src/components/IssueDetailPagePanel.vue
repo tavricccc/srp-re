@@ -3,14 +3,14 @@
     :author-name="displayAuthorName"
     :author-photo-url="displayPhotoUrl"
     :initial-tab="initialTab"
-    back-label="text.f3688932d28d"
+    back-label="issue.returnToProposalList"
     :comment-count="mobileCommentCount"
     :content="issue.content"
-    details-label="text.6822d1ef16bf"
+    details-label="issue.proposalContent"
     :notice-content="issue.status === 'review-rejected' ? issue.review_rejection_reason : issue.result_content"
     :notice-fallback-alt="t('issue.resultImage', { title: issue.title })"
     :notice-markdown="issue.status !== 'review-rejected'"
-    :notice-title="issue.status === 'review-rejected' ? 'text.62d3adb6b8ac' : 'text.d23a5e98eed7'"
+    :notice-title="issue.status === 'review-rejected' ? 'issue.reasonForRejection' : 'issue.result'"
     :notice-tone="issue.status === 'review-rejected' ? 'error' : 'success'"
     :show-author="showAuthor"
     :title="issue.title"
@@ -27,8 +27,8 @@
         v-if="issue.support_enabled && issue.support_met_at"
         class="tag bg-success-container font-semibold text-on-success-container shadow-note"
       >
-        <span class="hidden md:inline">{{ t('text.03952223b21b') }}</span>
-        <span class="md:hidden">{{ t('text.d988e57f8a58') }}</span>
+        <span class="hidden md:inline">{{ t('issue.proposalAuthor') }}</span>
+        <span class="md:hidden">{{ t('issue.author') }}</span>
       </span>
     </template>
 
@@ -74,15 +74,15 @@
           <div class="flex min-w-0 items-center gap-2">
             <AppIcon name="comment" class="shrink-0 text-ink-500" />
             <h4 class="truncate whitespace-nowrap text-base font-semibold text-ink-900 dark:text-ink-100">
-              {{ t('text.2d4dc6e81d39') }}
+              {{ t('comments.title') }}
             </h4>
           </div>
         </div>
         <div class="flex min-h-0 flex-1 items-center py-2 pr-1">
           <EmptyStatePanel
             class="!px-3 !py-7"
-            :title="t('text.7edc07b76e30')"
-            :description="t('text.19b1bbc3a4f8')"
+            :title="t('comments.commentsAreCurrentlyDisabled')"
+            :description="t('access.thisProposalIsNotPublicYetOnlyTheAuthorAndAdministratorsCanViewIt')"
             icon="comment"
           />
         </div>

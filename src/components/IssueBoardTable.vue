@@ -1,9 +1,9 @@
 <template>
   <ContentCardCollection
     :empty="issues.length === 0"
-    empty-label="text.6542a58533e1"
+    empty-label="issue.noProposalsYet"
     :error="error"
-    list-label="text.c8d8ded7a6e3"
+    list-label="issue.proposalList"
     :loading="loading"
   >
     <template #loading>

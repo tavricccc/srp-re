@@ -141,7 +141,7 @@ export function useIssueRouteDetail(
     if (currentRequestId !== requestId) return;
     routeIssue.value = null;
     routeIssueLoading.value = false;
-    show('text.4df61e2e64ef', 'error');
+    show('issue.thisPageDoesNotExistOrCannotBeViewed', 'error');
     await router.replace(issueListRoute());
   }
 

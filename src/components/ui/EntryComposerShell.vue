@@ -15,8 +15,8 @@
           type="button"
           class="button-dialog-close shrink-0"
           :disabled="blocked"
-          :title="t('text.ddc05404b0d6')"
-          :aria-label="t('text.ddc05404b0d6')"
+          :title="t('common.close')"
+          :aria-label="t('common.close')"
           @click="requestClose"
         >
           <AppIcon name="close" :size="5" :stroke-width="2.5" />
@@ -66,7 +66,7 @@
           :preview-content="content"
           :uploading="uploading"
           :disabled="busy"
-          :busy-label="t(busy ? 'text.77650bee6e0c' : 'text.4783088c913c')"
+          :busy-label="t(busy ? 'common.processingContent' : 'comments.addImage')"
           editor-class="flex-1 min-h-[180px]"
           textarea-class="h-full min-h-[180px]"
           preview-class="flex-1 min-h-[180px]"
@@ -76,7 +76,7 @@
         />
 
         <p v-if="error" class="mt-2 shrink-0 text-xs font-semibold text-error">
-          {{ t('text.77f715edace8', { error: t(error) }) }}
+          {{ t('common.errorError', { error: t(error) }) }}
         </p>
 
         <div class="entry-composer__footer">
@@ -88,7 +88,7 @@
               :disabled="blocked"
               @click="requestClose"
             >
-              {{ t('text.4d0b4688c787') }}
+              {{ t('issue.cancel') }}
             </button>
             <button
               type="submit"
@@ -152,11 +152,11 @@ const props = withDefaults(defineProps<{
   uploading?: boolean;
 }>(), {
   busy: false,
-  busyLabel: 'text.76065e012603',
+  busyLabel: 'common.publish',
   editorPlaceholder: '',
   error: '',
   locationInputId: '',
-  locationLabel: 'text.4260682efe89',
+  locationLabel: 'facility.place',
   locationMaxLength: 120,
   locationPlaceholder: '',
   locationWarningLength: 108,

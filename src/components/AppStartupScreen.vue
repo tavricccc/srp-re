@@ -12,8 +12,8 @@
       </div>
 
       <div v-if="stalled" class="startup-screen__recovery">
-        <p>{{ t('text.57c54d8966b7') }}</p>
-        <button type="button" class="button-primary" @click="emit('retry')">{{ t('text.0c9157b5bfac') }}</button>
+        <p>{{ t('common.theAppFailedToStartTryAgain') }}</p>
+        <button type="button" class="button-primary" @click="emit('retry')">{{ t('common.retry') }}</button>
       </div>
       <LoadingSpinner v-else :size="6" class="startup-screen__loader" />
     </div>
@@ -37,7 +37,7 @@ const props = withDefaults(defineProps<{
   stalled?: boolean;
   title?: string;
 }>(), {
-  ariaLabel: 'text.8ee16c627bc9',
+  ariaLabel: 'common.startingApp',
   message: '',
   stalled: false,
   title: '',

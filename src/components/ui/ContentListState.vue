@@ -24,7 +24,7 @@
         :description="error"
         icon="warning"
         tone="danger"
-        action-label="text.5387b55bb903"
+        action-label="dashboard.refresh"
         @action="emit('retry')"
       />
 

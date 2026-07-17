@@ -5,7 +5,7 @@
       :class="[supportClass, compact ? '!h-8 !px-2.5 !gap-1 text-xs' : '']"
       :disabled="busy || supportClosed || authorFixed"
       :title="supportTitle"
-      :aria-label="t(authorFixed ? 'text.7d3df9c62d93' : optimisticSupported ? 'text.b84607828623' : 'text.cae6b4c3adbf')"
+      :aria-label="t(authorFixed ? 'issue.theAuthorAutomaticallySupportsThisProposal' : optimisticSupported ? 'common.removeSupport' : 'issue.supportProposal')"
       @click="toggle"
     >
       <AppIcon name="thumbs-up" :size="compact ? 4 : 5" />
@@ -40,11 +40,11 @@ const emit = defineEmits<{
 }>();
 const { t } = useI18n();
 const supportTitle = computed(() => {
-  if (props.authorFixed) return t('text.7d3df9c62d93');
-  if (!props.supportClosed) return t(props.currentUserSupported ? 'text.b84607828623' : 'text.cae6b4c3adbf');
+  if (props.authorFixed) return t('issue.theAuthorAutomaticallySupportsThisProposal');
+  if (!props.supportClosed) return t(props.currentUserSupported ? 'common.removeSupport' : 'issue.supportProposal');
   return props.statusLabel
     ? t('issue.support.closedStatus', { status: props.statusLabel })
-    : t('text.411aa0778a48');
+    : t('issue.submissionsHaveEnded');
 });
 
 const supportClosed = computed(() => props.supportClosed);

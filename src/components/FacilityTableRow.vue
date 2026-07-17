@@ -22,7 +22,7 @@
       <div class="mt-4 rounded-xl bg-ink-50/85 px-3 py-2.5 dark:bg-ink-900/55">
         <div class="flex items-center justify-between gap-3 text-xs">
           <span class="truncate text-ink-500 dark:text-ink-400">{{ facility.location }}</span>
-          <span class="shrink-0 font-semibold tabular-nums text-ink-700 dark:text-ink-300">{{ t('text.067d059073fc', { count: facility.affected_count }) }}</span>
+          <span class="shrink-0 font-semibold tabular-nums text-ink-700 dark:text-ink-300">{{ t('facility.affectedCount', { count: facility.affected_count }) }}</span>
         </div>
       </div>
     </template>
@@ -35,7 +35,7 @@
           '!h-8 !gap-1 !px-2.5 text-xs',
         ]"
         :disabled="affecting || facility.isOwnFacility || isClosed"
-        :title="t(facility.isOwnFacility ? 'text.39cf806cd487' : 'text.047423ca10a2')"
+        :title="t(facility.isOwnFacility ? 'facility.theAuthorIsAutomaticallyIncludedInTheAffectedCount' : 'facility.iAlsoEncountered')"
         @click="emit('toggle-affected', facility)"
       >
         <AppIcon name="hand" :size="4" />

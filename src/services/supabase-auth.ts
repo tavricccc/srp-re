@@ -35,7 +35,7 @@ export async function ensureSupabaseAuthenticatedRole(user: User) {
 
   const token = await withRequestTimeout(
     () => user.getIdTokenResult(),
-    { label: 'text.c734c57eb882' },
+    { label: 'auth.supabaseLoginInitialization' },
   );
   if (token.claims.role === 'authenticated' && wasRecentlySynced(user.uid)) return;
 
@@ -49,7 +49,7 @@ export async function ensureSupabaseAuthenticatedRole(user: User) {
       },
       signal,
     }),
-    { label: 'text.c734c57eb882' },
+    { label: 'auth.supabaseLoginInitialization' },
   );
   let data: SyncUserResponse | null = null;
   try {
@@ -66,19 +66,19 @@ export async function ensureSupabaseAuthenticatedRole(user: User) {
   if (token.claims.role !== 'authenticated') {
     let refreshedToken = await withRequestTimeout(
       () => user.getIdTokenResult(true),
-      { label: 'text.967e196b7750' },
+      { label: 'auth.supabaseLoginUpdate' },
     );
     let attempts = 0;
     while (refreshedToken.claims.role !== 'authenticated' && attempts < 3) {
       await new Promise((resolve) => setTimeout(resolve, 800));
       refreshedToken = await withRequestTimeout(
         () => user.getIdTokenResult(true),
-        { label: 'text.f3c66dafe54d' },
+        { label: 'common.refreshingSupabaseSignIn' },
       );
       attempts++;
     }
     if (refreshedToken.claims.role !== 'authenticated') {
-      throw new Error('text.e51eab2fca5e');
+      throw new Error('auth.supabaseLoginInitializationHasNotBeenCompleted');
     }
   }
 }

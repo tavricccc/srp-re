@@ -563,7 +563,7 @@ test('content feeds share 30-item batches and bounded load-more controls', async
   assert.match(infiniteScroll, /options\.root\?\.value/u);
   assert.match(infiniteScroll, /loadPending/u);
   assert.match(loadMoreControl, /rounded-full/u);
-  assert.match(loadMoreControl, /text\.0ff983d5aa98/u);
+  assert.match(loadMoreControl, /common\.loadMore/u);
   assert.match(loadMoreControl, /LoadingSpinner/u);
   assert.match(issueSearch, /loadMoreSearchResults/u);
   assert.match(feedMigration, /reply_groups as materialized/u);
@@ -756,13 +756,13 @@ test('facility next actions and account UID use existing detail controls', async
   assert.match(facilityPanel, /:compact="compact"/u);
   assert.match(facilityActions, /DetailActionButton/u);
   assert.match(facilityActions, /DetailActionGroup/u);
-  assert.match(detailActionGroup, /label="text\.7a9243411482"/u);
+  assert.match(detailActionGroup, /label="common\.share"/u);
   assert.match(facilityPanel, /ContentDetailPagePanel/u);
   assert.match(detailPagePanel, /ContentDetailBody/u);
   assert.match(contentDetailBody, /noticeContent/u);
   assert.equal((contentDetailBody.match(/<MarkdownMediaContent/gu) ?? []).length, 2);
-  assert.match(facilityDetail, /text\.fe9a26f3f1a6' : 'text\.e6206856f534/u);
-  assert.match(facilityDetail, /text\.7a149ac0b37c[\s\S]*text\.e4e4bfef2b0e[\s\S]*text\.ed8904acabca/u);
+  assert.match(facilityDetail, /facility\.startProcessing' : 'facility\.completeCannotResolve/u);
+  assert.match(facilityDetail, /facility\.waitingTime[\s\S]*facility\.startProcessingTime[\s\S]*facility\.markedUnresolved/u);
   assert.match(facilityActions, /:operation-time-items="operationTimeItems"/u);
   assert.match(proposalFooter, /:operation-time-items="operationTimeItems"/u);
   assert.match(detailActionGroup, /OperationTimeList/u);
@@ -770,7 +770,7 @@ test('facility next actions and account UID use existing detail controls', async
   assert.doesNotMatch(facilityDetail, />更新狀態</u);
   assert.match(settingsView, /:uid="user\.uid"/u);
   assert.match(settingsPanel, /t\('account\.uidLabel'\)[\s\S]*\{\{ uid \}\}[\s\S]*name="copy"/u);
-  assert.match(settingsPanel, /show\(t\('text\.2306a9c387bc'\), 'success'\)/u);
+  assert.match(settingsPanel, /show\(t\('settings\.uidCopied'\), 'success'\)/u);
   assert.match(shareUrl, /export async function copyText/u);
 });
 
@@ -995,7 +995,7 @@ test('Google redirect recovery runs only after an explicit redirect fallback', a
   assert.match(authActions, /finally \{[\s\S]*clearGoogleRedirectPending\(\);/u);
   assert.match(authActions, /await firebaseAuth\.authStateReady\(\)/u);
   assert.match(authActions, /if \(!firebaseAuth\.currentUser && !state\.user\)/u);
-  assert.match(authActions, /text\.5c8678c08dbd/u);
+  assert.match(authActions, /auth\.loginReplyTimedOut/u);
   assert.match(session, /recoverPendingGoogleRedirect\(state, firebaseAuth\)/u);
   assert.doesNotMatch(session, /getRedirectResult/u);
 });
@@ -1015,7 +1015,7 @@ test('push notification registration recovers without overriding an explicit opt
   assert.match(pushNotifications, /PUSH_REGISTRATION_SYNC_TTL_MS = 7 \* 24 \* 60 \* 60_000/u);
   assert.match(pushNotifications, /setExplicitlyDisabled\(true\)/u);
   assert.match(pushNotifications, /setExplicitlyDisabled\(false\)/u);
-  assert.match(promptDialog, /text\.e97f7d648ee4/u);
+  assert.match(promptDialog, /app\.install\.reEnablePushNotifications/u);
 });
 
 test('notification navigation verifies target access before routing', async () => {
@@ -1163,7 +1163,7 @@ test('entry and comment limits are enforced across UI, Edge, and a new migration
   assert.doesNotMatch(commentComposer, /MarkdownRenderer|showPreview|預覽留言/u);
   assert.match(commentItem, /plain-text/u);
   assert.doesNotMatch(commentThread, /第一則留言會出現在這裡/u);
-  assert.match(detailShell, /label: t\('text\.548d04eaecd6'/u);
+  assert.match(detailShell, /label: t\('comments\.countComments'/u);
   assert.match(baseStyles, /padding-bottom: calc\(var\(--app-bottom-nav-height\) \+ 1rem\)/u);
   assert.match(responsiveStyles, /padding-left: max\(var\(--dialog-safe-padding, 1rem\), env\(safe-area-inset-left\)\)/u);
   assert.match(responsiveStyles, /padding-right: max\(var\(--dialog-safe-padding, 1rem\), env\(safe-area-inset-right\)\)/u);
@@ -1326,7 +1326,7 @@ test('navigation and contextual creation share the same responsive information a
   const composerShell = await read('src/components/ui/EntryComposerShell.vue');
   const controls = await read('src/styles/controls.css');
 
-  assert.match(appShell, /label: t\('text\.b9a2f9c03506'\)/u);
+  assert.match(appShell, /label: t\('issue\.proposal'\)/u);
   assert.match(appShell, /:category-filter="mobileCategoryFilter"/u);
   assert.match(mobileHeader, /IssueCategorySelector/u);
   assert.match(boardControls, /IssueCategorySelector/u);
@@ -1340,19 +1340,19 @@ test('navigation and contextual creation share the same responsive information a
   assert.ok(boardControls.indexOf('name="search"') < boardControls.indexOf('v-if="createLabel"'));
   assert.match(boardControls, /class="button-contextual h-8 w-8 min-w-8[\s\S]*name="plus"/u);
   assert.doesNotMatch(boardControls, /<span class="truncate">\{\{ createLabel \}\}<\/span>/u);
-  assert.match(issueBoard, /t\('text\.049a485046af'/u);
-  assert.match(facilitiesView, /:create-label="t\('text\.f6af17a5f622'\)"[\s\S]*@create="composerOpen = true"/u);
-  assert.match(announcementsView, /v-if="isAdmin"[\s\S]*:aria-label="t\('text\.e9cf7e935c45'\)"/u);
+  assert.match(issueBoard, /t\('issue\.addToCategory'/u);
+  assert.match(facilitiesView, /:create-label="t\('facility\.addFacility'\)"[\s\S]*@create="composerOpen = true"/u);
+  assert.match(announcementsView, /v-if="isAdmin"[\s\S]*:aria-label="t\('announcement\.newAnnouncement'\)"/u);
   assert.match(issueComposer, /EntryComposerShell/u);
   assert.match(composerShell, /class="button-dialog-close/u);
   assert.match(composerShell, /type="submit"[\s\S]*class="entry-composer__action button-secondary"/u);
   assert.doesNotMatch(issueComposer, /entry-composer__action button-contextual/u);
   assert.match(controls, /\.button-contextual \{[\s\S]*bg-surface[\s\S]*box-shadow: var\(--shadow-card\)/u);
   assert.match(controls, /\.button-dialog-close \{[\s\S]*bg-surface[\s\S]*box-shadow: var\(--shadow-card\)/u);
-  assert.ok(settingsPanel.indexOf('text.16441dd78ebf') < settingsPanel.indexOf('text.baa4b36d8a77'));
-  assert.ok(settingsPanel.indexOf('text.baa4b36d8a77') < settingsPanel.indexOf('text.3d0d88d5d438'));
-  assert.ok(settingsPanel.indexOf('text.3d0d88d5d438') < settingsPanel.indexOf('text.da21060e1ebb'));
-  assert.ok(settingsPanel.indexOf('text.da21060e1ebb') < settingsPanel.indexOf('text.9b0c6c7858bf'));
+  assert.ok(settingsPanel.indexOf('issue.myProposal') < settingsPanel.indexOf('dashboard.statistics'));
+  assert.ok(settingsPanel.indexOf('dashboard.statistics') < settingsPanel.indexOf('access.roleManagement'));
+  assert.ok(settingsPanel.indexOf('access.roleManagement') < settingsPanel.indexOf('settings.restartApp'));
+  assert.ok(settingsPanel.indexOf('settings.restartApp') < settingsPanel.indexOf('settings.moreResources'));
   await assert.rejects(read('src/components/CreateActionMenu.vue'));
   await assert.rejects(read('src/composables/useCreateEntryActions.ts'));
 });
@@ -1427,6 +1427,10 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   const boardControls = await read('src/components/BoardControls.vue');
   const settingsPanel = await read('src/components/SettingsPanelContent.vue');
   const commentComposer = await read('src/components/CommentComposer.vue');
+  const skeletonTable = await read('src/components/ui/SkeletonTable.vue');
+  const skeletonAnnouncements = await read('src/components/ui/SkeletonAnnouncementList.vue');
+  const notifications = await read('src/views/NotificationsView.vue');
+  const settingsView = await read('src/views/SettingsView.vue');
   const checker = await read('scripts/check-ui-primitives.mjs');
 
   assert.match(styleEntry, /@import "\.\/styles\/primitives\.css";/u);
@@ -1457,7 +1461,14 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   [compactMenu, facilityMenu].forEach((menu) => assert.match(menu, /<DropdownMenu/u));
   assert.match(boardControls, /<DropdownPanel/u);
   assert.match(settingsPanel, /list-surface/u);
+  assert.match(settingsPanel, /settings-row list-surface-row list-surface-row--interactive/u);
   assert.match(commentComposer, /control-frame/u);
+  [skeletonTable, skeletonAnnouncements].forEach((skeleton) => {
+    assert.match(skeleton, /<SurfacePanel[^>]*class="issue-card"/u);
+  });
+  assert.match(notifications, /notification-group-row list-surface-row list-surface-row--interactive/u);
+  assert.match(notifications, /notification-group-row list-surface-row/u);
+  assert.match(settingsView, /v-if="loading"[\s\S]*<SurfacePanel variant="list"/u);
 
   assert.equal(packageJson.scripts['check:ui'], 'node scripts/check-ui-primitives.mjs');
   assert.match(packageJson.scripts['verify:local'], /npm run check:ui/u);

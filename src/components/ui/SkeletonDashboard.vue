@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-5" :aria-label="t('text.19694d95dc08')" aria-busy="true">
+  <div class="space-y-5" :aria-label="t('dashboard.platformStatisticsLoading')" aria-busy="true">
     <header class="space-y-3 pb-2">
       <span class="block h-6 w-24 rounded-full bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>
       <span class="block h-9 w-44 rounded bg-ink-200/60 animate-skeleton dark:bg-ink-700/50"></span>

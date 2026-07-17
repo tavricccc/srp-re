@@ -71,7 +71,7 @@ if (hasFirebaseMessagingConfig()) {
       if (payload.notification) {
         return;
       }
-      const title = payload.data?.title ?? 'text.9be3d7800193';
+      const title = payload.data?.title ?? 'notification.newNotificationReceived';
       const body = payload.data?.body ?? '';
       const link = payload.data?.link ?? '/';
       return self.registration.showNotification(title, {
