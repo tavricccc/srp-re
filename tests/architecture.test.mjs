@@ -269,6 +269,13 @@ test('backendAction registry owns action metadata and frontend action names', as
     .filter((file) => !file.pathname.endsWith('/backend-action.ts'));
   const services = (await Promise.all(serviceFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 
+  assert.deepEqual(rateLimits.imageUploads, {
+    issueMaxImages: 2,
+    facilityMaxImages: 2,
+    announcementMaxImages: 10,
+    commentMaxImages: 1,
+  });
+
   const frontendActions = [...services.matchAll(/invokeBackendAction[\s\S]*?\);/gu)]
     .map((match) => match[0].match(/(?:invokeBackendAction\(|>\()'([^']+)'/u)?.[1])
     .filter(Boolean)
@@ -1229,7 +1236,7 @@ test('entry and comment limits are enforced across UI, Edge, and a new migration
   assert.match(baseStyles, /body\.dialog-open \.action-feedback-viewport \{[\s\S]*top: calc\(env\(safe-area-inset-top\) \+ 6\.75rem\)/u);
 });
 
-test('primary navigation keeps desktop chrome while mobile routes use a source-aware hierarchy', async () => {
+test('primary navigation keeps desktop chrome and persistent mobile navigation', async () => {
   const app = await read('src/App.vue');
   const appShell = await read('src/components/AppShell.vue');
   const mobileHeader = await read('src/components/app-shell/AppMobileHeader.vue');
@@ -1262,7 +1269,8 @@ test('primary navigation keeps desktop chrome while mobile routes use a source-a
   assert.match(appShell, /:data-bottom-nav="showMobileBottomNavigation/u);
   assert.match(appShell, /:data-sidebar="isAllowedUser/u);
   assert.match(appShell, /<Transition name="mobile-nav">[\s\S]*v-if="showMobileBottomNavigation"/u);
-  assert.match(appShell, /getRouteNavigationDepth/u);
+  assert.doesNotMatch(appShell, /getRouteNavigationDepth|data-navigation-depth/u);
+  assert.match(appShell, /showMobileBottomNavigation = computed\(\(\) => isAllowedUser\.value\)/u);
   assert.match(baseStyles, /\.route-content-frame \{[\s\S]*background-color: rgb\(var\(--color-page-background\)\)/u);
   assert.match(baseStyles, /\.route-stage \{[\s\S]*isolation: isolate/u);
   assert.doesNotMatch(baseStyles, /\.route-stage \{[\s\S]{0,120}(?:contain: paint|overflow: hidden)/u);
@@ -1372,6 +1380,8 @@ test('frontend localization follows the first-visit system language and remains 
   const i18n = await read('src/i18n/index.ts');
   const settings = await read('src/components/SettingsPanelContent.vue');
   const documentTitle = await read('src/composables/useDocumentTitle.ts');
+  const issueSearch = await read('src/composables/useIssueSearch.ts');
+  const pushPermissionPrompt = await read('src/components/PushPermissionPromptDialog.vue');
   const packageJson = JSON.parse(await read('package.json'));
   const i18nCheck = await read('scripts/check-i18n.mjs');
 
@@ -1387,6 +1397,8 @@ test('frontend localization follows the first-visit system language and remains 
   assert.match(settings, /value: 'en'/u);
   assert.match(documentTitle, /watch\(\[title, locale\]/u);
   assert.match(documentTitle, /t\(title\.value\)/u);
+  assert.match(issueSearch, /return t\('issue\.search\.enterTheKeywordAndPressEnterToSearch'\)/u);
+  assert.match(pushPermissionPrompt, /t\([\s\S]*'app\.install\.turnOnNotifications'/u);
   assert.equal(packageJson.scripts['check:i18n'], 'node scripts/check-i18n.mjs');
   assert.match(packageJson.scripts['verify:local'], /npm run check:i18n/u);
   assert.match(i18nCheck, /English catalog is missing/u);

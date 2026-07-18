@@ -83,9 +83,9 @@ export const RATE_LIMITS = {
     "errorCode": "rate-limit.background-processing"
   },
   "imageUploads": {
-    "issueMaxImages": 5,
-    "facilityMaxImages": 5,
-    "announcementMaxImages": 5,
+    "issueMaxImages": 2,
+    "facilityMaxImages": 2,
+    "announcementMaxImages": 10,
     "commentMaxImages": 1
   },
   "imageCompression": {

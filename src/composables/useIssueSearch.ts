@@ -43,12 +43,12 @@ export function useIssueSearch(options: {
   );
   const searchResultCount = computed(() => searchState.issues.length);
   const searchHint = computed(() => {
-    if (normalizedSearchQuery.value !== normalizedCommittedSearchQuery.value) return 'issue.search.pressEnterToSearch';
-    if (!isSearching.value) return 'issue.search.enterTheKeywordAndPressEnterToSearch';
+    if (normalizedSearchQuery.value !== normalizedCommittedSearchQuery.value) return t('issue.search.pressEnterToSearch');
+    if (!isSearching.value) return t('issue.search.enterTheKeywordAndPressEnterToSearch');
     if (normalizedCommittedSearchQuery.value.length < MIN_GLOBAL_SEARCH_LENGTH) {
-      return 'issue.search.loadedOnlyHint';
+      return t('issue.search.loadedOnlyHint');
     }
-    if (searchState.loading) return 'issue.search.searching';
+    if (searchState.loading) return t('issue.search.searching');
     if (searchState.limited) return t('issue.search.limitedResults', { count: searchResultCount.value });
     return t('issue.search.results', { count: searchResultCount.value });
   });

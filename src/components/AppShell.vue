@@ -2,7 +2,6 @@
   <div
     class="app-root relative flex flex-col bg-[rgb(var(--color-page-background))]"
     :data-bottom-nav="showMobileBottomNavigation ? 'true' : 'false'"
-    :data-navigation-depth="navigationDepth"
     :data-sidebar="isAllowedUser ? 'true' : 'false'"
     :data-sidebar-expanded="isSidebarExpanded ? 'true' : 'false'"
     :style="rootStyle"
@@ -82,7 +81,7 @@ import { useNotificationBadge } from '@/composables/useNotificationBadge';
 import { useSession } from '@/composables/useSession';
 import type { IssueFilter } from '@/types';
 import { preloadRoutePath } from '@/router/route-components';
-import { getRouteNavigationDepth, returnToNavigationOrigin } from '@/router/navigation-hierarchy';
+import { returnToNavigationOrigin } from '@/router/navigation-hierarchy';
 import { useI18n } from '@/i18n';
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'novae:desktop-sidebar-expanded';
@@ -138,9 +137,8 @@ const mobileCategoryFilter = computed<IssueFilter | undefined>(() =>
 const mobileCategoryLabel = computed(() => mobileCategoryFilter.value
   ? t(ISSUE_CATEGORY_LABELS[mobileCategoryFilter.value])
   : undefined);
-const bottomGap = computed(() => hasSafeIndicator.value ? 22 : 12);
-const navigationDepth = computed(() => getRouteNavigationDepth(route));
-const showMobileBottomNavigation = computed(() => isAllowedUser.value && navigationDepth.value === 0);
+const bottomGap = computed(() => hasSafeIndicator.value ? 25 : 15);
+const showMobileBottomNavigation = computed(() => isAllowedUser.value);
 const rootStyle = computed(() => ({
   '--app-bottom-nav-height': showMobileBottomNavigation.value
     ? `${bottomGap.value + MOBILE_NAV_HEIGHT + 6}px`

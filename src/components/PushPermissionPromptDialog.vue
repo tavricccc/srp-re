@@ -46,11 +46,13 @@
         <BusyButtonContent
           :busy="busy"
           :label="
-            mode === 'repair'
-              ? 'app.install.reEnable'
-              : 'app.install.turnOnNotifications'
+            t(
+              mode === 'repair'
+                ? 'app.install.reEnable'
+                : 'app.install.turnOnNotifications',
+            )
           "
-          busy-label="app.install.processing"
+          :busy-label="t('app.install.processing')"
         />
       </AppButton>
     </DialogActionRow>
