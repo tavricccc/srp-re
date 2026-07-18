@@ -36,6 +36,17 @@ for (const file of files) {
     if (/shadow-\[[^\]]+\]/u.test(source)) {
       errors.push(`${relativePath} defines an arbitrary shadow; use control/card/floating elevation tokens`);
     }
+    if (relativePath.startsWith(`src${path.sep}views${path.sep}`) && !relativePath.endsWith('LoginView.vue')) {
+      if (!/<RoutePageFrame\b/u.test(source)) {
+        errors.push(`${relativePath} must compose its page through RoutePageFrame`);
+      }
+      if (/\broute-page\b|\bpage-bottom-safe\b/u.test(source)) {
+        errors.push(`${relativePath} assembles route layout classes directly; use RoutePageFrame props`);
+      }
+      if (/app-viewport-gutter|safe-area-inset-(?:left|right)/u.test(source)) {
+        errors.push(`${relativePath} calculates viewport gutters directly; use AppShell and ViewportFrame`);
+      }
+    }
     if (
       /class="[^"]*rounded-\[var\(--radius-outer\)\][^"]*shadow-elevated[^"]*"/u.test(source)
       || /class="[^"]*shadow-elevated[^"]*rounded-\[var\(--radius-outer\)\][^"]*"/u.test(source)
@@ -50,6 +61,9 @@ for (const requiredPrimitive of [
   '.viewport-frame',
   '.viewport-content',
   '.viewport-floating-inline',
+  '.route-page-frame',
+  '.route-page-frame--fill',
+  '.route-page-frame--bottom-safe',
   '.surface-control',
   '.surface-card',
   '.surface-floating',

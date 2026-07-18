@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page page-bottom-safe space-y-5 py-2">
+  <RoutePageFrame bottom-safe padding="compact" class="space-y-5">
     <PageLoadFailure
       v-if="dashboardLoadingHasProblem"
       :title="dashboardProblemTitle"
@@ -170,10 +170,11 @@
       description="dashboard.thereAreCurrentlyNoPlatformResultsToDisplay"
       icon="chart"
     />
-  </section>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed, watch } from 'vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';
 import SkeletonDashboard from '@/components/ui/SkeletonDashboard.vue';

@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page py-2 md:py-6">
+  <RoutePageFrame padding="responsive">
     <form class="panel panel-pad" @submit.prevent="findUser">
       <label for="access-user-lookup" class="field-label">{{ t('access.findAUser') }}</label>
       <div class="mt-2 flex gap-2">
@@ -79,10 +79,11 @@
         </div>
       </div>
     </article>
-  </section>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed, ref } from 'vue';
 import SelectionOptionButton from '@/components/ui/SelectionOptionButton.vue';
 import EmptyStatePanel from '@/components/ui/EmptyStatePanel.vue';

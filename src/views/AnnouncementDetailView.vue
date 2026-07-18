@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-0">
+  <RoutePageFrame as="div" layout="fill">
     <DetailRouteState
       :allowed="isAllowedUser"
       :loading="sessionLoading || loading"
@@ -35,13 +35,14 @@
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     />
-  </div>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
 import AnnouncementDetailPagePanel from '@/components/AnnouncementDetailPagePanel.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DetailRouteState from '@/components/ui/DetailRouteState.vue';
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { useAnnouncementDetail } from '@/composables/useAnnouncementDetail';
 import { useAuthenticatedDetailState } from '@/composables/useAuthenticatedDetailState';
 import { resetAppConnection } from '@/lib/reconnect';

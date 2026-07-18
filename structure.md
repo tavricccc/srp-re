@@ -75,11 +75,12 @@
 
 ## components/ui（無業務）
 
-- `AppButton.vue` / `SurfacePanel.vue` / `DropdownPanel.vue` / `DropdownMenu.vue` / `ViewportFrame.vue` — 按鈕、表面／卡片、dropdown 與全域 viewport gutter 的規範入口；領域元件只用 props／slots 組合
+- `AppButton.vue` / `SurfacePanel.vue` / `DropdownPanel.vue` / `DropdownMenu.vue` — 按鈕、表面／卡片與 dropdown 的規範入口；領域元件只用 props／slots 組合
+- `ViewportFrame.vue` / `RoutePageFrame.vue` — AppShell 的 viewport gutter／safe-area 寬度與 route page 的 max-width、全高 flex、垂直 padding、底部導覽安全距離入口；route view 不自行計算 viewport 或拼裝頁面骨架
 - `LoadingSpinner.vue` / `BusyButtonContent.vue` / `FeedLoadMoreControl.vue` / `SelectionOptionButton.vue` — spinner、busy 按鈕內容、共用載入更多與一致的選取列控制
 - `EntryComposerShell.vue` / `CountedTextField.vue` — 提案、公告、設備共用的發布骨架、字數欄位與 Markdown 圖片編輯器設定
 - `ContentCardCollection.vue` / `ContentCardShell.vue` — 提案、公告、設備共用的列表狀態、卡片表面、作者／標題／時間／狀態與操作區；領域元件只填資料及差異 slots
-- `DetailRouteState.vue` — 提案、公告、設備詳情共用的登入等待、loading、逾時、離線及讀取錯誤狀態
+- `DetailRouteState.vue` — 提案、公告、設備詳情共用的全高狀態容器，以及登入等待、loading、逾時、離線及讀取錯誤狀態；確保 skeleton／錯誤／內容維持相同高度鏈
 - `StatusTransitionDialog.vue` — 提案與設備共用的狀態選擇、結果填寫、字數、錯誤及 busy 流程；各領域只提供狀態與文案
 - `AppIcon.vue` / `BrandMark.vue` / `UserAvatar.vue` / `DecorativeGlow.vue`
 - `EmptyStatePanel.vue` / `PageLoadFailure.vue` / `ContentListState.vue` / `SearchHighlight.vue`（三領域共用載入失敗、不可用、錯誤、空內容與分頁狀態殼）

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-0">
+  <RoutePageFrame as="div" layout="fill">
     <DetailRouteState
       :allowed="isAllowedUser"
       :loading="sessionLoading || loading"
@@ -49,7 +49,7 @@
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     />
-  </div>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
@@ -59,6 +59,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import FacilityDetailPagePanel from '@/components/FacilityDetailPagePanel.vue';
 import FacilityStatusDialog from '@/components/FacilityStatusDialog.vue';
 import DetailRouteState from '@/components/ui/DetailRouteState.vue';
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { useAuthenticatedDetailState } from '@/composables/useAuthenticatedDetailState';
 import { useFacilityDetail } from '@/composables/useFacilityDetail';

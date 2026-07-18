@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page page-bottom-safe min-h-0 flex-1 py-2">
+  <RoutePageFrame bottom-safe layout="fill" padding="compact">
     <div class="min-h-0 flex-1">
       <div :key="notificationPanelKey">
         <SurfacePanel v-if="loading" variant="list" :aria-label="t('notification.notificationsLoading')">
@@ -102,10 +102,11 @@
         </SurfacePanel>
       </div>
     </div>
-  </section>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed, onMounted } from 'vue';
 import AuthorAvatar from '@/components/AuthorAvatar.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';

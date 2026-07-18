@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-0">
+  <RoutePageFrame as="div" layout="fill">
     <DetailRouteState
       :allowed="isAllowedUser"
       :loading="sessionLoading || routeIssueLoading"
@@ -36,7 +36,7 @@
       @cancel="closeDeleteDialog"
       @confirm="performRouteIssueDelete"
     />
-  </div>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
@@ -45,6 +45,7 @@ import { useRoute } from 'vue-router';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IssueDetailPagePanel from '@/components/IssueDetailPagePanel.vue';
 import DetailRouteState from '@/components/ui/DetailRouteState.vue';
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { useDeleteIssue } from '@/composables/useDeleteIssue';
 import { useAuthenticatedDetailState } from '@/composables/useAuthenticatedDetailState';
 import { useDetailRouteQuery } from '@/composables/useDetailRouteQuery';

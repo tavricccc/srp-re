@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page page-bottom-safe min-h-0 min-w-0 flex-1">
+  <RoutePageFrame bottom-safe layout="fill">
     <div v-if="loading" class="space-y-6 py-4">
       <!-- Account Skeleton -->
       <SurfacePanel variant="list" padding="md" class="flex items-center gap-3">
@@ -65,10 +65,11 @@
       <p class="text-sm text-ink-500 dark:text-ink-400 mb-4">{{ t('auth.signInToViewSettings') }}</p>
       <GoogleLoginButton :loading="loading" @login="login" />
     </div>
-  </section>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import GoogleLoginButton from '@/components/ui/GoogleLoginButton.vue';

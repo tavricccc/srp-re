@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page h-full min-h-0 pb-0 md:pb-5">
+  <section class="h-full min-h-0 pb-0 md:pb-5">
     <article
       v-if="isDesktopViewport"
       class="panel hidden min-h-[calc(100dvh-2.5rem)] flex-col overflow-visible md:flex"

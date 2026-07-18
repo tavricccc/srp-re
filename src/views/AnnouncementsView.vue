@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page space-y-5">
+  <RoutePageFrame class="space-y-5">
     <div class="flex items-center justify-end gap-3 md:justify-between">
       <h2 class="hidden shrink-0 text-2xl font-semibold tracking-[0.015em] text-ink-950 dark:text-ink-50 md:block">{{ t('announcement.announcement') }}</h2>
       <button
@@ -84,10 +84,11 @@
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     />
-  </section>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed } from 'vue';
 import AnnouncementComposerDialog from '@/components/AnnouncementComposerDialog.vue';
 import AnnouncementTable from '@/components/AnnouncementTable.vue';

@@ -1,5 +1,5 @@
 <template>
-  <div class="route-page h-full min-h-0 pb-0 md:pb-5" :aria-label="label || t('common.loading')" aria-busy="true">
+  <div class="h-full min-h-0 pb-0 md:pb-5" :aria-label="label || t('common.loading')" aria-busy="true">
     <!-- Desktop Viewport Skeleton -->
     <article
       v-if="isDesktopViewport"

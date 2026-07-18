@@ -1189,6 +1189,7 @@ test('entry and comment limits are enforced across UI, Edge, and a new migration
   const feedbackBar = await read('src/components/ActionFeedbackBar.vue');
   const responsiveStyles = await read('src/styles/responsive.css');
   const baseStyles = await read('src/styles/base.css');
+  const primitives = await read('src/styles/primitives.css');
 
   assert.match(frontendLimits, /title: 30/u);
   assert.match(frontendLimits, /content: 1_000/u);
@@ -1202,7 +1203,7 @@ test('entry and comment limits are enforced across UI, Edge, and a new migration
   assert.match(commentItem, /plain-text/u);
   assert.doesNotMatch(commentThread, /第一則留言會出現在這裡/u);
   assert.match(detailShell, /label: t\('comments\.countComments'/u);
-  assert.match(baseStyles, /padding-bottom: calc\(var\(--app-bottom-nav-height\) \+ 1rem\)/u);
+  assert.match(primitives, /padding-bottom: calc\(var\(--app-bottom-nav-height\) \+ 1rem\)/u);
   assert.match(responsiveStyles, /padding-left: max\(var\(--dialog-safe-padding, 1rem\), env\(safe-area-inset-left\)\)/u);
   assert.match(responsiveStyles, /padding-right: max\(var\(--dialog-safe-padding, 1rem\), env\(safe-area-inset-right\)\)/u);
   assert.match(composerShell, /entry-composer__scroll/u);
@@ -1278,8 +1279,8 @@ test('primary navigation keeps desktop chrome while mobile routes use a source-a
   assert.match(hierarchy, /state\?\.navigationOrigin !== 'notifications'[\s\S]*router\.back\(\)/u);
   assert.match(notificationNavigation, /state: NOTIFICATION_NAVIGATION_STATE/u);
   assert.match(detailShell, /v-if="isDesktopViewport"[\s\S]*class="panel hidden/u);
-  assert.match(detailShell, /<section class="route-page h-full min-h-0[\s\S]*v-else[\s\S]*class="flex h-full min-h-0/u);
-  assert.match(detailSkeleton, /<div class="route-page h-full min-h-0[\s\S]*v-else[\s\S]*class="flex h-full min-h-0/u);
+  assert.match(detailShell, /<section class="h-full min-h-0[\s\S]*v-else[\s\S]*class="flex h-full min-h-0/u);
+  assert.match(detailSkeleton, /<div class="h-full min-h-0[\s\S]*v-else[\s\S]*class="flex h-full min-h-0/u);
   assert.doesNotMatch(detailShell, /100dvh-var\(--app-header-height\)/u);
   assert.doesNotMatch(detailSkeleton, /100dvh-var\(--app-header-height\)/u);
   assert.match(detailShell, /v-else[\s\S]{0,240}pb-\[5px\]/u);
@@ -1484,11 +1485,11 @@ test('navigation and contextual creation share the same responsive information a
 });
 
 test('authenticated route pages share one content width and AppShell owns horizontal gutters', async () => {
-  const baseStyles = await read('src/styles/base.css');
   const primitives = await read('src/styles/primitives.css');
   const contentStyles = await read('src/styles/content.css');
   const appShell = await read('src/components/AppShell.vue');
   const viewportFrame = await read('src/components/ui/ViewportFrame.vue');
+  const routePageFrame = await read('src/components/ui/RoutePageFrame.vue');
   const mobileHeader = await read('src/components/app-shell/AppMobileHeader.vue');
   const mobileNav = await read('src/components/app-shell/AppMobileBottomNav.vue');
   const feedbackBar = await read('src/components/ActionFeedbackBar.vue');
@@ -1504,25 +1505,32 @@ test('authenticated route pages share one content width and AppShell owns horizo
     'src/views/SettingsView.vue',
     'src/views/DashboardView.vue',
     'src/views/AccessManagementView.vue',
-    'src/components/ui/DetailPageShell.vue',
+    'src/views/IssueDetailView.vue',
+    'src/views/FacilityDetailView.vue',
+    'src/views/AnnouncementDetailView.vue',
   ].map(read));
 
+  const baseStyles = await read('src/styles/base.css');
   assert.match(baseStyles, /--app-content-max-width: 80rem;/u);
   assert.match(baseStyles, /--app-viewport-gutter: 1\.5rem;/u);
   assert.match(primitives, /\.viewport-frame \{[\s\S]*margin-left: max\(var\(--app-viewport-gutter\), env\(safe-area-inset-left\)\);[\s\S]*margin-right: max\(var\(--app-viewport-gutter\), env\(safe-area-inset-right\)\);[\s\S]*width: calc\(/u);
   assert.doesNotMatch(primitives, /\.viewport-frame \{[\s\S]{0,280}padding-(?:left|right):/u);
   assert.match(primitives, /\.viewport-floating-inline \{[\s\S]*left: max\(var\(--app-viewport-gutter\), env\(safe-area-inset-left\)\);[\s\S]*right: max\(var\(--app-viewport-gutter\), env\(safe-area-inset-right\)\);/u);
-  assert.match(baseStyles, /\.route-page \{[\s\S]*max-width: var\(--app-content-max-width\);[\s\S]*min-width: 0;[\s\S]*width: 100%;/u);
+  assert.match(primitives, /\.route-page-frame \{[\s\S]*max-width: var\(--app-content-max-width\);[\s\S]*min-width: 0;[\s\S]*width: 100%;/u);
+  assert.match(primitives, /\.route-page-frame--fill \{[\s\S]*flex: 1 1 0%;[\s\S]*height: 100%;[\s\S]*min-height: 0;/u);
+  assert.match(primitives, /\.route-page-frame--bottom-safe \{[\s\S]*padding-bottom: 1rem/u);
   assert.doesNotMatch(baseStyles, /\.app-viewport-frame/u);
   assert.match(viewportFrame, /class="viewport-frame"[\s\S]*'viewport-content': content/u);
+  assert.match(routePageFrame, /class="route-page-frame"[\s\S]*route-page-frame--\$\{layout\}[\s\S]*route-page-frame--padding-\$\{padding\}/u);
   assert.match(appShell, /<ViewportFrame as="main" class="flex min-h-0 flex-1 flex-col">/u);
   assert.match(mobileHeader, /<ViewportFrame/u);
   assert.doesNotMatch(mobileHeader, /mx-auto|max-w-/u);
   assert.match(mobileNav, /viewport-floating-inline/u);
   assert.doesNotMatch(mobileNav, /\bleft-4\b|\bright-4\b/u);
-  routePages.forEach((page) => assert.match(page, /class="[^"]*route-page/u));
-  routePages.forEach((page) => assert.doesNotMatch(page, /route-page-surface-inset/u));
-  routePages.forEach((page) => assert.doesNotMatch(page, /route-page[^"\n]*(?:px-|pl-|pr-|mx-|ml-|mr-|left-|right-|max-w-)/u));
+  routePages.forEach((page) => assert.match(page, /<RoutePageFrame/u));
+  routePages.forEach((page) => assert.doesNotMatch(page, /\broute-page\b|page-bottom-safe/u));
+  routePages.forEach((page) => assert.doesNotMatch(page, /app-viewport-gutter|safe-area-inset-(?:left|right)/u));
+  routePages.slice(7).forEach((page) => assert.match(page, /<RoutePageFrame as="div" layout="fill">/u));
   assert.doesNotMatch(issueBoard, /app-viewport-gutter/u);
   assert.match(appShell, /app-main-content[^"\n]*overflow-y-auto overflow-x-hidden/u);
   assert.doesNotMatch(contentStyles, /\.issue-card-grid \{[^}]*padding:/u);
@@ -1531,7 +1539,7 @@ test('authenticated route pages share one content width and AppShell owns horizo
   [issueBoard, routePages[1]]
     .forEach((page) => assert.match(page, /scroll-shadow-bleed[\s\S]*overflow-y-auto overflow-x-hidden/u));
   assert.match(emptyState, /class="flex w-full min-w-0/u);
-  assert.match(pageLoadFailure, /class="route-page panel panel-pad flex w-full min-w-0/u);
+  assert.match(pageLoadFailure, /class="panel panel-pad flex w-full min-w-0/u);
   assert.match(feedbackBar, /action-feedback-card[\s\S]*min-h-14 w-full/u);
   assert.match(contentStyles, /\.settings-scroll--flat \{[\s\S]*@apply overflow-visible px-0 py-3/u);
   assert.match(settingsPanel, /flat \? 'settings-panel--flat overflow-visible' : 'overflow-hidden'/u);

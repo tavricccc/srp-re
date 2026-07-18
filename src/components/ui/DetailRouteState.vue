@@ -1,28 +1,30 @@
 <template>
-  <PageLoadFailure
-    v-if="problem"
-    :title="t(problemTitle)"
-    :description="t(problemDescription)"
-    :retry-disabled="problemRetryDisabled"
-    @retry="emit('retryProblem')"
-  />
+  <div class="flex h-full min-h-0 flex-1 flex-col">
+    <PageLoadFailure
+      v-if="problem"
+      :title="t(problemTitle)"
+      :description="t(problemDescription)"
+      :retry-disabled="problemRetryDisabled"
+      @retry="emit('retryProblem')"
+    />
 
-  <SkeletonDetail
-    v-else-if="loading"
-    :label="loadingLabel"
-    :show-comments="showComments"
-  />
+    <SkeletonDetail
+      v-else-if="loading"
+      :label="loadingLabel"
+      :show-comments="showComments"
+    />
 
-  <div v-else-if="!allowed" class="sr-only" role="status">{{ t('auth.redirectingToSignIn') }}</div>
+    <div v-else-if="!allowed" class="sr-only" role="status">{{ t('auth.redirectingToSignIn') }}</div>
 
-  <PageLoadFailure
-    v-else-if="error"
-    :title="t(errorTitle)"
-    :description="t(error)"
-    @retry="emit('retryError')"
-  />
+    <PageLoadFailure
+      v-else-if="error"
+      :title="t(errorTitle)"
+      :description="t(error)"
+      @retry="emit('retryError')"
+    />
 
-  <slot v-else />
+    <slot v-else />
+  </div>
 </template>
 
 <script setup lang="ts">

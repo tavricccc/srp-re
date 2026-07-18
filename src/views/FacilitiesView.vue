@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page relative flex h-full min-h-0 flex-col gap-5">
+  <RoutePageFrame layout="fill" class="relative gap-5">
     <BoardControls
       v-model:status-tab="bucket"
       v-model:search-query="query"
@@ -76,10 +76,11 @@
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     />
-  </section>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import BoardControls from '@/components/BoardControls.vue';

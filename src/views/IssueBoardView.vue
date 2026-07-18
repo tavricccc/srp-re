@@ -1,5 +1,5 @@
 <template>
-  <div class="route-page flex h-full min-h-0 flex-col">
+  <RoutePageFrame as="div" layout="fill">
     <PageLoadFailure
       v-if="sessionLoadingHasProblem"
       :title="sessionProblemTitle"
@@ -35,10 +35,11 @@
       :is-form-open="isFormOpen"
       @toggle-form="toggleForm"
     />
-  </div>
+  </RoutePageFrame>
 </template>
 
 <script setup lang="ts">
+import RoutePageFrame from '@/components/ui/RoutePageFrame.vue';
 import { computed, ref } from 'vue';
 import { useI18n } from '@/i18n';
 import IssueBoard from '@/components/IssueBoard.vue';

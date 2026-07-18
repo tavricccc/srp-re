@@ -26,6 +26,50 @@
     right: max(var(--app-viewport-gutter), env(safe-area-inset-right));
   }
 
+  .route-page-frame {
+    box-sizing: border-box;
+    margin-inline: auto;
+    max-width: var(--app-content-max-width);
+    min-width: 0;
+    width: 100%;
+  }
+
+  .route-page-frame--fill {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .route-page-frame--padding-compact {
+    padding-block: 0.5rem;
+  }
+
+  .route-page-frame--padding-responsive {
+    padding-block: 0.5rem;
+  }
+
+  .route-page-frame--bottom-safe {
+    padding-bottom: 1rem;
+  }
+
+  @media (max-width: 767px) {
+    .route-page-frame--bottom-safe {
+      padding-bottom: calc(var(--app-bottom-nav-height) + 1rem);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .route-page-frame--padding-responsive {
+      padding-block: 1.5rem;
+    }
+
+    .route-page-frame--bottom-safe {
+      padding-bottom: 0;
+    }
+  }
+
   /*
    * Surface primitives
    * control < card < floating is the only elevation hierarchy.
