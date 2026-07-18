@@ -5,7 +5,7 @@
     :style="containerStyle"
   >
     <div
-      class="pointer-events-none absolute top-0 left-0 rounded-full border-0 bg-surface shadow-control dark:bg-ink-800"
+      class="segmented-control__indicator pointer-events-none absolute top-0 left-0 rounded-full border-0 bg-surface shadow-control dark:bg-ink-800"
       :style="indicatorStyle"
     ></div>
 
@@ -26,10 +26,7 @@
     >
       <AppIcon :name="item.icon" :size="3.5" />
       <span
-        class="inline-block overflow-hidden whitespace-nowrap transition-[opacity,transform,max-width,margin] duration-300 ease-[var(--motion-ease-enter)]"
-        :class="modelValue === item.value
-          ? 'ml-1.5 max-w-28 translate-x-0 opacity-100'
-          : 'ml-0 max-w-0 -translate-x-1 opacity-0'"
+        class="ml-1.5 inline-block min-w-0 truncate whitespace-nowrap"
       >
         {{ item.label }}
       </span>
@@ -63,18 +60,15 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const buttonRefs = ref<HTMLButtonElement[]>([]);
 let resizeObserver: ResizeObserver | null = null;
 
-const ACTIVE_SEGMENT_WIDTH_REM = 7;
-const COMPACT_SEGMENT_WIDTH_REM = 2;
+const SEGMENT_WIDTH_REM = 5.25;
 const SEGMENT_GAP_REM = 0.125;
 const CONTROL_INLINE_PADDING_REM = 0.25;
 
 const activeClass = 'text-ink-950 dark:text-ink-50';
 const inactiveClass = 'text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200';
 const containerStyle = computed(() => {
-  const compactSegmentCount = Math.max(0, props.options.length - 1);
   const gapCount = Math.max(0, props.options.length - 1);
-  const width = ACTIVE_SEGMENT_WIDTH_REM
-    + compactSegmentCount * COMPACT_SEGMENT_WIDTH_REM
+  const width = props.options.length * SEGMENT_WIDTH_REM
     + gapCount * SEGMENT_GAP_REM
     + CONTROL_INLINE_PADDING_REM;
 
@@ -84,7 +78,6 @@ const containerStyle = computed(() => {
 const indicatorStyle = ref({
   height: '0px',
   transform: 'translate3d(0px, 0px, 0)',
-  transition: 'transform var(--motion-duration-panel) var(--motion-ease-enter), width var(--motion-duration) var(--motion-ease-enter)',
   width: '0px',
 });
 
@@ -96,7 +89,6 @@ function measureIndicator() {
   indicatorStyle.value = {
     height: `${activeButton.offsetHeight}px`,
     transform: `translate3d(${activeButton.offsetLeft}px, ${activeButton.offsetTop}px, 0)`,
-    transition: 'transform var(--motion-duration-panel) var(--motion-ease-enter), width var(--motion-duration) var(--motion-ease-enter)',
     width: `${activeButton.offsetWidth}px`,
   };
 }

@@ -385,6 +385,7 @@
       var(--shadow-floating),
       inset 0 1px 0 rgb(255 255 255 / 0.72);
     padding: 0.5rem;
+    transform-origin: var(--dropdown-transform-origin, top right);
   }
 
   .dropdown-item {
@@ -468,15 +469,23 @@
 
   .skeleton-block {
     background-color: rgb(var(--color-outline) / 0.18);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .skeleton-block::after {
+    animation: skeleton-shimmer 1.4s linear infinite;
     background-image: linear-gradient(
       90deg,
       transparent 24%,
       rgb(255 255 255 / 0.42) 50%,
       transparent 76%
     );
-    background-position: 200% 0;
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.4s linear infinite;
+    content: '';
+    inset: 0;
+    position: absolute;
+    transform: translate3d(100%, 0, 0);
+    will-change: transform;
   }
 
   .skeleton-card {
@@ -493,7 +502,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .skeleton-block {
+  .skeleton-block::after {
     background-image: linear-gradient(
       90deg,
       transparent 24%,
@@ -505,7 +514,7 @@
 
 @keyframes skeleton-shimmer {
   to {
-    background-position: -200% 0;
+    transform: translate3d(-100%, 0, 0);
   }
 }
 
@@ -513,5 +522,16 @@
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block::after {
+    animation: none;
+    transform: none;
+  }
+
+  .skeleton-card {
+    animation: none;
   }
 }

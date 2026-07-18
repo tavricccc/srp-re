@@ -180,7 +180,7 @@ const { statusClass } = useStatusStyling(derivedStatus, 'dialog');
 
 const supportProgressStyle = computed(() => {
   const progress = getSupportProgressPercent(props.supportCount, props.issue.support_goal);
-  return { width: `${progress}%` };
+  return { transform: `scaleX(${progress / 100})` };
 });
 
 const showAuthor = computed(() => props.issue.canViewAuthor);
