@@ -311,7 +311,13 @@
   }
 
   .app-header__title {
+    height: 1.875rem;
     min-width: 0;
+  }
+
+  .app-header__back {
+    height: 1.875rem;
+    width: 1.875rem;
   }
 
   .app-main-content {
@@ -418,7 +424,7 @@
 
   @media (max-width: 767px) {
     :root {
-      --app-header-height: 3.5rem;
+      --app-header-height: 3rem;
     }
 
     .app-header {
@@ -430,14 +436,13 @@
       padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 0.25rem);
     }
 
+    .app-root[data-bottom-nav='true'] .route-content-frame {
+      padding-bottom: var(--app-bottom-nav-height);
+    }
+
     .page-bottom-safe {
       padding-bottom: calc(var(--app-bottom-nav-height) + 1rem);
     }
-  }
-
-  .app-root[data-bottom-nav='true'] .app-main-content {
-    padding-bottom: calc(var(--app-bottom-nav-height) + 1rem);
-    scroll-padding-bottom: calc(var(--app-bottom-nav-height) + 1rem);
   }
 
   body.dialog-open .app-main-content {

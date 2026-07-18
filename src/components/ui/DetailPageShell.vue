@@ -1,5 +1,5 @@
 <template>
-  <section class="route-page min-h-0 pb-0 md:pb-5">
+  <section class="route-page h-full min-h-0 pb-0 md:pb-5">
     <article
       v-if="isDesktopViewport"
       class="panel hidden min-h-[calc(100dvh-2.5rem)] flex-col overflow-visible md:flex"
@@ -45,7 +45,7 @@
 
     <article
       v-else
-      class="flex h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-0.5rem)] min-h-0 flex-col overflow-hidden pb-[5px] md:hidden"
+      class="flex h-full min-h-0 flex-col overflow-hidden pb-[5px] md:hidden"
       :aria-label="t(detailsLabel)"
     >
       <header class="flex shrink-0 items-start gap-3 px-0 py-3">

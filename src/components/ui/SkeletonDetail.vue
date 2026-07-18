@@ -1,5 +1,5 @@
 <template>
-  <div class="route-page pb-0 md:pb-5" :aria-label="label || t('common.loading')" aria-busy="true">
+  <div class="route-page h-full min-h-0 pb-0 md:pb-5" :aria-label="label || t('common.loading')" aria-busy="true">
     <!-- Desktop Viewport Skeleton -->
     <article
       v-if="isDesktopViewport"
@@ -71,7 +71,7 @@
     <!-- Mobile Viewport Skeleton -->
     <article
       v-else
-      class="flex h-[calc(100dvh-var(--app-header-height)-env(safe-area-inset-top)-0.5rem)] min-h-0 flex-col overflow-hidden pb-[5px]"
+      class="flex h-full min-h-0 flex-col overflow-hidden pb-[5px]"
     >
       <header class="flex shrink-0 items-start gap-3 px-0 py-3">
         <!-- Tags -->
