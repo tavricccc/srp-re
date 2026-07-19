@@ -42,9 +42,6 @@ const messages = {
   'categoryAdmin.supportGoal': '附議門檻',
   'categoryAdmin.supportDeadline': '附議期限（天）',
   'categoryAdmin.responseDeadline': '回覆期限（天，可留空）',
-  'categoryAdmin.settingsEyebrow': '平台設定',
-  'categoryAdmin.managementTitle': '分類與流程管理',
-  'categoryAdmin.managementDescription': '直接在後台新增、封存與調整分類。管理員指派則在權限管理中依分類設定。',
   'categoryAdmin.policyNoticeTitle': '隱私規則會隨分類建立永久固定',
   'categoryAdmin.policyNoticeDescription': '閱讀範圍與作者顯示規則建立後不可修改。留言、附議與期限可調整，但只影響日後的新提案。',
   'categoryAdmin.loadFailed': '無法載入分類設定',
@@ -54,8 +51,6 @@ const messages = {
   'categoryAdmin.archived': '已封存',
   'categoryAdmin.defaultCategory': '預設分類',
   'categoryAdmin.makeDefault': '設為預設',
-  'categoryAdmin.openManagement': '分類與流程管理',
-  'categoryAdmin.openManagementHelp': '新增分類、調整新案件規則與封存分類。',
 } as const;
 
 export default messages;

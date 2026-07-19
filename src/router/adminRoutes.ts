@@ -1,5 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { loadAccessManagementView, loadCategoryManagementView, loadDashboardView, loadSetupView } from '@/router/route-components';
+import { loadAdministrationView, loadDashboardView, loadSetupView } from '@/router/route-components';
 
 export const adminRoutes: RouteRecordRaw[] = [
   {
@@ -13,11 +13,17 @@ export const adminRoutes: RouteRecordRaw[] = [
     meta: { navigationDepth: 1, requiresAuth: true, requiredPermission: 'dashboard.view' },
   },
   {
-    path: '/admin/access', name: 'access-management', component: loadAccessManagementView,
+    path: '/admin/management', name: 'administration', component: loadAdministrationView,
     meta: { navigationDepth: 1, requiresAuth: true, requiredPermission: 'role.manage' },
   },
   {
-    path: '/admin/categories', name: 'category-management', component: loadCategoryManagementView,
-    meta: { navigationDepth: 1, requiresAuth: true, requiredPermission: 'category.manage' },
+    path: '/admin/access', name: 'access-management',
+    redirect: (to) => ({ name: 'administration', query: { ...to.query, tab: 'members' } }),
+    meta: { requiresAuth: true, requiredPermission: 'role.manage' },
+  },
+  {
+    path: '/admin/categories', name: 'category-management',
+    redirect: (to) => ({ name: 'administration', query: { ...to.query, tab: 'categories' } }),
+    meta: { requiresAuth: true, requiredPermission: 'category.manage' },
   },
 ];

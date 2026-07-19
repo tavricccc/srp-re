@@ -128,21 +128,12 @@
           @click="emit('close')"
         />
         <IconListRow
-          v-if="canManageRoles"
+          v-if="canManageRoles || canManageCategories"
           :as="RouterLink"
-          to="/admin/access"
+          to="/admin/management"
           icon="shield-check"
-          :label="t('access.roleManagement')"
-          :description="t('access.manageMemberRolesAndPermissions')"
-          @click="emit('close')"
-        />
-        <IconListRow
-          v-if="canManageCategories"
-          :as="RouterLink"
-          to="/admin/categories"
-          icon="settings"
-          :label="t('categoryAdmin.openManagement')"
-          :description="t('categoryAdmin.openManagementHelp')"
+          :label="t('adminCenter.openManagement')"
+          :description="t('adminCenter.openManagementHelp')"
           @click="emit('close')"
         />
         <IconListRow

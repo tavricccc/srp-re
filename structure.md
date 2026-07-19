@@ -68,8 +68,10 @@
 - `views/NotificationsView.vue` — 通知頁
 - `views/SettingsView.vue` — 設定頁（手機）
 - `views/DashboardView.vue` — 管理員統計
-- `views/AccessManagementView.vue` — `role.manage` 角色指派、動態提案／設備分類權限、平台最高權限與最後一位平台管理員保護
-- `views/SetupView.vue` / `views/CategoryManagementView.vue` — ADMIN_EMAILS 首次分類設定與後續程式內分類／流程管理
+- `views/AdministrationView.vue` — 單一平台管理中心，整合分類／流程與人員／權限兩個操作階段；舊 `/admin/access`、`/admin/categories` 會導向對應區段
+- `components/admin/CategoryWorkflowPanel.vue` / `MemberAccessPanel.vue` — 動態分類規則編輯、成員查找與分類式責任指派
+- `components/categories/CategoryManagementSection.vue` / `CategoryEditorCard.vue` — 一次選取並編輯一個分類的清單與規則表單
+- `views/SetupView.vue` — ADMIN_EMAILS 首次分類設定
 
 ---
 

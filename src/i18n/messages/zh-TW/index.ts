@@ -1,4 +1,5 @@
 import access from './access';
+import adminCenter from './adminCenter';
 import account from './account';
 import announcement from './announcement';
 import apiError from './apiError';
@@ -24,6 +25,7 @@ import upload from './upload';
 
 const messages = {
   ...access,
+  ...adminCenter,
   ...account,
   ...announcement,
   ...apiError,

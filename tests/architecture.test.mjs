@@ -731,7 +731,7 @@ test('facilities and author-fixed support use independent atomic storage', async
 });
 
 test('proposal and facility manager access is runtime-configured and category-scoped', async () => {
-  const accessView = await read('src/views/AccessManagementView.vue');
+  const accessView = await read('src/components/admin/MemberAccessPanel.vue');
   const categoryAction = await read('supabase/functions/backendAction/categories.ts');
   const auth = await read('supabase/functions/backendAction/auth.ts');
   const users = await read('supabase/functions/backendAction/users.ts');
@@ -1496,8 +1496,8 @@ test('navigation and contextual creation share the same responsive information a
   assert.match(controls, /\.button-contextual \{[\s\S]*bg-surface[\s\S]*box-shadow: var\(--shadow-card\)/u);
   assert.doesNotMatch(controls, /\.button-dialog-close\b/u);
   assert.ok(settingsPanel.indexOf('issue.myProposal') < settingsPanel.indexOf('dashboard.statistics'));
-  assert.ok(settingsPanel.indexOf('dashboard.statistics') < settingsPanel.indexOf('access.roleManagement'));
-  assert.ok(settingsPanel.indexOf('access.roleManagement') < settingsPanel.indexOf('settings.restartApp'));
+  assert.ok(settingsPanel.indexOf('dashboard.statistics') < settingsPanel.indexOf('adminCenter.openManagement'));
+  assert.ok(settingsPanel.indexOf('adminCenter.openManagement') < settingsPanel.indexOf('settings.restartApp'));
   assert.ok(settingsPanel.indexOf('settings.restartApp') < settingsPanel.indexOf('settings.moreResources'));
   await assert.rejects(read('src/components/CreateActionMenu.vue'));
   await assert.rejects(read('src/composables/useCreateEntryActions.ts'));
@@ -1523,7 +1523,7 @@ test('authenticated route pages share one content width and AppShell owns horizo
     'src/views/NotificationsView.vue',
     'src/views/SettingsView.vue',
     'src/views/DashboardView.vue',
-    'src/views/AccessManagementView.vue',
+    'src/views/AdministrationView.vue',
     'src/views/IssueDetailView.vue',
     'src/views/FacilityDetailView.vue',
     'src/views/AnnouncementDetailView.vue',

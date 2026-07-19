@@ -42,9 +42,6 @@ const messages = {
   'categoryAdmin.supportGoal': 'Support goal',
   'categoryAdmin.supportDeadline': 'Support deadline (days)',
   'categoryAdmin.responseDeadline': 'Response deadline (days, optional)',
-  'categoryAdmin.settingsEyebrow': 'Platform settings',
-  'categoryAdmin.managementTitle': 'Category and workflow management',
-  'categoryAdmin.managementDescription': 'Add, archive, and update categories directly in the app. Assign managers by category in access management.',
   'categoryAdmin.policyNoticeTitle': 'Privacy rules are permanently fixed when a category is created',
   'categoryAdmin.policyNoticeDescription': 'Read access and author visibility cannot be changed later. Comments, support, and deadlines can change, but only for future proposals.',
   'categoryAdmin.loadFailed': 'Unable to load category settings',
@@ -54,8 +51,6 @@ const messages = {
   'categoryAdmin.archived': 'Archived',
   'categoryAdmin.defaultCategory': 'Default category',
   'categoryAdmin.makeDefault': 'Make default',
-  'categoryAdmin.openManagement': 'Category and workflow management',
-  'categoryAdmin.openManagementHelp': 'Add categories, update rules for new records, and archive categories.',
 } as const;
 
 export default messages;

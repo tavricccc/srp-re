@@ -103,7 +103,7 @@ const isIssueRouteActive = computed(() => route.name === 'issues' || route.name 
 const isAnnouncementRouteActive = computed(() => route.name === 'announcements' || route.name === 'announcement-detail');
 const isFacilityRouteActive = computed(() => route.name === 'facilities' || route.name === 'facility-detail');
 const isMyProposalsRouteActive = computed(() => isIssueRouteActive.value && activeFilter.value === 'my-proposals');
-const isProfileRouteActive = computed(() => isMyProposalsRouteActive.value || ['settings', 'dashboard', 'access-management'].includes(route.name as string));
+const isProfileRouteActive = computed(() => isMyProposalsRouteActive.value || ['settings', 'dashboard', 'administration'].includes(route.name as string));
 const homeRoute = computed(() => ({ name: 'issues', params: { filter: getDefaultIssueRouteFilter() } } as const));
 const primaryRouteNavItems = computed(() => [
   {
@@ -157,7 +157,7 @@ const mobileHeaderTitle = computed(() => {
   if (route.name === 'facility-detail') return t('facility.facility');
   if (route.name === 'announcement-detail') return t('announcement.announcementContent');
   if (route.name === 'dashboard') return t('dashboard.statistics');
-  if (route.name === 'access-management') return t('access.roleManagement');
+  if (route.name === 'administration') return t('adminCenter.title');
   if (route.name === 'notifications') return t('navigation.notify');
   if (route.name === 'settings') return t('settings.mine');
   if (isAnnouncementRouteActive.value) return t('announcement.announcement');
@@ -165,10 +165,10 @@ const mobileHeaderTitle = computed(() => {
   if (isMyProposalsRouteActive.value) return t('issue.myProposal');
   return t('issue.proposal');
 });
-const showMobileBackButton = computed(() => ['issue-detail', 'facility-detail', 'announcement-detail', 'dashboard', 'access-management'].includes(route.name as string) || isMyProposalsRouteActive.value);
+const showMobileBackButton = computed(() => ['issue-detail', 'facility-detail', 'announcement-detail', 'dashboard', 'administration'].includes(route.name as string) || isMyProposalsRouteActive.value);
 const mobileBackLabel = computed(() => {
   if (route.name === 'dashboard') return t('navigation.returnMy');
-  if (route.name === 'access-management') return t('navigation.returnMy');
+  if (route.name === 'administration') return t('navigation.returnMy');
   if (route.name === 'issue-detail' && isMyProposalsRouteActive.value) return t('issue.returnToMyProposal');
   if (isMyProposalsRouteActive.value) return t('navigation.returnMy');
   if (route.name === 'announcement-detail') return t('announcement.returnToAnnouncementList');
@@ -226,7 +226,7 @@ async function handleMobileBack() {
     delete query.comment;
     return void await router.replace({ name: 'issues', params: { filter: activeFilter.value }, query });
   }
-  if (isMyProposalsRouteActive.value || route.name === 'dashboard' || route.name === 'access-management') await router.replace({ name: 'settings' });
+  if (isMyProposalsRouteActive.value || route.name === 'dashboard' || route.name === 'administration') await router.replace({ name: 'settings' });
 }
 
 watch(() => route.fullPath, (newPath, oldPath) => {

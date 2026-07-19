@@ -5,14 +5,13 @@ export const loadIssueBoardView = () => import('@/views/IssueBoardView.vue');
 export const loadIssueDetailView = () => import('@/views/IssueDetailView.vue');
 export const loadFacilitiesView = () => import('@/views/FacilitiesView.vue');
 export const loadFacilityDetailView = () => import('@/views/FacilityDetailView.vue');
-export const loadAccessManagementView = () => import('@/views/AccessManagementView.vue');
+export const loadAdministrationView = () => import('@/views/AdministrationView.vue');
 export const loadAnnouncementsView = () => import('@/views/AnnouncementsView.vue');
 export const loadAnnouncementDetailView = () => import('@/views/AnnouncementDetailView.vue');
 export const loadNotificationsView = () => import('@/views/NotificationsView.vue');
 export const loadSettingsView = () => import('@/views/SettingsView.vue');
 export const loadDashboardView = () => import('@/views/DashboardView.vue');
 export const loadSetupView = () => import('@/views/SetupView.vue');
-export const loadCategoryManagementView = () => import('@/views/CategoryManagementView.vue');
 
 const loaders = new Map<string, RouteComponentLoader>([
   ['login', loadLoginView],
@@ -20,14 +19,13 @@ const loaders = new Map<string, RouteComponentLoader>([
   ['issue-detail', loadIssueDetailView],
   ['facilities', loadFacilitiesView],
   ['facility-detail', loadFacilityDetailView],
-  ['access-management', loadAccessManagementView],
+  ['administration', loadAdministrationView],
   ['announcements', loadAnnouncementsView],
   ['announcement-detail', loadAnnouncementDetailView],
   ['notifications', loadNotificationsView],
   ['settings', loadSettingsView],
   ['dashboard', loadDashboardView],
   ['setup', loadSetupView],
-  ['category-management', loadCategoryManagementView],
 ]);
 const preloadRequests = new Map<string, Promise<unknown>>();
 
@@ -46,8 +44,9 @@ export function preloadRoutePath(pathname: string) {
   if (pathname === '/notifications') return preloadRouteComponent('notifications');
   if (pathname === '/settings') return preloadRouteComponent('settings');
   if (pathname === '/dashboard') return preloadRouteComponent('dashboard');
-  if (pathname === '/admin/access') return preloadRouteComponent('access-management');
-  if (pathname === '/admin/categories') return preloadRouteComponent('category-management');
+  if (pathname === '/admin/management' || pathname === '/admin/access' || pathname === '/admin/categories') {
+    return preloadRouteComponent('administration');
+  }
   if (pathname === '/setup') return preloadRouteComponent('setup');
   if (pathname.startsWith('/facilities/')) return preloadRouteComponent('facility-detail');
   if (pathname === '/facilities') return preloadRouteComponent('facilities');
