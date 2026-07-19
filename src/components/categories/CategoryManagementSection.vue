@@ -69,12 +69,22 @@
         <InlineMessage v-if="errors[selectedIndex]">{{ errors[selectedIndex] }}</InlineMessage>
       </div>
     </div>
+
+    <!-- Step-by-step creation wizard -->
+    <CategoryWizardDialog
+      :open="isWizardOpen"
+      :kind="kind"
+      :sort-order="model.length"
+      @close="isWizardOpen = false"
+      @created="handleCategoryCreated"
+    />
   </section>
 </template>
 
 <script setup lang="ts" generic="T extends IssueCategoryConfig | FacilityCategoryConfig">
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import CategoryEditorCard from '@/components/categories/CategoryEditorCard.vue';
+import CategoryWizardDialog from '@/components/admin/CategoryWizardDialog.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
 import BusyButtonContent from '@/components/ui/atoms/BusyButtonContent.vue';
 import InlineMessage from '@/components/ui/atoms/InlineMessage.vue';
@@ -100,14 +110,20 @@ const selectedIndex = ref(0);
 const savingIndex = ref<number | null>(null);
 const errors = ref<Record<number, string>>({});
 const selectedCategory = computed(() => model.value[selectedIndex.value] ?? null);
+const isWizardOpen = ref(false);
 
 watch(() => model.value.length, (length) => {
   if (selectedIndex.value >= length) selectedIndex.value = Math.max(0, length - 1);
 });
 
 function addCategory() {
-  emit('add');
-  void nextTick(() => { selectedIndex.value = Math.max(0, model.value.length - 1); });
+  isWizardOpen.value = true;
+}
+
+function handleCategoryCreated(newCategory: any) {
+  model.value.push(newCategory as T);
+  originalIds.add(newCategory.id);
+  selectedIndex.value = model.value.length - 1;
 }
 
 function makeDefault(index: number) {

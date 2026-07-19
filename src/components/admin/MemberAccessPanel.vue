@@ -59,61 +59,150 @@
         </div>
       </div>
 
-      <div class="space-y-5">
-        <div>
-          <p class="field-label mb-2">{{ t('adminCenter.fullPlatformAccess') }}</p>
-          <SelectionOptionButton
-            label="access.platformAdministrator"
-            description="adminCenter.platformAdminWarning"
-            :selected="isPlatformAdmin"
-            :disabled="Boolean(savingUid)"
-            @select="togglePlatformAdmin"
-          />
-        </div>
+      <!-- Access Mode Select Buttons -->
+      <div class="grid gap-3 sm:grid-cols-2">
+        <SelectionOptionButton
+          label="adminCenter.platformAdminTitle"
+          :description="t('adminCenter.platformAdminDesc')"
+          :selected="isPlatformAdmin"
+          :disabled="Boolean(savingUid)"
+          @select="selectPlatformAdmin"
+        />
+        <SelectionOptionButton
+          label="adminCenter.scopedManagerTitle"
+          :description="t('adminCenter.scopedManagerDesc')"
+          :selected="!isPlatformAdmin"
+          :disabled="Boolean(savingUid)"
+          @select="selectScopedManager"
+        />
+      </div>
 
-        <div>
-          <p class="field-label mb-1">{{ t('adminCenter.proposalResponsibility') }}</p>
-          <p class="mb-2 text-xs leading-5 text-ink-500">{{ t('adminCenter.proposalResponsibilityHelp') }}</p>
-          <div class="grid gap-2 md:grid-cols-2">
+      <!-- Scoped responsibilities configuration (Accordions) -->
+      <div v-if="!isPlatformAdmin" class="space-y-3">
+        <!-- Proposal manager accordion -->
+        <SurfacePanel variant="control" padding="sm" class="overflow-hidden">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between p-2 text-left font-bold text-sm text-ink-950 dark:text-ink-50"
+            @click="toggleSection('issue')"
+          >
+            <span class="flex items-center gap-2">
+              <AppIcon name="comment" :size="4" class="text-primary-600 dark:text-primary-400" />
+              <span>{{ t('adminCenter.proposalResponsibility') }}</span>
+              <span class="text-xs font-normal text-ink-500">
+                ({{ t('adminCenter.categoryListCount', { count: user.managedIssueCategoryIds.length }) }})
+              </span>
+            </span>
+            <AppIcon
+              name="chevron-down"
+              :size="4"
+              class="transform transition-transform duration-200"
+              :class="expandedSection === 'issue' ? 'rotate-180' : ''"
+            />
+          </button>
+          
+          <div
+            v-show="expandedSection === 'issue'"
+            class="border-t border-ink-100 mt-2 pt-3 px-2 pb-2 space-y-2 dark:border-ink-800 animate-fade-in"
+          >
+            <p class="text-xs leading-5 text-ink-500 pb-1">{{ t('adminCenter.proposalResponsibilityHelp') }}</p>
+            <div v-if="activeIssueCategories.length === 0" class="text-xs text-ink-400 py-2">
+              {{ t('categoryAdmin.noCategoriesAvailable') }}
+            </div>
+            <div v-else class="grid gap-2 sm:grid-cols-2">
+              <SelectionOptionButton
+                v-for="category in activeIssueCategories"
+                :key="category.id"
+                :label="category.label"
+                :description="t('access.reviewAndManageProposalsInCategory', { category: category.label })"
+                :selected="user.managedIssueCategoryIds.includes(category.id)"
+                :disabled="Boolean(savingUid)"
+                @select="toggleCategory(category.id)"
+              />
+            </div>
+          </div>
+        </SurfacePanel>
+
+        <!-- Facility manager accordion -->
+        <SurfacePanel variant="control" padding="sm" class="overflow-hidden">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between p-2 text-left font-bold text-sm text-ink-950 dark:text-ink-50"
+            @click="toggleSection('facility')"
+          >
+            <span class="flex items-center gap-2">
+              <AppIcon name="wrench" :size="4" class="text-primary-600 dark:text-primary-400" />
+              <span>{{ t('adminCenter.facilityResponsibility') }}</span>
+              <span class="text-xs font-normal text-ink-500">
+                ({{ t('adminCenter.categoryListCount', { count: user.managedFacilityCategoryIds.length }) }})
+              </span>
+            </span>
+            <AppIcon
+              name="chevron-down"
+              :size="4"
+              class="transform transition-transform duration-200"
+              :class="expandedSection === 'facility' ? 'rotate-180' : ''"
+            />
+          </button>
+
+          <div
+            v-show="expandedSection === 'facility'"
+            class="border-t border-ink-100 mt-2 pt-3 px-2 pb-2 space-y-2 dark:border-ink-800"
+          >
+            <p class="text-xs leading-5 text-ink-500 pb-1">{{ t('adminCenter.facilityResponsibilityHelp') }}</p>
+            <div v-if="activeFacilityCategories.length === 0" class="text-xs text-ink-400 py-2">
+              {{ t('categoryAdmin.noCategoriesAvailable') }}
+            </div>
+            <div v-else class="grid gap-2 sm:grid-cols-2">
+              <SelectionOptionButton
+                v-for="category in activeFacilityCategories"
+                :key="category.id"
+                :label="category.label"
+                :description="t('access.handleFacilityReportsInCategory', { category: category.label })"
+                :selected="user.managedFacilityCategoryIds.includes(category.id)"
+                :disabled="Boolean(savingUid)"
+                @select="toggleFacilityCategory(category.id)"
+              />
+            </div>
+          </div>
+        </SurfacePanel>
+
+        <!-- Other manager accordion (Announcement) -->
+        <SurfacePanel variant="control" padding="sm" class="overflow-hidden">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between p-2 text-left font-bold text-sm text-ink-950 dark:text-ink-50"
+            @click="toggleSection('other')"
+          >
+            <span class="flex items-center gap-2">
+              <AppIcon name="megaphone" :size="4" class="text-primary-600 dark:text-primary-400" />
+              <span>{{ t('adminCenter.otherResponsibility') }}</span>
+              <span class="text-xs font-normal text-ink-500">
+                ({{ user.roles.includes('announcement-manager') ? 1 : 0 }})
+              </span>
+            </span>
+            <AppIcon
+              name="chevron-down"
+              :size="4"
+              class="transform transition-transform duration-200"
+              :class="expandedSection === 'other' ? 'rotate-180' : ''"
+            />
+          </button>
+
+          <div
+            v-show="expandedSection === 'other'"
+            class="border-t border-ink-100 mt-2 pt-3 px-2 pb-2 space-y-2 dark:border-ink-800"
+          >
+            <p class="text-xs leading-5 text-ink-500 pb-1">{{ t('adminCenter.otherResponsibilityHelp') }}</p>
             <SelectionOptionButton
-              v-for="category in activeIssueCategories"
-              :key="category.id"
-              :label="t('access.manageCategory', { category: category.label })"
-              :description="t('access.reviewAndManageProposalsInCategory', { category: category.label })"
-              :selected="isPlatformAdmin || user.managedIssueCategoryIds.includes(category.id)"
-              :disabled="Boolean(savingUid) || isPlatformAdmin"
-              @select="toggleCategory(category.id)"
+              label="access.announcementManagement"
+              description="access.publishAndDeleteAnnouncements"
+              :selected="user.roles.includes('announcement-manager')"
+              :disabled="Boolean(savingUid)"
+              @select="toggleScopedRole('announcement-manager')"
             />
           </div>
-        </div>
-
-        <div>
-          <p class="field-label mb-1">{{ t('adminCenter.facilityResponsibility') }}</p>
-          <p class="mb-2 text-xs leading-5 text-ink-500">{{ t('adminCenter.facilityResponsibilityHelp') }}</p>
-          <div class="grid gap-2 md:grid-cols-2">
-            <SelectionOptionButton
-              v-for="category in activeFacilityCategories"
-              :key="category.id"
-              :label="t('access.manageCategory', { category: category.label })"
-              :description="t('access.handleFacilityReportsInCategory', { category: category.label })"
-              :selected="isPlatformAdmin || user.managedFacilityCategoryIds.includes(category.id)"
-              :disabled="Boolean(savingUid) || isPlatformAdmin"
-              @select="toggleFacilityCategory(category.id)"
-            />
-          </div>
-        </div>
-
-        <div>
-          <p class="field-label mb-1">{{ t('adminCenter.otherResponsibility') }}</p>
-          <p class="mb-2 text-xs leading-5 text-ink-500">{{ t('adminCenter.otherResponsibilityHelp') }}</p>
-          <SelectionOptionButton
-            label="access.announcementManagement"
-            description="access.publishAndDeleteAnnouncements"
-            :selected="isPlatformAdmin || user.roles.includes('announcement-manager')"
-            :disabled="Boolean(savingUid) || isPlatformAdmin"
-            @select="toggleScopedRole('announcement-manager')"
-          />
-        </div>
+        </SurfacePanel>
       </div>
 
       <InlineMessage v-if="error">{{ error }}</InlineMessage>
@@ -126,8 +215,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
+import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import BusyButtonContent from '@/components/ui/atoms/BusyButtonContent.vue';
 import InlineMessage from '@/components/ui/atoms/InlineMessage.vue';
 import UserAvatar from '@/components/ui/atoms/UserAvatar.vue';
@@ -150,15 +240,27 @@ const loading = ref(false);
 const error = ref('');
 const savingUid = ref('');
 const isPlatformAdmin = computed(() => user.value?.roles.includes('platform-admin') === true);
+const expandedSection = ref<'issue' | 'facility' | 'other' | null>(null);
+
 const responsibilityCount = computed(() => {
   if (!user.value || isPlatformAdmin.value) return 0;
   return user.value.managedIssueCategoryIds.length
     + user.value.managedFacilityCategoryIds.length
     + Number(user.value.roles.includes('announcement-manager'));
 });
+
 const accessSummary = computed(() => isPlatformAdmin.value
   ? t('adminCenter.fullAccessSummary')
   : t('adminCenter.scopedAccessSummary', { count: responsibilityCount.value }));
+
+// Watch user to reset active accordion section
+watch(user, () => {
+  expandedSection.value = null;
+});
+
+function toggleSection(section: 'issue' | 'facility' | 'other') {
+  expandedSection.value = expandedSection.value === section ? null : section;
+}
 
 async function findUser() {
   const query = lookup.value.trim();
@@ -192,6 +294,16 @@ async function saveAccess(roles: RoleCode[], categories: string[], facilityCateg
   } finally {
     savingUid.value = '';
   }
+}
+
+async function selectPlatformAdmin() {
+  if (!user.value || isPlatformAdmin.value) return;
+  await saveAccess(['platform-admin'], [], []);
+}
+
+async function selectScopedManager() {
+  if (!user.value || !isPlatformAdmin.value) return;
+  await saveAccess([], [], []);
 }
 
 async function togglePlatformAdmin() {

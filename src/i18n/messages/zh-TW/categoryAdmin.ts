@@ -51,6 +51,19 @@ const messages = {
   'categoryAdmin.archived': '已封存',
   'categoryAdmin.defaultCategory': '預設分類',
   'categoryAdmin.makeDefault': '設為預設',
+  'categoryAdmin.stepBasicInfo': '基本設定',
+  'categoryAdmin.stepPrivacy': '隱私與權限',
+  'categoryAdmin.stepWorkflowRules': '工作規則',
+  'categoryAdmin.stepConfirm': '確認建立',
+  'categoryAdmin.idPlaceholder': '例如: dormitory-affairs',
+  'categoryAdmin.namePlaceholder': '例如: 宿舍事務',
+  'categoryAdmin.descriptionPlaceholder': '說明此分類的用途，讓使用者便於選擇',
+  'categoryAdmin.previewCheckHelp': '請確認以下設定是否正確，建立後部分隱私規則與識別碼將無法修改。',
+  'categoryAdmin.idFormatError': '識別碼格式不正確，僅能包含小寫英文、數字與連字號，且頭尾不可為連字號。',
+  'categoryAdmin.nameAndId': '分類名稱 / 識別碼',
+  'categoryAdmin.supportGoalCount': '{count} 人',
+  'categoryAdmin.daysCount': '{count} 天',
+  'categoryAdmin.noCategoriesAvailable': '目前無可用分類',
 } as const;
 
 export default messages;

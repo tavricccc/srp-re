@@ -68,6 +68,14 @@ const messages = {
   'common.confirmPublish': '確認發布',
   'common.refreshingSupabaseSignIn': 'Supabase 登入更新重試',
   'common.shareLink': '分享連結',
+  'common.stepCount': '第 {current} 步，共 {total} 步',
+  'common.previous': '上一步',
+  'common.next': '下一步',
+  'common.cancel': '取消',
+  'common.create': '建立',
+  'common.creating': '建立中…',
+  'common.yes': '是',
+  'common.no': '否',
 } as const;
 
 export default messages;

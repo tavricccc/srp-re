@@ -1,6 +1,6 @@
 const messages = {
-  'adminCenter.eyebrow': '平台設定',
-  'adminCenter.title': '平台管理中心',
+  'adminCenter.eyebrow': '系統設定',
+  'adminCenter.title': '系統設定',
   'adminCenter.description': '先決定案件如何分類、公開與處理，再把每一類工作交給合適的人。所有設定集中在這裡，不需要在不同頁面來回尋找。',
   'adminCenter.sections': '管理中心區段',
   'adminCenter.categoriesTab': '1. 分類與處理流程',
@@ -38,8 +38,12 @@ const messages = {
   'adminCenter.fullAccessSummary': '目前擁有完整平台管理權限',
   'adminCenter.scopedAccessSummary': '目前負責 {count} 個分類或功能',
   'adminCenter.accessSaved': '管理權限已更新',
-  'adminCenter.openManagement': '平台管理中心',
+  'adminCenter.openManagement': '系統設定',
   'adminCenter.openManagementHelp': '設定分類與處理流程，並指派每個分類的負責人。',
+  'adminCenter.platformAdminTitle': '全系統管理員',
+  'adminCenter.platformAdminDesc': '授予系統所有功能與分類的最高管理權限。',
+  'adminCenter.scopedManagerTitle': '自訂特定職責',
+  'adminCenter.scopedManagerDesc': '依實際分工，指派負責特定案件分類或發布公告。',
 } as const;
 
 export default messages;

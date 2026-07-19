@@ -68,6 +68,14 @@ const messages = {
   'common.confirmPublish': 'Confirm release',
   'common.refreshingSupabaseSignIn': 'Refreshing Supabase sign-in',
   'common.shareLink': 'Share link',
+  'common.stepCount': 'Step {current} of {total}',
+  'common.previous': 'Previous',
+  'common.next': 'Next',
+  'common.cancel': 'Cancel',
+  'common.create': 'Create',
+  'common.creating': 'Creating...',
+  'common.yes': 'Yes',
+  'common.no': 'No',
 } as const;
 
 export default messages;

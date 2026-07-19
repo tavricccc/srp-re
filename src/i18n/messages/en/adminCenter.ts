@@ -1,6 +1,6 @@
 const messages = {
-  'adminCenter.eyebrow': 'Platform settings',
-  'adminCenter.title': 'Platform management center',
+  'adminCenter.eyebrow': 'System settings',
+  'adminCenter.title': 'System settings',
   'adminCenter.description': 'Define how records are categorized, shared, and handled, then assign each area to the right people. Everything lives in one place.',
   'adminCenter.sections': 'Management center sections',
   'adminCenter.categoriesTab': '1. Categories and workflows',
@@ -38,8 +38,12 @@ const messages = {
   'adminCenter.fullAccessSummary': 'Currently has full platform management access',
   'adminCenter.scopedAccessSummary': 'Currently responsible for {count} categories or tools',
   'adminCenter.accessSaved': 'Management access updated',
-  'adminCenter.openManagement': 'Platform management center',
+  'adminCenter.openManagement': 'System settings',
   'adminCenter.openManagementHelp': 'Configure categories and workflows, then assign the people responsible for each area.',
+  'adminCenter.platformAdminTitle': 'System Administrator',
+  'adminCenter.platformAdminDesc': 'Grant full management access to all features and categories.',
+  'adminCenter.scopedManagerTitle': 'Custom Responsibilities',
+  'adminCenter.scopedManagerDesc': 'Assign specific categories or tools based on team roles.',
 } as const;
 
 export default messages;

@@ -51,6 +51,19 @@ const messages = {
   'categoryAdmin.archived': 'Archived',
   'categoryAdmin.defaultCategory': 'Default category',
   'categoryAdmin.makeDefault': 'Make default',
+  'categoryAdmin.stepBasicInfo': 'Basic Settings',
+  'categoryAdmin.stepPrivacy': 'Privacy & Visibility',
+  'categoryAdmin.stepWorkflowRules': 'Workflow Rules',
+  'categoryAdmin.stepConfirm': 'Confirm & Create',
+  'categoryAdmin.idPlaceholder': 'E.g., dormitory-affairs',
+  'categoryAdmin.namePlaceholder': 'E.g., Dormitory Affairs',
+  'categoryAdmin.descriptionPlaceholder': 'Explain what this category is used for to guide users',
+  'categoryAdmin.previewCheckHelp': 'Please verify the following configuration. Some privacy rules and the identifier cannot be changed after creation.',
+  'categoryAdmin.idFormatError': 'Invalid identifier format. Only lowercase letters, numbers, and hyphens are allowed, and it must not start or end with a hyphen.',
+  'categoryAdmin.nameAndId': 'Category Name / ID',
+  'categoryAdmin.supportGoalCount': '{count} people',
+  'categoryAdmin.daysCount': '{count} days',
+  'categoryAdmin.noCategoriesAvailable': 'No categories available',
 } as const;
 
 export default messages;

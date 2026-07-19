@@ -68,8 +68,8 @@
 - `views/NotificationsView.vue` — 通知頁
 - `views/SettingsView.vue` — 設定頁（手機）
 - `views/DashboardView.vue` — 管理員統計
-- `views/AdministrationView.vue` — 單一平台管理中心，整合分類／流程與人員／權限兩個操作階段；舊 `/admin/access`、`/admin/categories` 會導向對應區段
-- `components/admin/CategoryWorkflowPanel.vue` / `MemberAccessPanel.vue` — 動態分類規則編輯、成員查找與分類式責任指派
+- `views/AdministrationView.vue` — 單一系統設定中心，整合分類／流程與人員／權限兩個操作階段；舊 `/admin/access`、`/admin/categories` 會導向對應區段
+- `components/admin/CategoryWorkflowPanel.vue` / `MemberAccessPanel.vue` / `CategoryWizardDialog.vue` — 動態分類規則編輯、引導式新增分類精靈、成員查找與分類式責任指派
 - `components/categories/CategoryManagementSection.vue` / `CategoryEditorCard.vue` — 一次選取並編輯一個分類的清單與規則表單
 - `views/SetupView.vue` — ADMIN_EMAILS 首次分類設定
 
