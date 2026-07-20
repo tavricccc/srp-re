@@ -3,6 +3,8 @@ set -euo pipefail
 
 ENV_FILE=""
 KEEP_RUNNING="false"
+SERVE="false"
+STRESS_SCALE="${NOVAE_STRESS_SCALE:-4}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env-file)
@@ -13,12 +15,25 @@ while [[ $# -gt 0 ]]; do
       KEEP_RUNNING="true"
       shift
       ;;
+    --serve)
+      SERVE="true"
+      shift
+      ;;
+    --stress-scale)
+      STRESS_SCALE="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1" >&2
       exit 2
       ;;
   esac
 done
+
+if ! [[ "$STRESS_SCALE" =~ ^[0-9]+$ ]] || (( STRESS_SCALE < 2 || STRESS_SCALE > 20 )); then
+  echo "--stress-scale must be an integer between 2 and 20." >&2
+  exit 2
+fi
 
 if [[ -n "$ENV_FILE" && ! -f "$ENV_FILE" ]]; then
   echo "The supplied --env-file is not readable." >&2
@@ -56,14 +71,37 @@ if ! docker info >/dev/null 2>&1; then
   echo "Docker is not running or the current WSL user cannot access it." >&2
   exit 2
 fi
+if [[ "$SERVE" == "true" ]]; then
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1 && command -v npx >/dev/null 2>&1; then
+    TEST_NODE=(node)
+    TEST_NPX=(npx --yes)
+    TEST_ROOT="$ROOT"
+  else
+    echo "The interactive test environment requires native WSL Node.js 24 with npm and npx." >&2
+    exit 2
+  fi
+  if [[ "$("${TEST_NODE[@]}" -p 'process.versions.node.split(`.`)[0]' | tr -d '\r')" != "24" ]]; then
+    echo "The interactive test environment requires Node.js 24 LTS." >&2
+    exit 2
+  fi
+  VITE_NPM=(npm)
+  if [[ "$ROOT" == /mnt/* ]] && command -v cmd.exe >/dev/null 2>&1; then
+    VITE_NPM=(cmd.exe /d /s /c npm)
+  fi
+fi
 
 cd "$ROOT"
 TEMP_ENV="$(mktemp)"
 FUNCTION_ENV="$(mktemp)"
 FUNCTION_LOG="$(mktemp)"
 FUNCTION_PID=""
+FIREBASE_LOG="$(mktemp)"
+FIREBASE_PID=""
 UPSTASH_LOG="$(mktemp)"
 UPSTASH_PID=""
+WORKER_LOG="$(mktemp)"
+WORKER_PID=""
+VITE_PID=""
 
 cleanup() {
   if [[ -n "$FUNCTION_PID" ]] && kill -0 "$FUNCTION_PID" >/dev/null 2>&1; then
@@ -74,7 +112,19 @@ cleanup() {
     kill "$UPSTASH_PID" >/dev/null 2>&1 || true
     wait "$UPSTASH_PID" >/dev/null 2>&1 || true
   fi
-  rm -f "$TEMP_ENV" "$FUNCTION_ENV" "$FUNCTION_LOG" "$UPSTASH_LOG"
+  if [[ -n "$WORKER_PID" ]] && kill -0 "$WORKER_PID" >/dev/null 2>&1; then
+    kill "$WORKER_PID" >/dev/null 2>&1 || true
+    wait "$WORKER_PID" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "$VITE_PID" ]] && kill -0 "$VITE_PID" >/dev/null 2>&1; then
+    kill "$VITE_PID" >/dev/null 2>&1 || true
+    wait "$VITE_PID" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "$FIREBASE_PID" ]] && kill -0 "$FIREBASE_PID" >/dev/null 2>&1; then
+    kill "$FIREBASE_PID" >/dev/null 2>&1 || true
+    wait "$FIREBASE_PID" >/dev/null 2>&1 || true
+  fi
+  rm -f "$TEMP_ENV" "$FUNCTION_ENV" "$FUNCTION_LOG" "$FIREBASE_LOG" "$UPSTASH_LOG" "$WORKER_LOG"
   if [[ "$KEEP_RUNNING" != "true" ]]; then
     supabase stop >/dev/null 2>&1 || true
   fi
@@ -131,6 +181,7 @@ supabase db lint --local --level error --fail-on error
   printf 'EDGE_ORIGIN_SECRET=integration-origin-secret\n'
   printf 'FIREBASE_PROJECT_ID=integration-project\n'
   printf 'FIREBASE_WEB_API_KEY=integration-web-api-key\n'
+  printf 'ADMIN_EMAILS=admin@integration.invalid\n'
   printf 'WEBHOOK_SECRET=integration-worker-secret\n'
   printf '\nAPP_SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SERVICE_ROLE_KEY"
   printf 'SUPABASE_URL=%s\n' "$API_URL"
@@ -140,12 +191,32 @@ supabase db lint --local --level error --fail-on error
   printf 'GOOGLE_SERVICE_ACCOUNT_JSON=not-json\n'
   printf 'UPSTASH_REDIS_REST_URL=http://127.0.0.1:54329\n'
   printf 'UPSTASH_REDIS_REST_TOKEN=integration-upstash-token\n'
+  printf 'NOVAE_STRESS_SCALE=%s\n' "$STRESS_SCALE"
 } >"$TEMP_ENV"
+
+if [[ "$SERVE" == "true" ]]; then
+  printf 'LOCAL_TEST_MODE=true\n' >>"$TEMP_ENV"
+  printf 'FIREBASE_AUTH_EMULATOR_HOST=host.docker.internal:9099\n' >>"$TEMP_ENV"
+fi
 chmod 600 "$TEMP_ENV"
 grep -v '^SUPABASE_' "$TEMP_ENV" >"$FUNCTION_ENV"
 sed -i 's#UPSTASH_REDIS_REST_URL=http://127.0.0.1:54329#UPSTASH_REDIS_REST_URL=http://host.docker.internal:54329#' "$FUNCTION_ENV"
 chmod 600 "$FUNCTION_ENV"
 ORIGIN_SECRET="$(grep '^EDGE_ORIGIN_SECRET=' "$TEMP_ENV" | head -n 1 | cut -d= -f2-)"
+
+if [[ "$SERVE" == "true" ]]; then
+  echo "[environment] Starting Firebase Auth emulator"
+  "${TEST_NPX[@]}" firebase-tools@15.24.0 emulators:start --only auth --project integration-project >"$FIREBASE_LOG" 2>&1 &
+  FIREBASE_PID="$!"
+  firebase_status=""
+  for _ in $(seq 1 60); do
+    firebase_status="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9099/ || true)"
+    [[ "$firebase_status" != "000" ]] && break
+    if ! kill -0 "$FIREBASE_PID" >/dev/null 2>&1; then cat "$FIREBASE_LOG" >&2; exit 1; fi
+    sleep 1
+  done
+  if [[ "$firebase_status" == "000" ]]; then cat "$FIREBASE_LOG" >&2; exit 1; fi
+fi
 
 echo "[integration] Starting isolated Upstash REST test server"
 "$DENO_COMMAND" run --allow-env --allow-net scripts/upstash-test-server.ts >"$UPSTASH_LOG" 2>&1 &
@@ -193,7 +264,7 @@ DENO_DEPENDENCY_AGE_ARGS=()
 if "$DENO_COMMAND" test --help | grep -q -- '--minimum-dependency-age'; then
   DENO_DEPENDENCY_AGE_ARGS+=(--minimum-dependency-age=0)
 fi
-if ! "$DENO_COMMAND" test \
+if [[ "$SERVE" != "true" ]] && ! "$DENO_COMMAND" test \
   --node-modules-dir=none \
   --no-lock \
   "${DENO_DEPENDENCY_AGE_ARGS[@]}" \
@@ -208,4 +279,52 @@ if ! "$DENO_COMMAND" test \
   exit 1
 fi
 
-echo "[integration] All local integration checks passed"
+if [[ "$SERVE" != "true" ]]; then
+  echo "[integration] All local integration checks passed"
+  exit 0
+fi
+
+echo "[environment] Starting local Cloudflare gateway"
+"${TEST_NPX[@]}" wrangler@4.112.0 dev --config "$TEST_ROOT/cloudflare/wrangler.toml" --env development --local --port 8787 \
+  --var "ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173" \
+  --var "CLOUDINARY_WEBHOOK_SECRET:integration-cloudinary-webhook" \
+  --var "EDGE_FUNCTION_NAMESPACE:local" \
+  --var "EDGE_ORIGIN_SECRET:$ORIGIN_SECRET" \
+  --var "FIREBASE_PROJECT_ID:integration-project" \
+  --var "LOCAL_TEST_MODE:true" \
+  --var "SUPABASE_FUNCTIONS_BASE_URL:$API_URL/functions/v1" >"$WORKER_LOG" 2>&1 &
+WORKER_PID="$!"
+worker_status=""
+for _ in $(seq 1 60); do
+  worker_status="$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS http://127.0.0.1:8787/v1/actions -H 'origin: http://localhost:5173' || true)"
+  [[ "$worker_status" == "204" ]] && break
+  if ! kill -0 "$WORKER_PID" >/dev/null 2>&1; then cat "$WORKER_LOG" >&2; exit 1; fi
+  sleep 1
+done
+if [[ "$worker_status" != "204" ]]; then cat "$WORKER_LOG" >&2; exit 1; fi
+
+echo "[environment] Starting Vite"
+export VITE_ALLOWED_DOMAIN=integration.invalid
+export VITE_API_BASE_URL=http://127.0.0.1:8787
+export VITE_FIREBASE_API_KEY=integration-web-api-key
+export VITE_FIREBASE_APP_ID=1:123456789:web:local
+export VITE_FIREBASE_AUTH_DOMAIN=integration-project.firebaseapp.com
+export VITE_FIREBASE_AUTH_EMULATOR_URL=http://127.0.0.1:9099
+export VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+export VITE_FIREBASE_PROJECT_ID=integration-project
+export VITE_FIREBASE_APP_CHECK_ENABLED=false
+export VITE_SUPABASE_URL="$API_URL"
+export VITE_SUPABASE_PUBLISHABLE_KEY="$ANON_KEY"
+export WSLENV="${WSLENV:-}:VITE_ALLOWED_DOMAIN/u:VITE_API_BASE_URL/u:VITE_FIREBASE_API_KEY/u:VITE_FIREBASE_APP_ID/u:VITE_FIREBASE_AUTH_DOMAIN/u:VITE_FIREBASE_AUTH_EMULATOR_URL/u:VITE_FIREBASE_MESSAGING_SENDER_ID/u:VITE_FIREBASE_PROJECT_ID/u:VITE_FIREBASE_APP_CHECK_ENABLED/u:VITE_SUPABASE_URL/u:VITE_SUPABASE_PUBLISHABLE_KEY/u"
+"${VITE_NPM[@]}" run dev -- --host 0.0.0.0 &
+VITE_PID="$!"
+
+echo ""
+echo "[environment] Ready"
+echo "  App:           http://localhost:5173"
+echo "  Auth emulator: http://localhost:4000/auth"
+echo "  API gateway:   http://localhost:8787"
+echo "  Admin login:   use Google sign-in, enter admin@integration.invalid in the emulator"
+echo "  New users:     sign out and use Google sign-in with any *@integration.invalid address"
+echo "  Stop:          press Ctrl+C"
+wait "$VITE_PID"

@@ -6,6 +6,7 @@ export interface Env {
   EDGE_FUNCTION_NAMESPACE: string;
   EDGE_ORIGIN_SECRET: string;
   FIREBASE_PROJECT_ID: string;
+  LOCAL_TEST_MODE?: string;
   READ_RATE_LIMITER: RateLimitBinding;
   SENSITIVE_WRITE_RATE_LIMITER: RateLimitBinding;
   SUPABASE_FUNCTIONS_BASE_URL: string;

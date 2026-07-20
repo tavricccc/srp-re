@@ -28,6 +28,8 @@
     "check:ui": "node scripts/check-ui-primitives.mjs",
     "verify:local": "npm run typecheck && npm run check:unused && npm run check:i18n && npm run check:ui && npm run lint && npm run build && npm run check:worker && npm run check:edge && npm run test:architecture && npm audit --offline --omit=dev",
     "verify:integration": "node scripts/verify-integration-local.mjs",
+    "verify:stress": "node scripts/verify-integration-local.mjs --stress-scale 8",
+    "test:env": "node scripts/verify-integration-local.mjs --serve",
     "verify:all": "npm run verify:local && npm run verify:integration",
     "test:architecture": "node --test tests/architecture.test.mjs",
     "test": "npm run test:architecture",

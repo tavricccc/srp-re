@@ -22,7 +22,6 @@ const messages = {
   'apiError.validationTooLong': 'The submitted text exceeds the length limit.',
   'apiError.validationInvalid': 'The submitted content is invalid.',
   'apiError.validationTooMany': 'The submitted item count exceeds the limit.',
-  'apiError.lastPlatformAdmin': 'At least one platform administrator must remain.',
   'apiError.serviceNotConfigured': 'The service setup has not been completed.',
   'apiError.rateLimitProviderUnavailable': 'The rate-limit service is temporarily unavailable. Try again later.',
   'apiError.invalidSignature': 'The request signature is invalid.',

@@ -70,7 +70,8 @@ integrationTest("access, role, idempotency, avatar, and upload actions", async (
 
   const roleRequestId = requestId("set-role");
   const rolePayload = {
-    managedIssueCategoryIds: [],
+    managedFacilityCategoryIds: ["general"],
+    managedIssueCategoryIds: ["public-issues"],
     requestId: roleRequestId,
     roles: ["announcement-manager"],
     uid: target.auth.uid,
@@ -81,6 +82,68 @@ integrationTest("access, role, idempotency, avatar, and upload actions", async (
   target = await refreshActor(target);
   assert.ok(target.auth.permissions.includes("announcement.manage"));
   assert.ok(!target.auth.permissions.includes("facility.manage"));
+  assert.ok(target.auth.permissions.includes("proposal.manage"));
+  assert.deepEqual(target.auth.managedFacilityCategoryIds, ["general"]);
+
+  const proposalAssignees = asRecord(await callAction("listRoleAssignments", {
+    categoryId: "public-issues", query: "", scopeKind: "issue",
+  }, admin.auth));
+  assert.ok((proposalAssignees.users as Array<{ uid: string }>).some((row) => row.uid === target.auth.uid));
+  assert.ok((proposalAssignees.users as Array<{ uid: string }>).some((row) => row.uid === admin.auth.uid));
+  const announcementAssignees = asRecord(await callAction("listRoleAssignments", {
+    query: "", scopeKind: "announcement",
+  }, admin.auth));
+  assert.ok((announcementAssignees.users as Array<{ uid: string }>).some((row) => row.uid === target.auth.uid));
+  await expectActionError("validation-required", () => callAction("listRoleAssignments", {
+    query: "", scopeKind: "platform",
+  }, admin.auth));
+  await expectActionError("validation-invalid", () => callAction("setUserRoles", {
+    managedFacilityCategoryIds: [],
+    managedIssueCategoryIds: [],
+    requestId: requestId("platform-role-api-denied"),
+    roles: ["platform-admin"],
+    uid: target.auth.uid,
+  }, admin.auth));
+  await expectActionError("permission-denied", () => callAction("setUserRoles", {
+    managedFacilityCategoryIds: [],
+    managedIssueCategoryIds: [],
+    requestId: requestId("platform-role-revoke-denied"),
+    roles: [],
+    uid: admin.auth.uid,
+  }, admin.auth));
+
+  await expectActionError("validation-invalid", () => callAction("setUserRoles", {
+    managedFacilityCategoryIds: [],
+    managedIssueCategoryIds: ["missing-category"],
+    requestId: requestId("invalid-category-assignment"),
+    roles: [],
+    uid: target.auth.uid,
+  }, admin.auth));
+  target = await refreshActor(target);
+  assert.ok(target.auth.permissions.includes("announcement.manage"), "invalid writes must roll back without changing roles");
+
+  const { data: accessAudit, error: accessAuditError } = await supabase.schema("app_private")
+    .from("access_assignment_audit").select("actor_uid,target_uid,before_value,after_value")
+    .eq("target_uid", target.auth.uid);
+  if (accessAuditError) throw accessAuditError;
+  assert.equal(accessAudit.length, 1);
+  assert.equal(accessAudit[0]?.actor_uid, admin.auth.uid);
+
+  const configuredAdmin = await seedActor("configured-admin");
+  const staleAdmin = await seedActor("stale-admin", { roles: ["platform-admin"] });
+  const { error: reconcileError } = await supabase.schema("app_api").rpc("backend_reconcile_platform_admins", {
+    actor_uid: admin.auth.uid,
+    admin_emails: [admin.identity.email, configuredAdmin.identity.email],
+  });
+  if (reconcileError) throw reconcileError;
+  const configuredAdminRole = await supabase.schema("app_private").from("user_role_assignments")
+    .select("uid").eq("uid", configuredAdmin.auth.uid).eq("role_code", "platform-admin").maybeSingle();
+  const staleAdminRole = await supabase.schema("app_private").from("user_role_assignments")
+    .select("uid").eq("uid", staleAdmin.auth.uid).eq("role_code", "platform-admin").maybeSingle();
+  if (configuredAdminRole.error) throw configuredAdminRole.error;
+  if (staleAdminRole.error) throw staleAdminRole.error;
+  assert.equal(configuredAdminRole.data?.uid, configuredAdmin.auth.uid);
+  assert.equal(staleAdminRole.data, null);
 
   const avatar = asRecord(await callAction("cacheUserAvatar", {}, user.auth));
   assert.equal(avatar.photoUrl, null);
@@ -270,4 +333,15 @@ integrationTest("category deletion removes category and all associated resources
   const outboxRow = outboxRows[0];
   assert.ok(outboxRow);
   assert.equal(asRecord(outboxRow).event_type, "issue.deleted");
+
+  await expectActionError("not-found", () => callAction("deleteCategory", {
+    kind: "issue", id: "temp-cat-to-delete", requestId: requestId("del-missing-issue"),
+  }, admin.auth));
+
+  const { data: deletionAudit, error: deletionAuditError } = await supabase.schema("app_private")
+    .from("category_configuration_audit").select("domain,category_id,operation,actor_uid")
+    .eq("category_id", "temp-cat-to-delete").eq("operation", "delete");
+  if (deletionAuditError) throw deletionAuditError;
+  assert.equal(deletionAudit.length, 1);
+  assert.equal(deletionAudit[0]?.actor_uid, admin.auth.uid);
 });

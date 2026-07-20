@@ -68,6 +68,8 @@
 新增 backend action 必須在 `tests/integration/` 加入有 assertion 的成功與拒絕案例；角色／scope 變更至少驗證 allowed、denied、跨 scope。`action-coverage.test.ts` 只作漏測防線，不得用無 assertion 呼叫敷衍。
 失敗與 warning 能修就修，否則在報告說明。
 
+# 注意:代碼追求簡潔乾淨 好維護 盡量不要打補丁式 要以可以復用為目標
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

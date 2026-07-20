@@ -312,6 +312,9 @@ interface AppPrivateTables {
     id: number; domain: string; category_id: string | null; operation: string; actor_uid: string;
     before_value: Json | null; after_value: Json | null; created_at: string;
   }>;
+  access_assignment_audit: Table<{
+    id: number; actor_uid: string; target_uid: string; before_value: Json; after_value: Json; created_at: string;
+  }>;
   system_setup: Table<{
     singleton: boolean; completed_at: string | null; completed_by: string | null; updated_at: string;
   }>;
@@ -482,6 +485,17 @@ interface AppApiFunctions {
     review_required_categories: string[];
     sort_name: string;
     status_bucket: string;
+  }, Json>;
+  backend_set_user_access: AppFunction<{
+    actor_uid: string;
+    target_uid: string;
+    requested_roles: string[];
+    issue_category_ids: string[];
+    facility_category_ids: string[];
+  }, Json>;
+  backend_reconcile_platform_admins: AppFunction<{
+    actor_uid: string;
+    admin_emails: string[];
   }, Json>;
   backend_list_notifications: AppFunction<{
     actor_is_admin: boolean;

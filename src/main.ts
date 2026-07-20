@@ -8,6 +8,7 @@ import { initializeSession } from './composables/useSession';
 import { initializeAppResume } from './composables/useAppResume';
 import { tryRedirectToExternalBrowser } from './lib/in-app-browser';
 import { initializeI18n } from './i18n';
+import { preventDoubleTapZoom } from './lib/touch-zoom';
 
 async function bootstrap() {
   if (typeof window !== 'undefined') {
@@ -17,6 +18,7 @@ async function bootstrap() {
   }
 
   initializeAppResume();
+  preventDoubleTapZoom();
   initializeI18n();
   void initializeAppUpdate();
   initializeSession();

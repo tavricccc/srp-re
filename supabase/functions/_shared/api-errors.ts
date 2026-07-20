@@ -82,10 +82,6 @@ export const API_ERRORS = {
     "status": 400,
     "messageKey": "apiError.validationTooMany"
   },
-  "last-platform-admin": {
-    "status": 409,
-    "messageKey": "apiError.lastPlatformAdmin"
-  },
   "comments-disabled": {
     "status": 409,
     "messageKey": "apiError.commentsDisabled"

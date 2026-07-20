@@ -12,9 +12,26 @@ export interface AccessUser {
   managedFacilityCategoryIds: string[];
 }
 
-export async function listRoleAssignments(query = '') {
-  const fn = invokeBackendAction<{ query: string }, { users: AccessUser[] }>('listRoleAssignments');
-  return (await fn({ query })).users;
+export type AccessScope =
+  | { kind: 'announcement' }
+  | { kind: 'facility' | 'issue'; categoryId: string };
+
+interface AccessUserList {
+  truncated: boolean;
+  users: AccessUser[];
+}
+
+export async function findRoleAssignment(query: string) {
+  const fn = invokeBackendAction<{ query: string }, AccessUserList>('listRoleAssignments');
+  return (await fn({ query })).users[0] ?? null;
+}
+
+export async function listScopeAssignments(scope: AccessScope) {
+  const fn = invokeBackendAction<
+    { categoryId?: string; query: string; scopeKind: AccessScope['kind'] },
+    AccessUserList
+  >('listRoleAssignments');
+  return await fn({ categoryId: 'categoryId' in scope ? scope.categoryId : undefined, query: '', scopeKind: scope.kind });
 }
 
 export async function setUserRoles(

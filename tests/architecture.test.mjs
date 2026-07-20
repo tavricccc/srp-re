@@ -726,7 +726,8 @@ test('facilities and author-fixed support use independent atomic storage', async
   assert.match(notion, /\["completed", "infeasible"\]\.includes\(newStatus\)/u);
   assert.match(legacyAdminBackfill, /from app_private\.user_roles[\s\S]*where role = 'admin'/u);
   assert.match(legacyAdminBackfill, /'platform-admin'/u);
-  assert.match(syncUser, /legacyRole\?\.role === "admin"/u);
+  assert.match(syncUser, /backend_reconcile_platform_admins[\s\S]*admin_emails: adminEmails\(\)/u);
+  assert.doesNotMatch(syncUser, /legacyRole|user_role_assignments/u);
   assert.doesNotMatch(supabaseAuth, /if \(token\.claims\.role === 'authenticated'\) \{\s*return;/u);
 });
 
@@ -738,6 +739,7 @@ test('proposal and facility manager access is runtime-configured and category-sc
   const issueRead = await read('supabase/functions/backendAction/issue-read.ts');
   const migration = await read('supabase/migrations/202607150006_category_scoped_proposal_access.sql');
   const lookupMigration = await read('supabase/migrations/202607150007_access_lookup_and_facility_status.sql');
+  const atomicAccessMigration = await read('supabase/migrations/202607200002_atomic_user_access.sql');
   const selectionControl = await read('src/components/ui/molecules/SelectionOptionButton.vue');
   const facilityDialog = await read('src/components/FacilityStatusDialog.vue');
   const statusTransitionDialog = await read('src/components/ui/organisms/StatusTransitionDialog.vue');
@@ -747,17 +749,25 @@ test('proposal and facility manager access is runtime-configured and category-sc
   assert.match(categoryAction, /getIssueCategories/u);
   assert.match(categoryAction, /saveIssueCategory/u);
   assert.match(migration, /primary key \(uid, category_id\)/u);
-  assert.match(users, /managedIssueCategoryIds[\s\S]*validIssueCategoryIds/u);
-  assert.match(users, /managedFacilityCategoryIds[\s\S]*validFacilityCategoryIds/u);
+  assert.match(users, /backend_set_user_access[\s\S]*issue_category_ids: managedIssueCategoryIds[\s\S]*facility_category_ids: managedFacilityCategoryIds/u);
+  assert.match(atomicAccessMigration, /create or replace function app_api\.backend_set_user_access/u);
+  assert.match(atomicAccessMigration, /role_code not in \('announcement-manager', 'general-affairs'\)/u);
+  assert.match(atomicAccessMigration, /backend_reconcile_platform_admins/u);
+  assert.match(atomicAccessMigration, /if 'platform-admin' = any\(previous_roles\)[\s\S]*permission-denied/u);
+  assert.match(atomicAccessMigration, /issue_categories where id = any\(issue_ids\) and is_active/u);
+  assert.match(atomicAccessMigration, /facility_categories where id = any\(facility_ids\) and is_active/u);
+  assert.match(atomicAccessMigration, /access_assignment_audit/u);
   assert.match(auth, /canManageIssueCategory/u);
   assert.match(issueRead, /canManageIssueCategory\(auth, category\)/u);
-  assert.match(users, /if \(!rawQuery\) return \{ users: \[\] \}/u);
+  assert.match(users, /if \(!rawQuery && !scoped\) return \{ truncated: false, users: \[\] \}/u);
   assert.match(users, /const rawQuery = asString\(payload\.query\)\.trim\(\)/u);
   assert.match(users, /rawQuery\.includes\("@"\) \? rawQuery\.toLowerCase\(\) : rawQuery/u);
-  assert.match(users, /profilesQuery\.eq\("email", query\)[\s\S]*profilesQuery\.eq\("uid", query\)/u);
+  assert.match(users, /profileQuery = query\.includes\("@"\) \? profileQuery\.eq\("email", query\) : profileQuery\.eq\("uid", query\)/u);
   assert.match(lookupMigration, /user_profiles_email_unique_idx/u);
   assert.match(lookupMigration, /backend_update_facility_status\.result_content/u);
   assert.match(accessView, /SelectionOptionButton/u);
+  assert.doesNotMatch(accessView, /value: 'platform'|platformAdminTitle/u);
+  assert.ok(accessView.indexOf('chooseResponsibilityStep') < accessView.indexOf('access-user-lookup'));
   assert.match(facilityDialog, /StatusTransitionDialog/u);
   assert.match(statusTransitionDialog, /SelectionOptionButton/u);
   assert.match(selectionControl, /button-toolbar--active[\s\S]*SelectionMark/u);
@@ -1609,6 +1619,7 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   const entryComposer = await read('src/components/ui/organisms/EntryComposerShell.vue');
   const markdownImageEditor = await read('src/components/ui/organisms/MarkdownImageEditor.vue');
   const compactMenu = await read('src/components/CompactActionMenu.vue');
+  const issueMenu = await read('src/components/IssueAdminMenu.vue');
   const facilityMenu = await read('src/components/FacilityAdminMenu.vue');
   const boardControls = await read('src/components/BoardControls.vue');
   const loginPanel = await read('src/components/LoginPanel.vue');
@@ -1690,7 +1701,9 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   assert.match(confirmDialog, /<DialogActionRow>[\s\S]*<AppButton/u);
   assert.match(confirmDialog, /<DialogHeading[\s\S]*description-id="confirm-dialog-message"/u);
   assert.match(entryComposer, /<DialogShell[\s\S]*labelled-by="entry-composer-title"/u);
-  [compactMenu, facilityMenu].forEach((menu) => assert.match(menu, /<DropdownMenu/u));
+  [compactMenu, issueMenu, facilityMenu].forEach((menu) => assert.match(menu, /<DropdownMenu/u));
+  assert.match(issueMenu, /@click\.stop="toggle"/u);
+  assert.doesNotMatch(issueMenu, /useDropdownPosition|useClickOutside/u);
   assert.match(boardControls, /<DropdownPanel/u);
   assert.match(settingsPanel, /<LabeledListSection[\s\S]*<IconListRow/u);
   assert.match(settingsPanel, /<LabeledListSection :label="t\('settings\.language'\)">[\s\S]*<DropdownMenu/u);

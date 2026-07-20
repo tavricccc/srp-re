@@ -6,9 +6,88 @@
       :description="t('adminCenter.memberSectionDescription')"
     />
 
-    <SurfacePanel as="form" padding="lg" @submit.prevent="findUser">
+    <SurfacePanel padding="lg" class="space-y-5">
       <div class="flex items-start gap-3">
         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-bold text-white dark:bg-ink-50 dark:text-ink-950">1</span>
+        <div class="min-w-0 flex-1">
+          <h3 class="text-sm font-bold text-ink-950 dark:text-ink-50">{{ t('adminCenter.chooseResponsibilityStep') }}</h3>
+          <p class="mt-1 text-xs leading-5 text-ink-500">{{ t('adminCenter.chooseResponsibilityHelp') }}</p>
+        </div>
+      </div>
+
+      <PillSegmentedControl v-model="scopeKind" :options="scopeOptions" />
+
+      <div v-if="scopeKind === 'issue' || scopeKind === 'facility'" class="grid gap-2 sm:grid-cols-2">
+        <SelectionOptionButton
+          v-for="category in selectableCategories"
+          :key="category.id"
+          :label="category.label"
+          :description="categoryDescription(category.label)"
+          :selected="selectedCategoryId === category.id"
+          :disabled="loading || Boolean(savingUid)"
+          @select="selectedCategoryId = category.id"
+        />
+      </div>
+      <EmptyStatePanel
+        v-if="(scopeKind === 'issue' || scopeKind === 'facility') && selectableCategories.length === 0"
+        title="categoryAdmin.noCategoriesAvailable"
+        description="adminCenter.noAssignableCategoriesHelp"
+        icon="warning"
+      />
+    </SurfacePanel>
+
+    <SurfacePanel v-if="scopeReady" padding="lg" class="space-y-4">
+      <div class="flex items-start gap-3">
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-bold text-white dark:bg-ink-50 dark:text-ink-950">2</span>
+        <div class="min-w-0 flex-1">
+          <h3 class="text-sm font-bold text-ink-950 dark:text-ink-50">{{ t('adminCenter.currentAssigneesStep') }}</h3>
+          <p class="mt-1 text-xs leading-5 text-ink-500">
+            {{ t('adminCenter.currentAssigneesCount', { count: assignees.length, scope: selectedScopeLabel }) }}
+          </p>
+        </div>
+      </div>
+
+      <InlineMessage v-if="assigneesLoading">{{ t('common.loading') }}</InlineMessage>
+      <InlineMessage v-else-if="assigneeError" tone="error">{{ assigneeError }}</InlineMessage>
+      <InlineMessage v-if="assigneesTruncated" tone="warning">{{ t('adminCenter.assigneeListTruncated') }}</InlineMessage>
+      <EmptyStatePanel
+        v-if="!assigneesLoading && !assigneeError && assignees.length === 0"
+        title="adminCenter.noCurrentAssignees"
+        description="adminCenter.noCurrentAssigneesHelp"
+        icon="lock"
+      />
+      <SurfacePanel v-else-if="assignees.length" variant="list">
+        <ListSurfaceRow v-for="assignee in assignees" :key="assignee.uid" as="div" class="flex flex-wrap items-center gap-3">
+          <UserAvatar :photo-url="assignee.photoUrl" :name="assignee.name" size="md" />
+          <div class="min-w-0 flex-1">
+            <h4 class="truncate text-sm font-bold text-ink-900 dark:text-ink-100">{{ assignee.name }}</h4>
+            <p class="mt-0.5 truncate text-xs text-ink-500">{{ assignee.email || assignee.uid }}</p>
+            <p class="mt-1 text-xs text-ink-500">{{ accessSummary(assignee) }}</p>
+          </div>
+          <div class="flex shrink-0 gap-2">
+            <AppButton size="sm" variant="secondary" :disabled="Boolean(savingUid)" @click="selectAssignee(assignee)">
+              {{ t('common.manage') }}
+            </AppButton>
+            <AppButton
+              size="sm"
+              variant="danger"
+              :disabled="Boolean(savingUid) || hasInheritedAccess(assignee)"
+              @click="revokeAssignee(assignee)"
+            >
+              <BusyButtonContent
+                :busy="savingUid === assignee.uid"
+                :label="t('adminCenter.removeAccess')"
+                :busy-label="t('common.saving')"
+              />
+            </AppButton>
+          </div>
+        </ListSurfaceRow>
+      </SurfacePanel>
+    </SurfacePanel>
+
+    <SurfacePanel v-if="scopeReady" as="form" padding="lg" @submit.prevent="findUser">
+      <div class="flex items-start gap-3">
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-bold text-white dark:bg-ink-50 dark:text-ink-950">3</span>
         <div class="min-w-0 flex-1">
           <label for="access-user-lookup" class="block text-sm font-bold text-ink-950 dark:text-ink-50">
             {{ t('adminCenter.findMemberStep') }}
@@ -33,202 +112,44 @@
     </SurfacePanel>
 
     <EmptyStatePanel v-if="error && !user" title="access.unableToFindUser" :description="error" icon="warning" />
-    <EmptyStatePanel
-      v-else-if="!user"
-      title="adminCenter.noMemberSelected"
-      description="adminCenter.noMemberSelectedHelp"
-      icon="lock"
-    />
 
-    <SurfacePanel v-else as="article" padding="lg" class="space-y-6">
-      <div class="flex items-start gap-3 border-b border-ink-100 pb-5 dark:border-ink-800">
+    <SurfacePanel v-else-if="user && scopeReady" as="article" padding="lg" class="space-y-5">
+      <div class="flex items-start gap-3">
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-bold text-white dark:bg-ink-50 dark:text-ink-950">4</span>
+        <div class="min-w-0 flex-1">
+          <h3 class="text-sm font-bold text-ink-950 dark:text-ink-50">{{ t('adminCenter.confirmAssignmentStep') }}</h3>
+          <p class="mt-1 text-xs leading-5 text-ink-500">{{ selectedScopeLabel }}</p>
+        </div>
+      </div>
+
+      <ListSurfaceRow as="div" class="flex items-center gap-3">
         <UserAvatar :photo-url="user.photoUrl" :name="user.name" size="md" />
         <div class="min-w-0 flex-1">
           <h2 class="truncate text-base font-bold text-ink-900 dark:text-ink-100">{{ user.name }}</h2>
           <p class="mt-0.5 truncate text-xs text-ink-500">{{ user.email || user.uid }}</p>
-          <p class="mt-2 text-xs font-semibold text-primary-700 dark:text-primary-300">{{ accessSummary }}</p>
+          <p class="mt-2 text-xs font-semibold" :class="hasSelectedAccess ? 'text-primary-700 dark:text-primary-300' : 'text-ink-500'">
+            {{ accessStateLabel }}
+          </p>
         </div>
-        <span v-if="savingUid" class="text-xs font-semibold text-ink-500">{{ t('common.saving') }}</span>
-      </div>
-
-      <div class="flex items-start gap-3">
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-bold text-white dark:bg-ink-50 dark:text-ink-950">2</span>
-        <div class="min-w-0 flex-1">
-          <h3 class="text-sm font-bold text-ink-950 dark:text-ink-50">{{ t('adminCenter.assignResponsibilityStep') }}</h3>
-          <p class="mt-1 text-xs leading-5 text-ink-500">{{ t('adminCenter.assignResponsibilityHelp') }}</p>
-        </div>
-      </div>
-
-      <!-- Access Mode Select Buttons -->
-      <div class="grid gap-3 sm:grid-cols-2">
-        <SelectionOptionButton
-          label="adminCenter.platformAdminTitle"
-          :description="t('adminCenter.platformAdminDesc')"
-          :selected="isPlatformAdmin"
-          :disabled="Boolean(savingUid)"
-          @select="selectPlatformAdmin"
-        />
-        <SelectionOptionButton
-          label="adminCenter.scopedManagerTitle"
-          :description="t('adminCenter.scopedManagerDesc')"
-          :selected="!isPlatformAdmin"
-          :disabled="Boolean(savingUid)"
-          @select="selectScopedManager"
-        />
-      </div>
-
-      <!-- Scoped responsibilities configuration (Accordions) -->
-      <div v-if="!isPlatformAdmin" class="space-y-3">
-        <!-- Proposal manager accordion -->
-        <SurfacePanel variant="control" padding="sm" class="overflow-hidden">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between p-2 text-left font-bold text-sm text-ink-950 dark:text-ink-50"
-            @click="toggleSection('issue')"
-          >
-            <span class="flex items-center gap-2">
-              <AppIcon name="comment" :size="4" class="text-primary-600 dark:text-primary-400" />
-              <span>{{ t('adminCenter.proposalResponsibility') }}</span>
-              <span class="text-xs font-normal text-ink-500">
-                ({{ t('adminCenter.categoryListCount', { count: draftIssueCategoryIds.length }) }})
-              </span>
-            </span>
-            <AppIcon
-              name="chevron-down"
-              :size="4"
-              class="transform transition-transform duration-200"
-              :class="expandedSection === 'issue' ? 'rotate-180' : ''"
-            />
-          </button>
-          
-          <div
-            v-show="expandedSection === 'issue'"
-            class="border-t border-ink-100 mt-2 pt-3 px-2 pb-2 space-y-2 dark:border-ink-800 animate-fade-in"
-          >
-            <p class="text-xs leading-5 text-ink-500 pb-1">{{ t('adminCenter.proposalResponsibilityHelp') }}</p>
-            <div v-if="activeIssueCategories.length === 0" class="text-xs text-ink-400 py-2">
-              {{ t('categoryAdmin.noCategoriesAvailable') }}
-            </div>
-            <div v-else class="grid gap-2 sm:grid-cols-2">
-              <SelectionOptionButton
-                v-for="category in activeIssueCategories"
-                :key="category.id"
-                :label="category.label"
-                :description="t('access.reviewAndManageProposalsInCategory', { category: category.label })"
-                :selected="draftIssueCategoryIds.includes(category.id)"
-                :disabled="Boolean(savingUid)"
-                @click="toggleCategory(category.id)"
-              />
-            </div>
-          </div>
-        </SurfacePanel>
-
-        <!-- Facility manager accordion -->
-        <SurfacePanel variant="control" padding="sm" class="overflow-hidden">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between p-2 text-left font-bold text-sm text-ink-950 dark:text-ink-50"
-            @click="toggleSection('facility')"
-          >
-            <span class="flex items-center gap-2">
-              <AppIcon name="wrench" :size="4" class="text-primary-600 dark:text-primary-400" />
-              <span>{{ t('adminCenter.facilityResponsibility') }}</span>
-              <span class="text-xs font-normal text-ink-500">
-                ({{ t('adminCenter.categoryListCount', { count: draftFacilityCategoryIds.length }) }})
-              </span>
-            </span>
-            <AppIcon
-              name="chevron-down"
-              :size="4"
-              class="transform transition-transform duration-200"
-              :class="expandedSection === 'facility' ? 'rotate-180' : ''"
-            />
-          </button>
-
-          <div
-            v-show="expandedSection === 'facility'"
-            class="border-t border-ink-100 mt-2 pt-3 px-2 pb-2 space-y-2 dark:border-ink-800"
-          >
-            <p class="text-xs leading-5 text-ink-500 pb-1">{{ t('adminCenter.facilityResponsibilityHelp') }}</p>
-            <div v-if="activeFacilityCategories.length === 0" class="text-xs text-ink-400 py-2">
-              {{ t('categoryAdmin.noCategoriesAvailable') }}
-            </div>
-            <div v-else class="grid gap-2 sm:grid-cols-2">
-              <SelectionOptionButton
-                v-for="category in activeFacilityCategories"
-                :key="category.id"
-                :label="category.label"
-                :description="t('access.handleFacilityReportsInCategory', { category: category.label })"
-                :selected="draftFacilityCategoryIds.includes(category.id)"
-                :disabled="Boolean(savingUid)"
-                @click="toggleFacilityCategory(category.id)"
-              />
-            </div>
-          </div>
-        </SurfacePanel>
-
-        <!-- Other manager accordion (Announcement) -->
-        <SurfacePanel variant="control" padding="sm" class="overflow-hidden">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between p-2 text-left font-bold text-sm text-ink-950 dark:text-ink-50"
-            @click="toggleSection('other')"
-          >
-            <span class="flex items-center gap-2">
-              <AppIcon name="megaphone" :size="4" class="text-primary-600 dark:text-primary-400" />
-              <span>{{ t('adminCenter.otherResponsibility') }}</span>
-              <span class="text-xs font-normal text-ink-500">
-                ({{ draftRoles.includes('announcement-manager') ? 1 : 0 }})
-              </span>
-            </span>
-            <AppIcon
-              name="chevron-down"
-              :size="4"
-              class="transform transition-transform duration-200"
-              :class="expandedSection === 'other' ? 'rotate-180' : ''"
-            />
-          </button>
-
-          <div
-            v-show="expandedSection === 'other'"
-            class="border-t border-ink-100 mt-2 pt-3 px-2 pb-2 space-y-2 dark:border-ink-800"
-          >
-            <p class="text-xs leading-5 text-ink-500 pb-1">{{ t('adminCenter.otherResponsibilityHelp') }}</p>
-            <SelectionOptionButton
-              label="access.announcementManagement"
-              description="access.publishAndDeleteAnnouncements"
-              :selected="draftRoles.includes('announcement-manager')"
-              :disabled="Boolean(savingUid)"
-              @click="toggleScopedRole('announcement-manager')"
-            />
-          </div>
-        </SurfacePanel>
-      </div>
+      </ListSurfaceRow>
 
       <InlineMessage v-if="error">{{ error }}</InlineMessage>
 
-      <!-- Save / Reset actions row, only active when hasChanges is true -->
-      <div class="flex items-center justify-between gap-3 border-t border-ink-100 pt-5 dark:border-ink-800">
-        <p class="text-xs leading-5 text-ink-500">
-          {{ t('adminCenter.autoSaveHelp') }}
-        </p>
-        <div class="flex items-center gap-3">
-          <AppButton
-            v-if="hasChanges"
-            variant="secondary"
-            :disabled="Boolean(savingUid)"
-            @click="resetChanges"
-          >
-            {{ t('common.reset') }}
-          </AppButton>
-          <AppButton
-            variant="primary"
-            :disabled="!hasChanges || Boolean(savingUid)"
-            @click="saveChanges"
-          >
-            <BusyButtonContent :busy="Boolean(savingUid)" :label="t('common.save')" :busy-label="t('common.saving')" />
-          </AppButton>
-        </div>
+      <div class="flex flex-col-reverse gap-2 border-t border-ink-100 pt-5 dark:border-ink-800 sm:flex-row sm:justify-end">
+        <AppButton variant="secondary" :disabled="Boolean(savingUid)" @click="clearUser">
+          {{ t('adminCenter.chooseAnotherMember') }}
+        </AppButton>
+        <AppButton
+          :variant="hasSelectedAccess ? 'danger' : 'primary'"
+          :disabled="Boolean(savingUid) || hasInheritedPlatformAccess"
+          @click="saveSelectedAccess(!hasSelectedAccess)"
+        >
+          <BusyButtonContent
+            :busy="Boolean(savingUid)"
+            :label="hasSelectedAccess ? t('adminCenter.removeAccess') : t('adminCenter.grantAccess')"
+            :busy-label="t('common.saving')"
+          />
+        </AppButton>
       </div>
     </SurfacePanel>
   </section>
@@ -237,159 +158,204 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
-import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import BusyButtonContent from '@/components/ui/atoms/BusyButtonContent.vue';
 import InlineMessage from '@/components/ui/atoms/InlineMessage.vue';
 import UserAvatar from '@/components/ui/atoms/UserAvatar.vue';
 import EmptyStatePanel from '@/components/ui/molecules/EmptyStatePanel.vue';
+import ListSurfaceRow from '@/components/ui/molecules/ListSurfaceRow.vue';
+import PillSegmentedControl, { type PillSegmentedControlOption } from '@/components/ui/molecules/PillSegmentedControl.vue';
 import SectionHeader from '@/components/ui/molecules/SectionHeader.vue';
 import SelectionOptionButton from '@/components/ui/molecules/SelectionOptionButton.vue';
 import SurfacePanel from '@/components/ui/molecules/SurfacePanel.vue';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { useCategories } from '@/composables/useCategories';
 import { useI18n } from '@/i18n';
-import { listRoleAssignments, setUserRoles, type AccessUser } from '@/services/access';
+import {
+  findRoleAssignment,
+  listScopeAssignments,
+  setUserRoles,
+  type AccessScope,
+  type AccessUser,
+} from '@/services/access';
 import type { RoleCode } from '@/services/session-role';
 
-const lookup = ref('');
+type AccessScopeKind = 'issue' | 'facility' | 'announcement';
+
 const { t } = useI18n();
 const { activeFacilityCategories, activeIssueCategories, refresh } = useCategories();
 const { show } = useActionFeedback();
+const scopeKind = ref<AccessScopeKind>('issue');
+const selectedCategoryId = ref('');
+const lookup = ref('');
 const user = ref<AccessUser | null>(null);
 const loading = ref(false);
-const error = ref('');
 const savingUid = ref('');
-const expandedSection = ref<'issue' | 'facility' | 'other' | null>(null);
+const error = ref('');
+const assignees = ref<AccessUser[]>([]);
+const assigneesLoading = ref(false);
+const assigneesTruncated = ref(false);
+const assigneeError = ref('');
+let assigneeRequestSequence = 0;
 
-// Draft state
-const draftRoles = ref<RoleCode[]>([]);
-const draftIssueCategoryIds = ref<string[]>([]);
-const draftFacilityCategoryIds = ref<string[]>([]);
+const scopeOptions = computed<readonly PillSegmentedControlOption<AccessScopeKind>[]>(() => [
+  { value: 'issue', label: t('adminCenter.proposalResponsibility'), icon: 'comment' },
+  { value: 'facility', label: t('adminCenter.facilityResponsibility'), icon: 'wrench' },
+  { value: 'announcement', label: t('access.announcementManagement'), icon: 'megaphone' },
+]);
 
-const isPlatformAdmin = computed(() => draftRoles.value.includes('platform-admin'));
+const selectableCategories = computed(() => scopeKind.value === 'issue'
+  ? activeIssueCategories.value
+  : scopeKind.value === 'facility' ? activeFacilityCategories.value : []);
 
-const responsibilityCount = computed(() => {
-  if (!user.value || isPlatformAdmin.value) return 0;
-  return draftIssueCategoryIds.value.length
-    + draftFacilityCategoryIds.value.length
-    + Number(draftRoles.value.includes('announcement-manager'));
+const scopeReady = computed(() => scopeKind.value === 'announcement' || Boolean(selectedCategoryId.value));
+
+const selectedAccessScope = computed<AccessScope | null>(() => {
+  if (scopeKind.value === 'issue' || scopeKind.value === 'facility') {
+    return selectedCategoryId.value ? { kind: scopeKind.value, categoryId: selectedCategoryId.value } : null;
+  }
+  return { kind: scopeKind.value };
 });
 
-const accessSummary = computed(() => isPlatformAdmin.value
-  ? t('adminCenter.fullAccessSummary')
-  : t('adminCenter.scopedAccessSummary', { count: responsibilityCount.value }));
+const selectedCategory = computed(() => selectableCategories.value.find((category) => category.id === selectedCategoryId.value));
+const selectedScopeLabel = computed(() => selectedCategory.value?.label
+  ?? t('access.announcementManagement'));
 
-// Compare current draft with original database values
-const hasChanges = computed(() => {
-  if (!user.value) return false;
+function hasInheritedAccess(accessUser: AccessUser) {
+  return accessUser.roles.includes('platform-admin');
+}
 
-  const sameRoles = draftRoles.value.length === user.value.roles.length &&
-    draftRoles.value.every(r => user.value!.roles.includes(r));
+const hasInheritedPlatformAccess = computed(() => Boolean(user.value && hasInheritedAccess(user.value)));
 
-  const sameIssues = draftIssueCategoryIds.value.length === user.value.managedIssueCategoryIds.length &&
-    draftIssueCategoryIds.value.every(id => user.value!.managedIssueCategoryIds.includes(id));
+function userHasSelectedAccess(accessUser: AccessUser) {
+  if (hasInheritedAccess(accessUser)) return true;
+  if (scopeKind.value === 'issue') return accessUser.managedIssueCategoryIds.includes(selectedCategoryId.value);
+  if (scopeKind.value === 'facility') return accessUser.managedFacilityCategoryIds.includes(selectedCategoryId.value);
+  return accessUser.roles.includes('announcement-manager');
+}
 
-  const sameFacilities = draftFacilityCategoryIds.value.length === user.value.managedFacilityCategoryIds.length &&
-    draftFacilityCategoryIds.value.every(id => user.value!.managedFacilityCategoryIds.includes(id));
+const hasSelectedAccess = computed(() => Boolean(user.value && userHasSelectedAccess(user.value)));
 
-  return !sameRoles || !sameIssues || !sameFacilities;
-});
+const accessStateLabel = computed(() => hasInheritedPlatformAccess.value
+  ? t('adminCenter.accessInheritedFromPlatformAdmin')
+  : hasSelectedAccess.value ? t('adminCenter.accessAlreadyGranted') : t('adminCenter.accessNotGranted'));
 
-function resetChanges() {
-  if (!user.value) {
-    draftRoles.value = [];
-    draftIssueCategoryIds.value = [];
-    draftFacilityCategoryIds.value = [];
+function categoryDescription(label: string) {
+  return scopeKind.value === 'issue'
+    ? t('access.reviewAndManageProposalsInCategory', { category: label })
+    : t('access.handleFacilityReportsInCategory', { category: label });
+}
+
+function clearUser() {
+  user.value = null;
+  error.value = '';
+}
+
+function accessSummary(accessUser: AccessUser) {
+  if (accessUser.roles.includes('platform-admin')) return t('adminCenter.fullAccessSummary');
+  const count = accessUser.roles.length
+    + accessUser.managedIssueCategoryIds.length
+    + accessUser.managedFacilityCategoryIds.length;
+  return t('adminCenter.scopedAccessSummary', { count });
+}
+
+function selectAssignee(accessUser: AccessUser) {
+  user.value = accessUser;
+  lookup.value = accessUser.email ?? accessUser.uid;
+  error.value = '';
+}
+
+async function loadAssignees() {
+  const scope = selectedAccessScope.value;
+  const requestSequence = ++assigneeRequestSequence;
+  if (!scope) {
+    assignees.value = [];
+    assigneesTruncated.value = false;
     return;
   }
-  draftRoles.value = [...user.value.roles];
-  draftIssueCategoryIds.value = [...user.value.managedIssueCategoryIds];
-  draftFacilityCategoryIds.value = [...user.value.managedFacilityCategoryIds];
+  assigneesLoading.value = true;
+  assigneeError.value = '';
+  try {
+    const result = await listScopeAssignments(scope);
+    if (requestSequence !== assigneeRequestSequence) return;
+    assignees.value = result.users;
+    assigneesTruncated.value = result.truncated;
+  } catch (caught) {
+    if (requestSequence === assigneeRequestSequence) {
+      assigneeError.value = t(caught instanceof Error ? caught.message : 'access.theSearchFailed');
+    }
+  } finally {
+    if (requestSequence === assigneeRequestSequence) assigneesLoading.value = false;
+  }
 }
 
-watch(user, () => {
-  resetChanges();
-  expandedSection.value = null;
-}, { immediate: true });
+watch(scopeKind, () => {
+  selectedCategoryId.value = '';
+  lookup.value = '';
+  error.value = '';
+});
 
-function toggleSection(section: 'issue' | 'facility' | 'other') {
-  expandedSection.value = expandedSection.value === section ? null : section;
-}
+watch(selectedAccessScope, () => { void loadAssignees(); }, { immediate: true });
 
 async function findUser() {
   const query = lookup.value.trim();
-  if (!query) return;
+  if (!query || !scopeReady.value) return;
   loading.value = true;
   error.value = '';
   user.value = null;
   try {
-    const matches = await listRoleAssignments(query);
-    user.value = matches[0] ?? null;
+    user.value = await findRoleAssignment(query);
     if (!user.value) error.value = t('access.userNotFoundHelp');
   } catch (caught) {
-    error.value = caught instanceof Error ? t(caught.message) : t('access.theSearchFailed');
+    error.value = t(caught instanceof Error ? caught.message : 'access.theSearchFailed');
   } finally {
     loading.value = false;
   }
 }
 
-async function saveChanges() {
-  if (!user.value) return;
-  savingUid.value = user.value.uid;
-  error.value = '';
+async function saveAccess(accessUser: AccessUser, grant: boolean) {
+  savingUid.value = accessUser.uid;
   try {
-    const result = await setUserRoles(
-      user.value.uid,
-      draftRoles.value,
-      draftIssueCategoryIds.value,
-      draftFacilityCategoryIds.value
-    );
-    user.value.roles = result.roles;
-    user.value.managedIssueCategoryIds = result.managedIssueCategoryIds;
-    user.value.managedFacilityCategoryIds = result.managedFacilityCategoryIds;
-    resetChanges();
+    let roles: RoleCode[] = [...accessUser.roles];
+    let issueIds = [...accessUser.managedIssueCategoryIds];
+    let facilityIds = [...accessUser.managedFacilityCategoryIds];
+    if (scopeKind.value === 'announcement') {
+      roles = grant
+        ? [...new Set([...roles.filter((role) => role !== 'platform-admin'), 'announcement-manager' as const])]
+        : roles.filter((role) => role !== 'announcement-manager');
+    } else if (scopeKind.value === 'issue') {
+      issueIds = grant ? [...new Set([...issueIds, selectedCategoryId.value])] : issueIds.filter((id) => id !== selectedCategoryId.value);
+    } else {
+      facilityIds = grant ? [...new Set([...facilityIds, selectedCategoryId.value])] : facilityIds.filter((id) => id !== selectedCategoryId.value);
+    }
+    const result = await setUserRoles(accessUser.uid, roles, issueIds, facilityIds);
+    const updated = { ...accessUser, ...result };
+    if (user.value?.uid === accessUser.uid) user.value = updated;
+    await loadAssignees();
     show(t('adminCenter.accessSaved'), 'success');
+    return true;
   } catch (caught) {
-    error.value = caught instanceof Error ? t(caught.message) : t('access.saveFailed');
+    const message = t(caught instanceof Error ? caught.message : 'access.saveFailed');
+    if (user.value?.uid === accessUser.uid) error.value = message;
+    else assigneeError.value = message;
+    return false;
   } finally {
     savingUid.value = '';
   }
 }
 
-function selectPlatformAdmin() {
-  if (isPlatformAdmin.value) return;
-  draftRoles.value = ['platform-admin'];
-  draftIssueCategoryIds.value = [];
-  draftFacilityCategoryIds.value = [];
+async function saveSelectedAccess(grant: boolean) {
+  if (!user.value) return;
+  error.value = '';
+  await saveAccess(user.value, grant);
 }
 
-function selectScopedManager() {
-  if (!isPlatformAdmin.value) return;
-  draftRoles.value = [];
-  draftIssueCategoryIds.value = [];
-  draftFacilityCategoryIds.value = [];
+async function revokeAssignee(accessUser: AccessUser) {
+  assigneeError.value = '';
+  await saveAccess(accessUser, false);
 }
 
-function toggleCategory(categoryId: string) {
-  if (isPlatformAdmin.value) return;
-  draftIssueCategoryIds.value = draftIssueCategoryIds.value.includes(categoryId)
-    ? draftIssueCategoryIds.value.filter((value) => value !== categoryId)
-    : [...draftIssueCategoryIds.value, categoryId];
-}
-
-function toggleFacilityCategory(categoryId: string) {
-  if (isPlatformAdmin.value) return;
-  draftFacilityCategoryIds.value = draftFacilityCategoryIds.value.includes(categoryId)
-    ? draftFacilityCategoryIds.value.filter((value) => value !== categoryId)
-    : [...draftFacilityCategoryIds.value, categoryId];
-}
-
-function toggleScopedRole(role: Extract<RoleCode, 'announcement-manager'>) {
-  if (isPlatformAdmin.value) return;
-  draftRoles.value = draftRoles.value.includes(role)
-    ? draftRoles.value.filter((value) => value !== role)
-    : [...draftRoles.value, role];
-}
-
-onMounted(() => { void refresh(); });
+onMounted(async () => {
+  await refresh();
+  await loadAssignees();
+});
 </script>

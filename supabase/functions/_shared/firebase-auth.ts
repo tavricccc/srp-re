@@ -13,7 +13,23 @@ export interface FirebaseAuthContext {
 const FIREBASE_USER_CACHE_SECONDS = 15 * 60;
 const FIREBASE_USER_MEMORY_CACHE_MS = 60 * 1000;
 const FIREBASE_USER_MEMORY_CACHE_MAX = 200;
+const LOCAL_AUTH_EMULATOR_PATTERN = /^(?:127\.0\.0\.1|localhost|host\.docker\.internal):\d{2,5}$/u;
 const firebaseUserMemoryCache = new Map<string, { expiresAt: number; user: Record<string, unknown> }>();
+
+function authEmulatorHost() {
+  if (Deno.env.get("LOCAL_TEST_MODE") !== "true") return "";
+  const host = Deno.env.get("FIREBASE_AUTH_EMULATOR_HOST")?.trim() ?? "";
+  if (!LOCAL_AUTH_EMULATOR_PATTERN.test(host)) throw new Error("invalid-local-test-config");
+  return host;
+}
+
+function identityToolkitUrl(path: string, apiKey: string) {
+  const emulatorHost = authEmulatorHost();
+  const base = emulatorHost
+    ? `http://${emulatorHost}/identitytoolkit.googleapis.com/v1`
+    : "https://identitytoolkit.googleapis.com/v1";
+  return `${base}/${path}?key=${apiKey}`;
+}
 
 function firebaseUserCacheKey(uid: string) {
   return `srp:firebase-user:${uid}`;
@@ -109,7 +125,7 @@ export function requireAuthHeader(request: Request) {
 export async function lookupFirebaseUser(idToken: string) {
   const firebaseApiKey = requireEnv("FIREBASE_WEB_API_KEY");
   const lookupResponse = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`,
+    identityToolkitUrl("accounts:lookup", firebaseApiKey),
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -156,14 +172,21 @@ export async function requireVerifiedFirebaseUser(request: Request): Promise<Fir
   const idToken = requireAuthHeader(request);
   const projectId = requireEnv("FIREBASE_PROJECT_ID");
   let payload: Record<string, unknown>;
-  try {
-    const verified = await jwtVerify(idToken, firebaseKeys, {
-      audience: projectId,
-      issuer: `https://securetoken.google.com/${projectId}`,
-    });
-    payload = verified.payload as Record<string, unknown>;
-  } catch {
-    throw new Error("unauthenticated");
+  if (authEmulatorHost()) {
+    payload = decodeJwtPayload(idToken);
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.aud !== projectId || payload.iss !== `https://securetoken.google.com/${projectId}`
+      || typeof payload.exp !== "number" || payload.exp <= now) throw new Error("unauthenticated");
+  } else {
+    try {
+      const verified = await jwtVerify(idToken, firebaseKeys, {
+        audience: projectId,
+        issuer: `https://securetoken.google.com/${projectId}`,
+      });
+      payload = verified.payload as Record<string, unknown>;
+    } catch {
+      throw new Error("unauthenticated");
+    }
   }
   const uid = asString(payload.sub);
   if (!uid) throw new Error("unauthenticated");

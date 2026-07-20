@@ -4,99 +4,52 @@
     :class="compact ? 'relative inline-block text-left' : 'space-y-3 relative'"
   >
     <p v-if="!compact" class="field-label">{{ t('issue.admin.title') }}</p>
-    <div :class="compact ? '' : 'relative inline-block w-full sm:w-60 text-left'">
-      <!-- Toggle Button (Normal) -->
-      <button
-        v-if="!compact"
-        ref="triggerRef"
-        type="button"
-        class="interactive-surface flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold"
-        :class="[
-          isDropdownOpen
-            ? 'border-ink-400 bg-white ring-2 ring-secondary/15 dark:border-ink-600 dark:bg-ink-900'
-            : 'border-ink-200/80 bg-ink-50/50 hover:bg-ink-100/50 dark:border-ink-700/80 dark:bg-ink-900/30 dark:hover:bg-ink-800/30',
-          getDropdownButtonTextClass(adminStatus)
-        ]"
-        :disabled="isClosed"
-        @click="isDropdownOpen = !isDropdownOpen"
-      >
-        <span class="flex items-center gap-2">
-          <span class="h-2 w-2 rounded-full" :class="getStatusDotClass(adminStatus)"></span>
-          {{ getStatusLabel(adminStatus) }}
-        </span>
-        <AppIcon
-          name="chevron-down"
-          class="h-4 w-4 text-ink-500 transition-transform duration-300"
-          :class="{ 'rotate-180': isDropdownOpen }"
-        />
-      </button>
+    <DropdownMenu :fallback-height="compact ? 280 : 240" :width="compact ? 176 : 240" :size="compact ? 'compact' : 'default'">
+      <template #trigger="{ open, toggle }">
+        <AppButton
+          v-if="compact"
+          variant="toolbar"
+          size="sm"
+          class="w-8 rounded-full p-0"
+          :class="{ 'text-ink-800 dark:text-ink-100': open }"
+          :title="t('issue.manageProposals')"
+          :aria-label="t('issue.manageProposals')"
+          @click.stop="toggle"
+        >
+          <AppIcon name="more-horizontal" :size="4.5" :stroke-width="1.8" />
+        </AppButton>
+        <AppButton
+          v-else
+          variant="toolbar"
+          class="w-full justify-between gap-2 px-4"
+          :class="getDropdownButtonTextClass(adminStatus)"
+          :disabled="isClosed"
+          :active="open"
+          @click="toggle"
+        >
+          <span class="flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full" :class="getStatusDotClass(adminStatus)"></span>
+            {{ getStatusLabel(adminStatus) }}
+          </span>
+          <AppIcon name="chevron-down" :size="4" class="text-ink-500 transition-transform duration-300" :class="{ 'rotate-180': open }" />
+        </AppButton>
+      </template>
 
-      <!-- Toggle Button (Compact three dots) -->
-      <AppButton
-        v-else
-        ref="triggerRef"
-        variant="toolbar"
-        class="h-8 w-8 rounded-full p-0"
-        :class="{ 'text-ink-800 dark:text-ink-100': isDropdownOpen }"
-        :title="t('issue.manageProposals')"
-        :aria-label="t('issue.manageProposals')"
-        @click="isDropdownOpen = !isDropdownOpen"
-      >
-        <AppIcon name="more-horizontal" :size="4.5" :stroke-width="1.8" />
-      </AppButton>
-
-      <!-- Dropdown Menu -->
-      <Teleport to="body">
-        <transition name="popover">
-          <div
-            v-if="isDropdownOpen"
-            ref="dropdownRef"
-            class="dropdown-panel fixed z-[120] origin-top-right"
-            :class="compact ? 'w-44' : 'w-60'"
-            :style="dropdownStyle"
-            @click.stop
-            @pointerdown.stop
-          >
-            <!-- Under-review state: Show "issue.review" -->
-            <button
-              v-if="isUnderReview"
-              type="button"
-              class="dropdown-item justify-between"
-              @click.stop="openReviewDialog"
-            >
-              <span class="font-semibold text-ink-900 dark:text-ink-100">
-                {{ t('issue.admin.review') }}
-              </span>
-            </button>
-
-            <!-- Approved state (pending / processing): Update status/result in one dialog -->
-            <template v-if="isProcessingOrPending">
-              <button
-                type="button"
-                class="dropdown-item justify-between"
-                @click.stop="openStatusDialog"
-              >
-                <span class="font-semibold text-ink-900 dark:text-ink-100">
-                  {{ t('issue.admin.changeStatus') }}
-                </span>
-              </button>
-            </template>
-
-            <!-- Danger zone: Delete (compact only) -->
-            <div v-if="compact" class="mt-1 border-t border-error/20 pt-1">
-              <button
-                type="button"
-                class="dropdown-item dropdown-item--danger"
-                @click.stop="onDeleteClick"
-              >
-                <AppIcon name="trash" :size="3" />
-                <span>{{ t('issue.admin.delete') }}</span>
-              </button>
-            </div>
-          </div>
-        </transition>
-      </Teleport>
-    </div>
+      <template #default="{ close }">
+        <button v-if="isUnderReview" type="button" class="dropdown-item justify-between" @click.stop="openReviewDialog(close)">
+          <span class="font-semibold text-ink-900 dark:text-ink-100">{{ t('issue.admin.review') }}</span>
+        </button>
+        <button v-if="isProcessingOrPending" type="button" class="dropdown-item justify-between" @click.stop="openStatusDialog(close)">
+          <span class="font-semibold text-ink-900 dark:text-ink-100">{{ t('issue.admin.changeStatus') }}</span>
+        </button>
+        <div v-if="compact" class="mt-1 border-t border-error/20 pt-1">
+          <button type="button" class="dropdown-item dropdown-item--danger" @click.stop="onDeleteClick(close)">
+            <AppIcon name="trash" :size="3" />
+            <span>{{ t('issue.admin.delete') }}</span>
+          </button>
+        </div>
+      </template>
+    </DropdownMenu>
   </div>
 
   <!-- Shared Moderation Dialogs -->
@@ -123,10 +76,9 @@ import { computed, ref } from 'vue';
 import { useSession } from '@/composables/useSession';
 import { ISSUE_STATUS_LABELS } from '@/constants/statuses';
 import { useStatusStyling } from '@/composables/useStatusStyling';
-import { useClickOutside } from '@/composables/useClickOutside';
-import { useDropdownPosition } from '@/composables/useDropdownPosition';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
+import DropdownMenu from '@/components/ui/molecules/DropdownMenu.vue';
 import type { IssueRecord, IssueStatus } from '@/types';
 import { useI18n } from '@/i18n';
 
@@ -146,9 +98,6 @@ const emit = defineEmits<{
   'error': [error: string];
   'delete': [];
 }>();
-
-const triggerRef = ref<HTMLButtonElement | null>(null);
-const dropdownRef = ref<HTMLDivElement | null>(null);
 
 const isReviewDialogOpen = ref(false);
 const isStatusDialogOpen = ref(false);
@@ -170,34 +119,18 @@ const isProcessingOrPending = computed(() =>
 const { canManageIssueCategory } = useSession();
 const isAdmin = computed(() => canManageIssueCategory(props.issue.category));
 const adminStatus = computed(() => props.issue.status);
-const isDropdownOpen = ref(false);
-
-useClickOutside(isDropdownOpen, [triggerRef, dropdownRef], () => {
-  isDropdownOpen.value = false;
-});
-
-const { dropdownStyle } = useDropdownPosition(
-  triggerRef,
-  isDropdownOpen,
-  {
-    fallbackHeight: props.compact ? 280 : 240,
-    width: props.compact ? 176 : 240,
-  },
-  dropdownRef,
-);
-
-function onDeleteClick() {
-  isDropdownOpen.value = false;
+function onDeleteClick(close: () => void) {
+  close();
   emit('delete');
 }
 
-function openReviewDialog() {
-  isDropdownOpen.value = false;
+function openReviewDialog(close: () => void) {
+  close();
   isReviewDialogOpen.value = true;
 }
 
-function openStatusDialog() {
-  isDropdownOpen.value = false;
+function openStatusDialog(close: () => void) {
+  close();
   statusDialogInitialAction.value = 'processing';
   isStatusDialogOpen.value = true;
 }

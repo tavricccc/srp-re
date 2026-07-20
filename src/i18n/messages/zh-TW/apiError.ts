@@ -22,7 +22,6 @@ const messages = {
   'apiError.validationTooLong': '送出的文字超過長度限制。',
   'apiError.validationInvalid': '送出的內容不正確。',
   'apiError.validationTooMany': '送出的項目超過數量限制。',
-  'apiError.lastPlatformAdmin': '至少需要保留一位平台管理員。',
   'apiError.serviceNotConfigured': '服務設定尚未完成。',
   'apiError.rateLimitProviderUnavailable': '限流服務暫時無法使用，請稍後再試。',
   'apiError.invalidSignature': '請求簽章無效。',

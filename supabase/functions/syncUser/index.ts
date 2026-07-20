@@ -16,12 +16,13 @@ function parseCustomAttributes(value: string) {
   }
 }
 
-function isAdminEmail(email: string) {
-  return requireEnv("ADMIN_EMAILS")
+function adminEmails() {
+  const emails = requireEnv("ADMIN_EMAILS")
     .split(",")
     .map((item) => item.trim().toLowerCase())
-    .filter(Boolean)
-    .includes(email.toLowerCase());
+    .filter(Boolean);
+  if (emails.length === 0) throw new Error("service-not-configured");
+  return [...new Set(emails)];
 }
 
 Deno.serve(async (request) => {
@@ -38,30 +39,32 @@ Deno.serve(async (request) => {
     const user = await requireEligibleFirebaseUser(request);
     await claimFixedWindowRateLimit(user.uid, "auth.sync", utcHourWindow(), RATE_LIMITS.loginSyncHourly);
 
-    const accessToken = await getGoogleAccessToken([
-      "https://www.googleapis.com/auth/identitytoolkit",
-      "https://www.googleapis.com/auth/firebase",
-    ]);
-    const updateResponse = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/projects/${projectId}/accounts:update`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          localId: user.uid,
-          customAttributes: JSON.stringify({
-            ...parseCustomAttributes(user.customAttributes),
-            role: "authenticated",
+    if (Deno.env.get("LOCAL_TEST_MODE") !== "true") {
+      const accessToken = await getGoogleAccessToken([
+        "https://www.googleapis.com/auth/identitytoolkit",
+        "https://www.googleapis.com/auth/firebase",
+      ]);
+      const updateResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/projects/${projectId}/accounts:update`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            localId: user.uid,
+            customAttributes: JSON.stringify({
+              ...parseCustomAttributes(user.customAttributes),
+              role: "authenticated",
+            }),
           }),
-        }),
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
-    if (!updateResponse.ok) {
-      throw new Error(`Firebase custom claim update failed: ${await updateResponse.text()}`);
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
+      if (!updateResponse.ok) {
+        throw new Error(`Firebase custom claim update failed: ${await updateResponse.text()}`);
+      }
     }
 
     const supabase = createDatabaseClient();
@@ -82,18 +85,11 @@ Deno.serve(async (request) => {
       updated_at: new Date().toISOString(),
     }, { onConflict: "uid" });
     if (profileError) throw profileError;
-    const { data: legacyRole, error: legacyRoleError } = await supabase.schema("app_private")
-      .from("user_roles").select("role").eq("uid", user.uid).maybeSingle();
-    if (legacyRoleError) throw legacyRoleError;
-    const { count, error: countError } = await supabase.schema("app_private")
-      .from("user_role_assignments").select("uid", { count: "exact", head: true }).eq("role_code", "platform-admin");
-    if (countError) throw countError;
-    if (legacyRole?.role === "admin" || ((count ?? 0) === 0 && isAdminEmail(user.email))) {
-      const { error } = await supabase.schema("app_private").from("user_role_assignments").upsert({
-        uid: user.uid, role_code: "platform-admin", granted_by: user.uid,
-      }, { onConflict: "uid,role_code" });
-      if (error) throw error;
-    }
+    const { error: adminSyncError } = await supabase.schema("app_api").rpc("backend_reconcile_platform_admins", {
+      actor_uid: user.uid,
+      admin_emails: adminEmails(),
+    });
+    if (adminSyncError) throw adminSyncError;
 
     return jsonResponse({ ok: true, role: "authenticated" });
   } catch (error) {

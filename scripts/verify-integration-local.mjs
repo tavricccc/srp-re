@@ -61,6 +61,8 @@ if (hasEnvFile) {
 
 const scriptPath = fileURLToPath(new URL('./verify-integration-local.sh', import.meta.url));
 const keepRunning = process.argv.includes('--keep-running');
+const serve = process.argv.includes('--serve');
+const stressScale = readOption('--stress-scale');
 if (process.platform === 'win32') {
   const distro = process.env.NOVAE_WSL_DISTRO ?? 'Debian';
   const convertPath = (path) => {
@@ -76,11 +78,15 @@ if (process.platform === 'win32') {
     convertPath(scriptPath),
     ...(hasEnvFile ? ['--env-file', convertPath(envFile)] : []),
     ...(keepRunning ? ['--keep-running'] : []),
+    ...(serve ? ['--serve'] : []),
+    ...(stressScale ? ['--stress-scale', stressScale] : []),
   ]);
 } else {
   run('bash', [
     scriptPath,
     ...(hasEnvFile ? ['--env-file', envFile] : []),
     ...(keepRunning ? ['--keep-running'] : []),
+    ...(serve ? ['--serve'] : []),
+    ...(stressScale ? ['--stress-scale', stressScale] : []),
   ]);
 }

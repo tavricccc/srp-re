@@ -19,7 +19,6 @@
   "validation-too-long": { "status": 400, "messageKey": "apiError.validationTooLong" },
   "validation-invalid": { "status": 400, "messageKey": "apiError.validationInvalid" },
   "validation-too-many": { "status": 400, "messageKey": "apiError.validationTooMany" },
-  "last-platform-admin": { "status": 409, "messageKey": "apiError.lastPlatformAdmin" },
   "comments-disabled": { "status": 409, "messageKey": "apiError.commentsDisabled" },
   "immutable-category-policy": { "status": 409, "messageKey": "apiError.immutableCategoryPolicy" },
   "setup-already-completed": { "status": 409, "messageKey": "apiError.setupAlreadyCompleted" },

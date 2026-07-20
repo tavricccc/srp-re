@@ -6,9 +6,76 @@ import {
 import { asString } from "../_shared/http.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { requirePermission } from "./auth.ts";
-import { getFacilityCategories, getIssueCategories } from "./categories.ts";
 
-const ASSIGNABLE_ROLES = new Set(["platform-admin", "proposal-manager", "announcement-manager", "general-affairs"]);
+const ACCESS_LIST_LIMIT = 100;
+const ACCESS_SCOPE_KINDS = new Set(["announcement", "facility", "issue"]);
+
+async function scopedAccessUids(payload: JsonRecord, supabase: BackendSupabase) {
+  const scopeKind = asString(payload.scopeKind);
+  if (!scopeKind) return null;
+  if (!ACCESS_SCOPE_KINDS.has(scopeKind)) throw new Error("validation-required");
+  const categoryId = asString(payload.categoryId).trim();
+  if ((scopeKind === "issue" || scopeKind === "facility") && !categoryId) {
+    throw new Error("validation-required");
+  }
+
+  const roleCodes = ["platform-admin", ...(scopeKind === "announcement" ? ["announcement-manager"] : [])];
+  const roleQuery = supabase.schema("app_private").from("user_role_assignments")
+    .select("uid").in("role_code", roleCodes).limit(ACCESS_LIST_LIMIT + 1);
+  const categoryQuery = scopeKind === "issue"
+    ? supabase.schema("app_private").from("user_issue_category_assignments")
+      .select("uid").eq("category_id", categoryId).limit(ACCESS_LIST_LIMIT + 1)
+    : scopeKind === "facility"
+    ? supabase.schema("app_private").from("user_facility_category_assignments")
+      .select("uid").eq("category_id", categoryId).limit(ACCESS_LIST_LIMIT + 1)
+    : Promise.resolve({ data: [], error: null });
+  const [roleResult, categoryResult] = await Promise.all([roleQuery, categoryQuery]);
+  if (roleResult.error) throw roleResult.error;
+  if (categoryResult.error) throw categoryResult.error;
+  const allUids = [
+    ...(roleResult.data ?? []).map((row) => row.uid),
+    ...(categoryResult.data ?? []).map((row) => row.uid),
+  ];
+  const uniqueUids = [...new Set(allUids)];
+  return { truncated: uniqueUids.length > ACCESS_LIST_LIMIT, uids: uniqueUids.slice(0, ACCESS_LIST_LIMIT) };
+}
+
+async function accessUsersForUids(uids: string[], supabase: BackendSupabase) {
+  if (uids.length === 0) return [];
+  const { data: profiles, error: profileError } = await supabase.schema("app_private").from("user_profiles")
+    .select("uid,email,display_name,cached_photo_url,photo_url").in("uid", uids)
+    .order("display_name", { ascending: true });
+  if (profileError) throw profileError;
+  const [roleResult, issueResult, facilityResult] = await Promise.all([
+    supabase.schema("app_private").from("user_role_assignments").select("uid,role_code").in("uid", uids),
+    supabase.schema("app_private").from("user_issue_category_assignments").select("uid,category_id").in("uid", uids),
+    supabase.schema("app_private").from("user_facility_category_assignments").select("uid,category_id").in("uid", uids),
+  ]);
+  if (roleResult.error) throw roleResult.error;
+  if (issueResult.error) throw issueResult.error;
+  if (facilityResult.error) throw facilityResult.error;
+  const roles = new Map<string, string[]>();
+  const issueCategories = new Map<string, string[]>();
+  const facilityCategories = new Map<string, string[]>();
+  for (const assignment of roleResult.data ?? []) {
+    roles.set(assignment.uid, [...(roles.get(assignment.uid) ?? []), assignment.role_code]);
+  }
+  for (const assignment of issueResult.data ?? []) {
+    issueCategories.set(assignment.uid, [...(issueCategories.get(assignment.uid) ?? []), assignment.category_id]);
+  }
+  for (const assignment of facilityResult.data ?? []) {
+    facilityCategories.set(assignment.uid, [...(facilityCategories.get(assignment.uid) ?? []), assignment.category_id]);
+  }
+  return (profiles ?? []).map((profile) => ({
+    uid: profile.uid,
+    email: profile.email ?? null,
+    name: profile.display_name ?? profile.email ?? profile.uid,
+    photoUrl: profile.cached_photo_url ?? profile.photo_url ?? null,
+    roles: roles.get(profile.uid) ?? [],
+    managedIssueCategoryIds: issueCategories.get(profile.uid) ?? [],
+    managedFacilityCategoryIds: facilityCategories.get(profile.uid) ?? [],
+  }));
+}
 
 export function isUserAction(action: string) {
   return action === "recordPlatformVisit"
@@ -51,125 +118,37 @@ export async function handleUserAction(
   if (action === "listRoleAssignments") {
     requirePermission(auth, "role.manage");
     const rawQuery = asString(payload.query).trim();
-    if (!rawQuery) return { users: [] };
+    const scoped = await scopedAccessUids(payload, supabase);
+    if (!rawQuery && !scoped) return { truncated: false, users: [] };
     const query = rawQuery.includes("@") ? rawQuery.toLowerCase() : rawQuery;
-    let profilesQuery = supabase.schema("app_private").from("user_profiles")
-      .select("uid,email,display_name,cached_photo_url,photo_url").limit(1);
-    profilesQuery = query.includes("@")
-      ? profilesQuery.eq("email", query)
-      : profilesQuery.eq("uid", query);
-    const { data: profiles, error: profileError } = await profilesQuery;
-    if (profileError) throw profileError;
-    const uids = (profiles ?? []).map((profile) => profile.uid);
-    const { data: assignments, error: assignmentError } = uids.length
-      ? await supabase.schema("app_private").from("user_role_assignments").select("uid,role_code").in("uid", uids)
-      : { data: [], error: null };
-    if (assignmentError) throw assignmentError;
-    const { data: categoryAssignments, error: categoryAssignmentError } = uids.length
-      ? await supabase.schema("app_private").from("user_issue_category_assignments").select("uid,category_id").in("uid", uids)
-      : { data: [], error: null };
-    if (categoryAssignmentError) throw categoryAssignmentError;
-    const { data: facilityCategoryAssignments, error: facilityCategoryAssignmentError } = uids.length
-      ? await supabase.schema("app_private").from("user_facility_category_assignments").select("uid,category_id").in("uid", uids)
-      : { data: [], error: null };
-    if (facilityCategoryAssignmentError) throw facilityCategoryAssignmentError;
-    const roleMap = new Map<string, string[]>();
-    for (const assignment of assignments ?? []) {
-      roleMap.set(assignment.uid, [...(roleMap.get(assignment.uid) ?? []), assignment.role_code]);
+    let uids = scoped?.uids ?? [];
+    if (rawQuery) {
+      let profileQuery = supabase.schema("app_private").from("user_profiles").select("uid").limit(1);
+      profileQuery = query.includes("@") ? profileQuery.eq("email", query) : profileQuery.eq("uid", query);
+      const { data, error } = await profileQuery;
+      if (error) throw error;
+      uids = (data ?? []).map((profile) => profile.uid);
     }
-    const categoryMap = new Map<string, string[]>();
-    for (const assignment of categoryAssignments ?? []) {
-      categoryMap.set(assignment.uid, [...(categoryMap.get(assignment.uid) ?? []), assignment.category_id]);
-    }
-    const facilityCategoryMap = new Map<string, string[]>();
-    for (const assignment of facilityCategoryAssignments ?? []) {
-      facilityCategoryMap.set(assignment.uid, [...(facilityCategoryMap.get(assignment.uid) ?? []), assignment.category_id]);
-    }
-    return { users: (profiles ?? []).map((profile) => ({
-      uid: profile.uid, email: profile.email ?? null, name: profile.display_name ?? profile.email ?? profile.uid,
-      photoUrl: profile.cached_photo_url ?? profile.photo_url ?? null,
-      roles: roleMap.get(profile.uid) ?? [],
-      managedIssueCategoryIds: categoryMap.get(profile.uid) ?? [],
-      managedFacilityCategoryIds: facilityCategoryMap.get(profile.uid) ?? [],
-    })) };
+    return { truncated: scoped?.truncated ?? false, users: await accessUsersForUids(uids, supabase) };
   }
 
   if (action === "setUserRoles") {
     requirePermission(auth, "role.manage");
-    const uid = asString(payload.uid);
-    const requestedRoles = [...new Set(Array.isArray(payload.roles) ? payload.roles.map((value) => asString(value)).filter((role) => ASSIGNABLE_ROLES.has(role) && role !== "proposal-manager") : [])];
-    // The platform administrator is the single highest-level role. Keeping
-    // scoped roles alongside it is redundant and makes later revocation hard
-    // to reason about, so persist only the platform role when it is selected.
-    const roles = requestedRoles.includes("platform-admin") ? ["platform-admin"] : requestedRoles;
-    const [issueCategories, facilityCategories] = await Promise.all([
-      getIssueCategories(supabase), getFacilityCategories(supabase),
-    ]);
-    const validIssueCategoryIds = new Set(issueCategories.map((category) => category.id));
-    const validFacilityCategoryIds = new Set(facilityCategories.map((category) => category.id));
-    const managedIssueCategoryIds = roles.includes("platform-admin")
-      ? []
-      : [...new Set(Array.isArray(payload.managedIssueCategoryIds)
-        ? payload.managedIssueCategoryIds.map((value) => asString(value)).filter((id) => validIssueCategoryIds.has(id))
-        : [])];
-    const managedFacilityCategoryIds = roles.includes("platform-admin")
-      ? []
-      : [...new Set(Array.isArray(payload.managedFacilityCategoryIds)
-        ? payload.managedFacilityCategoryIds.map((value) => asString(value)).filter((id) => validFacilityCategoryIds.has(id))
-        : [])];
-    if (!uid) throw new Error("not-found");
-    const { data: currentRows, error: currentError } = await supabase.schema("app_private")
-      .from("user_role_assignments").select("role_code").eq("uid", uid);
-    if (currentError) throw currentError;
-    const current = new Set((currentRows ?? []).map((row) => row.role_code));
-    if (current.has("platform-admin") && !roles.includes("platform-admin")) {
-      const { count, error } = await supabase.schema("app_private").from("user_role_assignments")
-        .select("uid", { count: "exact", head: true }).eq("role_code", "platform-admin");
-      if (error) throw error;
-      if ((count ?? 0) <= 1) throw new Error("last-platform-admin");
-    }
-    const grants = roles.filter((role) => !current.has(role));
-    const revokes = [...current].filter((role) => !roles.includes(role));
-    if (revokes.length) {
-      const { error } = await supabase.schema("app_private").from("user_role_assignments").delete().eq("uid", uid).in("role_code", revokes);
-      if (error) throw error;
-    }
-    if (grants.length) {
-      const { error } = await supabase.schema("app_private").from("user_role_assignments").insert(
-        grants.map((role_code) => ({ uid, role_code, granted_by: auth.uid })),
-      );
-      if (error) throw error;
-    }
-    if (grants.length || revokes.length) {
-      const { error } = await supabase.schema("app_private").from("role_assignment_audit").insert([
-        ...grants.map((role_code) => ({ uid, role_code, operation: "grant", actor_uid: auth.uid })),
-        ...revokes.map((role_code) => ({ uid, role_code, operation: "revoke", actor_uid: auth.uid })),
-      ]);
-      if (error) throw error;
-    }
-    const { error: clearCategoryError } = await supabase.schema("app_private")
-      .from("user_issue_category_assignments").delete().eq("uid", uid);
-    if (clearCategoryError) throw clearCategoryError;
-    if (managedIssueCategoryIds.length > 0) {
-      const { error: categoryInsertError } = await supabase.schema("app_private")
-        .from("user_issue_category_assignments").insert(managedIssueCategoryIds.map((category_id) => ({
-          category_id,
-          granted_by: auth.uid,
-          uid,
-        })));
-      if (categoryInsertError) throw categoryInsertError;
-    }
-    const { error: clearFacilityCategoryError } = await supabase.schema("app_private")
-      .from("user_facility_category_assignments").delete().eq("uid", uid);
-    if (clearFacilityCategoryError) throw clearFacilityCategoryError;
-    if (managedFacilityCategoryIds.length > 0) {
-      const { error: facilityCategoryInsertError } = await supabase.schema("app_private")
-        .from("user_facility_category_assignments").insert(managedFacilityCategoryIds.map((category_id) => ({
-          category_id, granted_by: auth.uid, notify_on_created: true, uid,
-        })));
-      if (facilityCategoryInsertError) throw facilityCategoryInsertError;
-    }
-    return { success: true, roles, managedIssueCategoryIds, managedFacilityCategoryIds };
+    const uid = asString(payload.uid).trim();
+    if (!uid || !Array.isArray(payload.roles) || !Array.isArray(payload.managedIssueCategoryIds)
+      || !Array.isArray(payload.managedFacilityCategoryIds)) throw new Error("validation-required");
+    const roles = payload.roles.map((value) => asString(value));
+    const managedIssueCategoryIds = payload.managedIssueCategoryIds.map((value) => asString(value));
+    const managedFacilityCategoryIds = payload.managedFacilityCategoryIds.map((value) => asString(value));
+    const { data, error } = await supabase.schema("app_api").rpc("backend_set_user_access", {
+      actor_uid: auth.uid,
+      target_uid: uid,
+      requested_roles: roles,
+      issue_category_ids: managedIssueCategoryIds,
+      facility_category_ids: managedFacilityCategoryIds,
+    });
+    if (error) throw error;
+    return data;
   }
 
   if (action === "cacheUserAvatar") {

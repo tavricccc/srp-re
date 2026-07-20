@@ -24,6 +24,11 @@ function clientIp(request: Request) {
 
 function originUrl(env: Env, role: string) {
   const base = env.SUPABASE_FUNCTIONS_BASE_URL.replace(/\/+$/u, '');
+  if (env.LOCAL_TEST_MODE === 'true') {
+    const localFunction = { api: 'backendAction', media: 'cloudinaryWebhook', sync: 'syncUser' }[role];
+    if (!localFunction) throw new Error('not-found');
+    return `${base}/${localFunction}`;
+  }
   return `${base}/n${env.EDGE_FUNCTION_NAMESPACE}-${role}`;
 }
 

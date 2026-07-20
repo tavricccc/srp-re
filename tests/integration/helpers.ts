@@ -55,6 +55,7 @@ export async function seedActor(
   label: string,
   options: {
     categoryIds?: string[];
+    facilityCategoryIds?: string[];
     roles?: string[];
   } = {},
 ) {
@@ -89,6 +90,16 @@ export async function seedActor(
     const { error } = await supabase.schema("app_private")
       .from("user_issue_category_assignments")
       .insert(options.categoryIds.map((category_id) => ({
+        category_id,
+        granted_by: uid,
+        uid,
+      })));
+    if (error) throw error;
+  }
+  if (options.facilityCategoryIds?.length) {
+    const { error } = await supabase.schema("app_private")
+      .from("user_facility_category_assignments")
+      .insert(options.facilityCategoryIds.map((category_id) => ({
         category_id,
         granted_by: uid,
         uid,
