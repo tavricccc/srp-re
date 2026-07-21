@@ -58,7 +58,7 @@ test('Vercel deployment config is hosting-only', async () => {
 
   assert.match(vercelJson, /"headers"/u);
   assert.match(vercelJson, /"rewrites"/u);
-  assert.match(vercelJson, /script-src 'self' 'wasm-unsafe-eval' https:\/\/apis\.google\.com https:\/\/www\.google\.com\/recaptcha\/ https:\/\/www\.gstatic\.com\/recaptcha\//u);
+  assert.match(vercelJson, /script-src 'self' 'wasm-unsafe-eval' https:\/\/accounts\.google\.com https:\/\/apis\.google\.com https:\/\/www\.google\.com\/recaptcha\/ https:\/\/www\.gstatic\.com\/recaptcha\//u);
   assert.doesNotMatch(vercelJson, /script-src[^;]*'unsafe-eval'/u);
   const globalHeaders = vercelConfig.headers.find((entry) => entry.source === '/(.*)')?.headers ?? [];
   assert.equal(globalHeaders.some((header) => header.key.toLowerCase() === 'cache-control'), false);
@@ -1068,32 +1068,44 @@ test('app updates hand over the service worker with bounded reload recovery', as
   assert.match(realtimeEvents, /event: 'content_changed'/u);
 });
 
-test('Google redirect recovery runs only after an explicit redirect fallback', async () => {
+test('Google login uses GIS Token Client with Firebase credential in production', async () => {
   const firebase = await read('src/lib/firebase.ts');
+  const googleIdentity = await read('src/lib/google-identity.ts');
   const authActions = await read('src/composables/sessionAuthActions.ts');
   const session = await read('src/composables/useSession.ts');
+  const sessionTypes = await read('src/composables/sessionTypes.ts');
   const loginPanel = await read('src/components/LoginPanel.vue');
   const loginButton = await read('src/components/ui/molecules/GoogleLoginButton.vue');
+  const envExample = await read('.env.example');
+  const hostingWorkflow = await read('.github/workflows/deploy-frontend.yml');
+  const vercelJson = await read('vercel.json');
 
   assert.match(firebase, /browserPopupRedirectResolver/u);
   assert.match(firebase, /popupRedirectResolver: browserPopupRedirectResolver/u);
+  assert.match(googleIdentity, /accounts\.google\.com\/gsi\/client/u);
+  assert.match(googleIdentity, /initTokenClient/u);
+  assert.match(googleIdentity, /requestAccessToken/u);
+  assert.match(googleIdentity, /prompt: 'select_account'/u);
+  assert.match(authActions, /requestGoogleAccessToken/u);
+  assert.match(authActions, /GoogleAuthProvider\.credential\(null, accessToken\)/u);
+  assert.match(authActions, /signInWithCredential\(firebaseAuth, credential\)/u);
+  assert.match(authActions, /VITE_FIREBASE_AUTH_EMULATOR_URL/u);
   assert.match(authActions, /await signInWithPopup\(firebaseAuth/u);
-  assert.match(authActions, /error\.code === 'auth\/argument-error'/u);
+  assert.match(authActions, /VITE_GOOGLE_CLIENT_ID/u);
+  assert.match(authActions, /auth\.loginWidgetInitFailed/u);
   assert.match(loginPanel, /<GoogleLoginButton :loading="loginBusy" @login="login"/u);
   assert.match(loginButton, /@click="emit\('login'\)"/u);
   assert.match(loginButton, /:busy="Boolean\(loading\)"[\s\S]*busy-label="[^"]*auth\.signingIn/u);
-  assert.match(authActions, /GOOGLE_REDIRECT_PENDING_KEY = 'novae:google-redirect-pending'/u);
-  assert.match(authActions, /markGoogleRedirectPending\(\);[\s\S]*await signInWithRedirect/u);
-  assert.match(authActions, /if \(!hasPendingGoogleRedirect\(\)\) return;/u);
-  assert.match(authActions, /state\.redirectRecovering = true;[\s\S]*state\.loading = true;/u);
-  assert.match(authActions, /finally \{[\s\S]*clearGoogleRedirectPending\(\);[\s\S]*state\.redirectRecovering = false;/u);
-  assert.match(authActions, /await firebaseAuth\.authStateReady\(\)/u);
-  assert.match(authActions, /if \(!firebaseAuth\.currentUser && !state\.user\)/u);
-  assert.match(authActions, /auth\.loginReplyTimedOut/u);
-  assert.match(session, /isGoogleRedirectPending\(\)/u);
-  assert.match(session, /recoverPendingGoogleRedirect\(state, firebaseAuth\)/u);
-  assert.match(session, /loginBusy: computed\(\(\) =>[\s\S]*redirectRecovering[\s\S]*roleLoading/u);
-  assert.doesNotMatch(session, /getRedirectResult/u);
+  assert.match(session, /loginBusy: computed\(\(\) =>[\s\S]*roleLoading/u);
+  assert.doesNotMatch(session, /redirectRecovering/u);
+  assert.doesNotMatch(sessionTypes, /redirectRecovering/u);
+  assert.doesNotMatch(authActions, /signInWithRedirect/u);
+  assert.doesNotMatch(authActions, /getRedirectResult/u);
+  assert.doesNotMatch(authActions, /novae:google-redirect-pending/u);
+  assert.doesNotMatch(session, /getRedirectResult|signInWithRedirect|isGoogleRedirectPending|recoverPendingGoogleRedirect/u);
+  assert.match(envExample, /VITE_GOOGLE_CLIENT_ID=/u);
+  assert.match(hostingWorkflow, /VITE_GOOGLE_CLIENT_ID/u);
+  assert.match(vercelJson, /https:\/\/accounts\.google\.com/u);
 });
 
 test('push notification registration recovers without overriding an explicit opt-out', async () => {

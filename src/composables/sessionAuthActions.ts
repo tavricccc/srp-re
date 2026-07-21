@@ -1,63 +1,23 @@
 import {
-  getRedirectResult,
   GoogleAuthProvider,
+  signInWithCredential,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
-  type Auth,
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { auth, allowedDomain } from '@/lib/firebase';
+import { GoogleIdentityError, requestGoogleAccessToken } from '@/lib/google-identity';
 import type { SessionState } from '@/composables/sessionTypes';
-import { RequestFailure, withRequestTimeout } from '@/lib/request';
+import { withRequestTimeout } from '@/lib/request';
 import { debugLog } from '@/composables/sessionDebug';
 
 const LOGIN_ATTEMPT_KEY = 'novae-login-attempts';
-const GOOGLE_REDIRECT_PENDING_KEY = 'novae:google-redirect-pending';
 const LOGIN_ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 const LOGIN_ATTEMPT_LIMIT = 30;
 const LOGIN_CLICK_COOLDOWN_MS = 2_000;
-const REDIRECT_RECOVERY_TIMEOUT_MS = 15_000;
+const authEmulatorUrl = String(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_URL ?? '').trim();
+const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '').trim();
 let lastLoginAttemptAt = 0;
-
-function markGoogleRedirectPending() {
-  try {
-    sessionStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, '1');
-  } catch {
-    // Firebase auth state restoration still handles a successful redirect.
-  }
-}
-
-function hasPendingGoogleRedirect() {
-  try {
-    return sessionStorage.getItem(GOOGLE_REDIRECT_PENDING_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function clearGoogleRedirectPending() {
-  try {
-    sessionStorage.removeItem(GOOGLE_REDIRECT_PENDING_KEY);
-  } catch {
-    // A blocked storage API should not prevent authentication.
-  }
-}
-
-async function getPendingRedirectResult(firebaseAuth: Auth) {
-  let timeoutId = 0;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = window.setTimeout(() => {
-      reject(new RequestFailure('auth.loginReplyTimedOut', 'timeout'));
-    }, REDIRECT_RECOVERY_TIMEOUT_MS);
-  });
-
-  try {
-    return await Promise.race([getRedirectResult(firebaseAuth), timeout]);
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-}
 
 function claimLoginAttempt() {
   const now = Date.now();
@@ -76,14 +36,6 @@ function claimLoginAttempt() {
   return true;
 }
 
-function shouldFallbackToRedirect(error: unknown) {
-  return error instanceof FirebaseError && [
-    'auth/popup-blocked',
-    'auth/cancelled-popup-request',
-    'auth/operation-not-supported-in-this-environment',
-  ].includes(error.code);
-}
-
 function googleProvider(selectAccount = false) {
   const provider = new GoogleAuthProvider();
   if (allowedDomain) {
@@ -97,13 +49,10 @@ function googleProvider(selectAccount = false) {
   return provider;
 }
 
-export function isGoogleRedirectPending() {
-  return hasPendingGoogleRedirect();
-}
-
 export async function loginWithGoogle(state: SessionState, options: { selectAccount?: boolean } = {}) {
   debugLog('login requested', {
     allowedDomain,
+    emulator: Boolean(authEmulatorUrl),
   });
   state.error = '';
   if (!claimLoginAttempt()) {
@@ -121,11 +70,40 @@ export async function loginWithGoogle(state: SessionState, options: { selectAcco
   const firebaseAuth = auth;
 
   try {
-    debugLog('starting popup login', {
-      customParameters: allowedDomain ? { hd: allowedDomain } : {},
+    if (authEmulatorUrl) {
+      debugLog('starting emulator popup login', {
+        customParameters: allowedDomain ? { hd: allowedDomain } : {},
+      });
+      await signInWithPopup(firebaseAuth, googleProvider(Boolean(options.selectAccount)));
+      debugLog('emulator popup login resolved', firebaseAuth.currentUser
+        ? {
+            uid: firebaseAuth.currentUser.uid,
+            email: firebaseAuth.currentUser.email ?? '',
+          }
+        : null);
+      // Explicit click loading ends here; loginBusy stays true via roleLoading
+      // while bootstrap finishes after onAuthStateChanged accepts the user.
+      state.loading = false;
+      return;
+    }
+
+    if (!googleClientId) {
+      debugLog('missing VITE_GOOGLE_CLIENT_ID; failing closed');
+      state.error = 'auth.loginWidgetInitFailed';
+      state.loading = false;
+      return;
+    }
+
+    debugLog('starting GIS token login', {
+      hd: allowedDomain || undefined,
     });
-    await signInWithPopup(firebaseAuth, googleProvider(Boolean(options.selectAccount)));
-    debugLog('popup login resolved', firebaseAuth.currentUser
+    const accessToken = await requestGoogleAccessToken({
+      clientId: googleClientId,
+      hd: allowedDomain || undefined,
+    });
+    const credential = GoogleAuthProvider.credential(null, accessToken);
+    await signInWithCredential(firebaseAuth, credential);
+    debugLog('GIS credential login resolved', firebaseAuth.currentUser
       ? {
           uid: firebaseAuth.currentUser.uid,
           email: firebaseAuth.currentUser.email ?? '',
@@ -135,70 +113,26 @@ export async function loginWithGoogle(state: SessionState, options: { selectAcco
     // while bootstrap finishes after onAuthStateChanged accepts the user.
     state.loading = false;
   } catch (error) {
-    if (shouldFallbackToRedirect(error)) {
-      debugLog('popup unavailable, falling back to redirect', error);
-      markGoogleRedirectPending();
-      state.redirectRecovering = true;
-      try {
-        await signInWithRedirect(firebaseAuth, googleProvider(Boolean(options.selectAccount)));
-        // Page navigates away; leave loading/redirectRecovering set so a partial
-        // paint cannot re-enable the button before unload.
-        return;
-      } catch (redirectError) {
-        clearGoogleRedirectPending();
-        state.redirectRecovering = false;
-        debugLog('redirect login failed', redirectError);
-        state.error = getLoginErrorMessage(redirectError);
-        state.loading = false;
-        return;
-      }
-    }
-
     debugLog('login failed before completion', error);
     state.error = getLoginErrorMessage(error);
     state.loading = false;
   }
 }
 
-export async function recoverPendingGoogleRedirect(state: SessionState, firebaseAuth: Auth) {
-  if (!hasPendingGoogleRedirect()) return;
-
-  state.redirectRecovering = true;
-  state.loading = true;
-  try {
-    const result = await getPendingRedirectResult(firebaseAuth);
-    debugLog('getRedirectResult resolved', result
-      ? {
-          uid: result.user.uid,
-          email: result.user.email ?? '',
-          providerId: result.providerId ?? '',
-        }
-      : null);
-  } catch (error) {
-    debugLog('getRedirectResult failed', error);
-    try {
-      await firebaseAuth.authStateReady();
-    } catch {
-      // The redirect failure below remains the actionable authentication error.
-    }
-    if (!firebaseAuth.currentUser && !state.user) {
-      state.error = getRedirectRecoveryErrorMessage(error);
-    }
-  } finally {
-    clearGoogleRedirectPending();
-    state.redirectRecovering = false;
-    state.loading = false;
-  }
-}
-
-function getRedirectRecoveryErrorMessage(error: unknown) {
-  if (error instanceof RequestFailure && error.code === 'timeout') {
-    return 'auth.loginReplyTimedOut';
-  }
-  return getLoginErrorMessage(error, 'auth.loginReplyFailed');
-}
-
 function getLoginErrorMessage(error: unknown, fallback = 'auth.loginFailedPleaseTryAgainLater') {
+  if (error instanceof GoogleIdentityError) {
+    if (error.code === 'popup_closed' || error.code === 'access_denied') {
+      return 'auth.theLoginWindowHasBeenClosedPleaseTryAgain';
+    }
+    if (error.code === 'popup_blocked') {
+      return 'auth.popupBlocked';
+    }
+    if (error.code === 'script_load_failed' || error.code === 'unavailable') {
+      return 'auth.loginWidgetInitFailed';
+    }
+    return fallback;
+  }
+
   if (!(error instanceof FirebaseError)) {
     return fallback;
   }
@@ -232,7 +166,7 @@ function getLoginErrorMessage(error: unknown, fallback = 'auth.loginFailedPlease
     return 'access.googleLoginOriginInvalid';
   }
 
-  if (error.code === 'auth/argument-error') {
+  if (error.code === 'auth/argument-error' || error.code === 'auth/invalid-credential') {
     return 'auth.loginWidgetInitFailed';
   }
 

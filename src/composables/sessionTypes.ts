@@ -9,8 +9,6 @@ export interface SessionState {
   appInitializing: boolean;
   appReady: boolean;
   roleLoading: boolean;
-  /** True while recovering a Google redirect return or mid-redirect handoff. */
-  redirectRecovering: boolean;
   user: User | null;
   userRole: 'admin' | 'user';
   roles: RoleCode[];
