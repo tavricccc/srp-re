@@ -2,30 +2,6 @@
   <section class="space-y-5" aria-labelledby="category-workflow-title">
     <h2 id="category-workflow-title" class="sr-only">{{ t('adminCenter.categorySectionTitle') }}</h2>
 
-    <section class="space-y-3" aria-labelledby="platform-features-title">
-      <div>
-        <h3 id="platform-features-title" class="text-lg font-bold text-ink-950 dark:text-ink-50">{{ t('categoryAdmin.featureSettings') }}</h3>
-        <p class="mt-1 text-sm leading-6 text-ink-500">{{ t('categoryAdmin.featureSettingsHelp') }}</p>
-      </div>
-      <div class="grid gap-3 sm:grid-cols-2">
-        <PlatformFeatureToggle
-          label="categoryAdmin.proposalFeature"
-          description="categoryAdmin.proposalFeatureHelp"
-          :enabled="issuesEnabled"
-          :disabled="loading || saving"
-          @toggle="toggleFeature('issue')"
-        />
-        <PlatformFeatureToggle
-          label="categoryAdmin.facilityFeature"
-          description="categoryAdmin.facilityFeatureHelp"
-          :enabled="facilitiesEnabled"
-          :disabled="loading || saving"
-          @toggle="toggleFeature('facility')"
-        />
-      </div>
-      <InlineMessage v-if="featureError">{{ featureError }}</InlineMessage>
-    </section>
-
     <div class="grid gap-3 pb-1 sm:grid-cols-2" role="group" :aria-label="t('adminCenter.categorySectionTitle')">
       <SelectionOptionButton
         v-for="option in kindOptions"
@@ -38,13 +14,51 @@
     </div>
 
     <EmptyStatePanel v-if="error" title="categoryAdmin.loadFailed" :description="error" icon="warning" />
-    <div v-if="loading" class="space-y-3">
-      <SurfacePanel v-for="index in 2" :key="index" padding="lg">
-        <SkeletonBlock class="h-44 w-full rounded-xl" />
+
+    <div v-if="loading" class="space-y-3" aria-busy="true" :aria-label="t('common.loading')">
+      <SurfacePanel padding="md" class="space-y-3">
+        <SkeletonBlock class="block h-4 w-28 rounded" />
+        <SkeletonBlock class="block h-3 w-2/3 rounded" />
+        <SkeletonBlock class="h-14 w-full rounded-[var(--radius-inner)]" />
       </SurfacePanel>
+      <div class="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <SurfacePanel variant="list" padding="sm" class="space-y-2">
+          <SkeletonBlock class="block h-3 w-20 rounded" />
+          <div
+            v-for="index in 3"
+            :key="index"
+            class="skeleton-enter flex items-center gap-3 rounded-[var(--radius-inner)] px-3 py-3"
+            :style="{ '--skeleton-enter-index': index - 1 }"
+          >
+            <div class="min-w-0 flex-1 space-y-2">
+              <SkeletonBlock class="block h-4 w-24 rounded" />
+              <SkeletonBlock class="block h-3 w-16 rounded" />
+            </div>
+            <SkeletonBlock class="h-3 w-10 rounded" />
+          </div>
+        </SurfacePanel>
+        <SurfacePanel padding="lg" class="space-y-4">
+          <SkeletonBlock class="block h-3 w-16 rounded" />
+          <SkeletonBlock class="block h-5 w-40 rounded" />
+          <SkeletonBlock class="block h-10 w-full rounded-xl" />
+          <SkeletonBlock class="block h-10 w-full rounded-xl" />
+          <SkeletonBlock class="block h-24 w-full rounded-xl" />
+        </SurfacePanel>
+      </div>
     </div>
 
     <template v-else>
+      <div class="space-y-2">
+        <PlatformFeatureToggle
+          :label="activeFeatureToggle.label"
+          :description="activeFeatureToggle.description"
+          :enabled="activeFeatureToggle.enabled"
+          :disabled="saving"
+          @toggle="toggleFeature(activeCategoryKind)"
+        />
+        <InlineMessage v-if="featureError">{{ featureError }}</InlineMessage>
+      </div>
+
       <CategoryManagementSection
         v-if="activeCategoryKind === 'issue'"
         v-model="issueCategories"
@@ -55,7 +69,7 @@
         @add="addIssue"
       />
       <CategoryManagementSection
-        v-else-if="activeCategoryKind === 'facility'"
+        v-else
         v-model="facilityCategories"
         kind="facility"
         :title="t('categoryAdmin.facilityCategories')"
@@ -111,6 +125,18 @@ const kindOptions = computed(() => [
   { value: 'issue' as const, label: t('categoryAdmin.proposalCategories'), description: t('categoryAdmin.proposalManagementHelp') },
   { value: 'facility' as const, label: t('categoryAdmin.facilityCategories'), description: t('categoryAdmin.facilityManagementHelp') },
 ]);
+
+const activeFeatureToggle = computed(() => activeCategoryKind.value === 'issue'
+  ? {
+    description: 'categoryAdmin.proposalFeatureHelp',
+    enabled: issuesEnabled.value,
+    label: 'categoryAdmin.proposalFeature',
+  }
+  : {
+    description: 'categoryAdmin.facilityFeatureHelp',
+    enabled: facilitiesEnabled.value,
+    label: 'categoryAdmin.facilityFeature',
+  });
 
 function newIssue(index: number): IssueCategoryConfig {
   return {

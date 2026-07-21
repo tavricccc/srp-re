@@ -492,11 +492,15 @@
     animation: skeleton-shimmer 1.4s linear infinite;
   }
 
-  .skeleton-card {
-    /* Opacity-only enter: transform + box-shadow compositing leaves residual
-       card shadows after unmount on some mobile browsers. */
-    animation: skeleton-card-enter 320ms var(--motion-ease-enter) both;
-    animation-delay: calc(var(--skeleton-card-index, 0) * 45ms);
+  /*
+   * Opacity-only enter for list/card skeletons (including load-more).
+   * Avoid transform: compositing with box-shadow can leave residual
+   * card shadows after unmount on some mobile browsers.
+   */
+  .skeleton-card,
+  .skeleton-enter {
+    animation: skeleton-enter 320ms var(--motion-ease-enter) both;
+    animation-delay: calc(var(--skeleton-enter-index, var(--skeleton-card-index, 0)) * 45ms);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -524,6 +528,13 @@
   }
 }
 
+@keyframes skeleton-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Keep legacy name as alias for any external/docs references. */
 @keyframes skeleton-card-enter {
   from {
     opacity: 0;

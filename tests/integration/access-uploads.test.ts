@@ -58,7 +58,7 @@ integrationTest("access, role, idempotency, avatar, and upload actions", async (
   await expectActionError(
     "permission-denied",
     () => callAction("listRoleAssignments", {
-      categoryId: "public-issues", includeDirectory: true, query: "", scopeKind: "issue",
+      categoryId: "public-issues", query: "", scopeKind: "issue",
     }, user.auth),
   );
   const roleSearch = asRecord(await callAction(
@@ -67,15 +67,12 @@ integrationTest("access, role, idempotency, avatar, and upload actions", async (
     admin.auth,
   ));
   assert.equal((roleSearch.users as unknown[]).length, 1);
-  const assignableMembers = asRecord(await callAction("listRoleAssignments", {
-    categoryId: "public-issues", includeDirectory: true, query: "", scopeKind: "issue",
+  const emptyScopeAssignees = asRecord(await callAction("listRoleAssignments", {
+    categoryId: "public-issues", query: "", scopeKind: "issue",
   }, admin.auth));
-  const assignableMemberUids = (assignableMembers.users as Array<{ uid: string }>).map((member) => member.uid);
-  assert.ok(assignableMemberUids.includes(user.auth.uid));
-  assert.ok(assignableMemberUids.includes(target.auth.uid));
-  assert.ok(!assignableMemberUids.includes(admin.auth.uid), "platform admins must not appear as category candidates");
+  assert.equal((emptyScopeAssignees.users as unknown[]).length, 0);
   await expectActionError("validation-required", () => callAction("listRoleAssignments", {
-    includeDirectory: true, query: "",
+    query: "",
   }, admin.auth));
 
   await expectActionError(

@@ -8,6 +8,7 @@
     <template #loading>
       <ContentCardSkeleton
         :action-shapes="['icon', 'pill']"
+        :count="loadingCount"
         loading-label="announcement.announcementLoading"
         :show-admin="canManage"
       />
@@ -33,12 +34,18 @@ import ContentCardCollection from '@/components/ui/organisms/ContentCardCollecti
 import ContentCardSkeleton from '@/components/ui/organisms/ContentCardSkeleton.vue';
 import type { AnnouncementRecord } from '@/types';
 
-defineProps<{
+withDefaults(defineProps<{
   announcements: AnnouncementRecord[];
   canManage?: boolean;
   likingAnnouncementId?: string;
   loading?: boolean;
-}>();
+  loadingCount?: number;
+}>(), {
+  canManage: false,
+  likingAnnouncementId: '',
+  loading: false,
+  loadingCount: 2,
+});
 
 const emit = defineEmits<{
   delete: [announcement: AnnouncementRecord];

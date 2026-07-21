@@ -8,6 +8,7 @@
     <template #loading>
       <ContentCardSkeleton
         :action-shapes="['pill']"
+        :count="loadingCount"
         loading-label="facility.loadingFacility"
         supplement="summary"
       />
@@ -37,10 +38,12 @@ withDefaults(defineProps<{
   affectingFacilityId?: string;
   facilities: FacilitySummary[];
   loading: boolean;
+  loadingCount?: number;
   highlightQuery?: string;
 }>(), {
   affectingFacilityId: '',
   highlightQuery: '',
+  loadingCount: 2,
 });
 const emit = defineEmits<{
   'open-details': [facility: FacilitySummary];

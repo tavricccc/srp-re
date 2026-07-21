@@ -790,8 +790,9 @@ test('proposal and facility manager access is runtime-configured and category-sc
   }
   assert.doesNotMatch(accessView, /accessInheritedFromPlatformAdmin|fullAccessSummary|hasInheritedAccess/u);
   assert.doesNotMatch(accessView, /value: 'platform'|platformAdminTitle/u);
-  assert.ok(accessView.indexOf('chooseResponsibilityStep') < accessView.indexOf('access-member-filter'));
-  assert.match(accessView, /listScopeMembers[\s\S]*filteredCandidates[\s\S]*grantCandidate/u);
+  assert.ok(accessView.indexOf('chooseResponsibilityStep') < accessView.indexOf('access-member-lookup'));
+  assert.match(accessView, /listScopeMembers[\s\S]*lookupAccessMember[\s\S]*grantCandidate/u);
+  assert.match(accessView, /SkeletonBlock[\s\S]*skeleton-enter/u);
   assert.match(accessView, /aria-live="polite"[\s\S]*memberDirectoryStatus/u);
   assert.match(accessView, /prefers-reduced-motion/u);
   assert.match(accessView, /scrollIntoView/u);
@@ -1453,7 +1454,8 @@ test('proposals, announcements, and facilities share list cards and detail panel
   });
   assert.match(cardCollection, /issue-card-grid/u);
   assert.match(cardShell, /issue-card[\s\S]*surface-card[\s\S]*list-row-trigger/u);
-  assert.match(cardSkeleton, /const CARD_COUNT = 2/u);
+  assert.match(cardSkeleton, /count\?: number[\s\S]*count: 2/u);
+  assert.match(cardSkeleton, /--skeleton-enter-index/u);
   assert.match(cardSkeleton, /<header[\s\S]*showAuthor[\s\S]*supplement[\s\S]*<footer/u);
   assert.match(contentListState, /PageLoadFailure/u);
   assert.match(contentListState, /EmptyStatePanel/u);
@@ -1548,7 +1550,7 @@ test('initial setup reuses the settings-style selected category editor', async (
   assert.match(setupCategorySection, /lg:grid-cols-\[15rem_minmax\(0,1fr\)\]/u);
   assert.match(setupCategorySection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"/u);
   assert.match(categoryManagementSection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"[\s\S]*show-status/u);
-  assert.match(categorySelectorList, /<SurfacePanel variant="list"[\s\S]*v-for="\(category, index\) in categories"/u);
+  assert.match(categorySelectorList, /v-for="\(category, index\) in categories"[\s\S]*content-trigger/u);
   assert.match(categorySelectorList, /:aria-current="selectedIndex === index \? 'true' : undefined"/u);
   assert.match(setupCategorySection, /<CategoryEditorCard[\s\S]*flat/u);
   assert.match(categoryEditor, /:is="flat \? 'article' : SurfacePanel"/u);
@@ -1573,7 +1575,8 @@ test('platform feature switches persist atomically and remain configurable after
   assert.match(migration, /if issues_enabled then[\s\S]*if facilities_enabled then/u);
   assert.match(categoryAction, /action === "savePlatformFeatures"[\s\S]*requirePermission\(auth, "category\.manage"\)/u);
   assert.match(categoryAction, /features:[\s\S]*facilitiesEnabled:[\s\S]*issuesEnabled:/u);
-  assert.match(categoryManagement, /<PlatformFeatureToggle[\s\S]*saveCategoryManagement[\s\S]*saveAll/u);
+  assert.match(categoryManagement, /activeCategoryKind[\s\S]*PlatformFeatureToggle[\s\S]*saveCategoryManagement[\s\S]*saveAll/u);
+  assert.match(categoryManagement, /SkeletonBlock[\s\S]*skeleton-enter|SkeletonBlock[\s\S]*aria-busy/u);
   assert.match(atomicManagementMigration, /backend_save_category_management[\s\S]*for update[\s\S]*backend_update_platform_features/u);
   assert.match(categoryState, /const loaded = ref\(false\)[\s\S]*if \(!force && loaded\.value\) return/u);
 });

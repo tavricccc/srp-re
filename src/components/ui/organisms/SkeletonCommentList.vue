@@ -7,7 +7,8 @@
     <div
       v-for="index in count"
       :key="index"
-      class="flex items-start gap-2.5 py-2.5"
+      class="skeleton-enter flex items-start gap-2.5 py-2.5"
+      :style="{ '--skeleton-enter-index': index - 1 }"
     >
       <SkeletonBlock class="mt-0.5 h-8 w-8 shrink-0 rounded-full" />
       <div class="min-w-0 flex-1 space-y-2">

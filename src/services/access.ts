@@ -21,17 +21,31 @@ interface AccessUserList {
   users: AccessUser[];
 }
 
+function withoutPlatformAdmins(result: AccessUserList): AccessUserList {
+  return {
+    truncated: result.truncated,
+    users: result.users.filter((user) => !user.roles.includes('platform-admin')),
+  };
+}
+
 export async function listScopeMembers(scope: AccessScope) {
   const fn = invokeBackendAction<
-    { categoryId?: string; includeDirectory: true; query: string; scopeKind: AccessScope['kind'] },
+    { categoryId?: string; query: string; scopeKind: AccessScope['kind'] },
     AccessUserList
   >('listRoleAssignments');
-  return await fn({
+  return withoutPlatformAdmins(await fn({
     categoryId: 'categoryId' in scope ? scope.categoryId : undefined,
-    includeDirectory: true,
     query: '',
     scopeKind: scope.kind,
-  });
+  }));
+}
+
+export async function lookupAccessMember(query: string) {
+  const fn = invokeBackendAction<
+    { query: string },
+    AccessUserList
+  >('listRoleAssignments');
+  return withoutPlatformAdmins(await fn({ query: query.trim() }));
 }
 
 export async function setUserRoles(

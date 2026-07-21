@@ -9,6 +9,7 @@
     <template #loading>
       <ContentCardSkeleton
         :action-shapes="['icon', 'pill']"
+        :count="loadingCount"
         loading-label="issue.proposalLoading"
         :show-admin="isAdmin"
         :show-author="showAuthor"
@@ -39,10 +40,12 @@ import type { IssueRecord } from '@/types';
 withDefaults(defineProps<{
   issues: IssueRecord[];
   loading: boolean;
+  loadingCount?: number;
   error: string;
   showAuthor?: boolean;
   highlightQuery?: string;
 }>(), {
+  loadingCount: 2,
   showAuthor: true,
   highlightQuery: '',
 });

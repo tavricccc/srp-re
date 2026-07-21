@@ -6,12 +6,14 @@
           v-if="loading"
           variant="list"
           :aria-label="t('notification.notificationsLoading')"
+          aria-busy="true"
         >
           <ListSurfaceRow
             v-for="index in 2"
             :key="index"
             as="div"
-            class="notification-group-row"
+            class="notification-group-row skeleton-enter"
+            :style="{ '--skeleton-enter-index': index - 1 }"
           >
             <SkeletonBlock as="div" class="h-10 w-10 shrink-0 rounded-2xl" />
             <div class="min-w-0 flex-1 space-y-2 pt-1">
@@ -127,7 +129,8 @@
           <ListSurfaceRow
             v-if="loadingMore"
             as="div"
-            class="notification-group-row border-t border-ink-100/70 dark:border-ink-800/70"
+            class="notification-group-row skeleton-enter border-t border-ink-100/70 dark:border-ink-800/70"
+            :style="{ '--skeleton-enter-index': 0 }"
           >
             <SkeletonBlock as="div" class="h-10 w-10 shrink-0 rounded-2xl" />
             <div class="min-w-0 flex-1 space-y-2 pt-1">

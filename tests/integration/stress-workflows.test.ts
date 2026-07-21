@@ -136,29 +136,11 @@ integrationTest(`dynamic full workflow stress matrix (scale ${stressScale})`, as
   const announcementManagers = managers.filter((manager) => manager.auth.permissions.includes("announcement.manage"));
   assert.ok(announcementManagers.length >= 1);
 
-  const issueMemberDirectory = asRecord(await callAction("listRoleAssignments", {
-    categoryId: issueCategoryId, includeDirectory: true, query: "", scopeKind: "issue",
+  const lookedUpOrdinaryUser = asRecord(await callAction("listRoleAssignments", {
+    query: ordinaryUsers[0].auth.uid,
   }, admins[0].auth));
-  const issueDirectoryRows = records(issueMemberDirectory.users);
-  const issueDirectoryUids = new Set(issueDirectoryRows.map((row) => String(row.uid)));
-  for (const manager of managers) assert.ok(issueDirectoryUids.has(manager.auth.uid));
-  for (const user of ordinaryUsers) assert.ok(issueDirectoryUids.has(user.auth.uid));
-  for (const admin of admins) assert.ok(!issueDirectoryUids.has(admin.auth.uid));
-  for (const manager of managers) {
-    const row = issueDirectoryRows.find((candidate) => candidate.uid === manager.auth.uid);
-    assert.ok(row);
-    assert.ok((row.managedIssueCategoryIds as string[]).includes(issueCategoryId));
-  }
-
-  const facilityMemberDirectory = asRecord(await callAction("listRoleAssignments", {
-    categoryId: facilityCategoryId, includeDirectory: true, query: "", scopeKind: "facility",
-  }, admins[1].auth));
-  const facilityDirectoryRows = records(facilityMemberDirectory.users);
-  for (const manager of managers) {
-    const row = facilityDirectoryRows.find((candidate) => candidate.uid === manager.auth.uid);
-    assert.ok(row);
-    assert.ok((row.managedFacilityCategoryIds as string[]).includes(facilityCategoryId));
-  }
+  assert.equal(records(lookedUpOrdinaryUser.users).length, 1);
+  assert.equal(String(records(lookedUpOrdinaryUser.users)[0].uid), ordinaryUsers[0].auth.uid);
 
   for (const categoryId of issueIds) {
     const result = asRecord(await callAction("listRoleAssignments", {

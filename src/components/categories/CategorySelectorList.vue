@@ -1,15 +1,17 @@
 <template>
-  <SurfacePanel variant="list" padding="sm" class="space-y-1">
-    <p class="px-2 pb-2 text-xs font-semibold text-ink-500">
+  <div class="space-y-2" role="list" :aria-label="t('adminCenter.categoryListCount', { count: categories.length })">
+    <p class="px-1 text-xs font-semibold text-ink-500">
       {{ t('adminCenter.categoryListCount', { count: categories.length }) }}
     </p>
-    <ListSurfaceRow
+    <button
       v-for="(category, index) in categories"
       :key="category.id || `new-${index}`"
-      as="button"
-      interactive
-      class="w-full text-left"
-      :class="selectedIndex === index ? 'button-toolbar--active' : ''"
+      type="button"
+      role="listitem"
+      class="content-trigger flex w-full items-center gap-3 border px-3 py-3 text-left"
+      :class="selectedIndex === index
+        ? 'button-toolbar--active shadow-control'
+        : 'border-ink-100 dark:border-ink-800'"
       :aria-current="selectedIndex === index ? 'true' : undefined"
       @click="selectedIndex = index"
     >
@@ -27,18 +29,16 @@
         </span>
         <span
           v-if="category.isDefault"
-          class="rounded bg-primary-50 px-1 py-0.5 text-[9px] font-bold text-primary-700 dark:bg-primary-950/30 dark:text-primary-400"
+          class="rounded-full bg-primary-50 px-1.5 py-0.5 text-[9px] font-bold text-primary-700 dark:bg-primary-950/30 dark:text-primary-400"
         >
           {{ t('categoryAdmin.defaultCategory') }}
         </span>
       </div>
-    </ListSurfaceRow>
-  </SurfacePanel>
+    </button>
+  </div>
 </template>
 
 <script setup lang="ts">
-import ListSurfaceRow from '@/components/ui/molecules/ListSurfaceRow.vue';
-import SurfacePanel from '@/components/ui/molecules/SurfacePanel.vue';
 import { useI18n } from '@/i18n';
 
 interface CategorySelectorItem {

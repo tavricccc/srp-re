@@ -44,6 +44,7 @@
           <IssueBoardTable
             :issues="[]"
             :loading="true"
+            :loading-count="1"
             error=""
             :show-author="showAuthorCol"
           />

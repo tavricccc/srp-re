@@ -65,7 +65,27 @@
           </div>
         </div>
 
-        <InlineMessage v-if="membersLoading">{{ t('common.loading') }}</InlineMessage>
+        <SurfacePanel
+          v-if="membersLoading"
+          variant="list"
+          aria-busy="true"
+          :aria-label="t('common.loading')"
+        >
+          <ListSurfaceRow
+            v-for="index in 2"
+            :key="`assignee-skeleton-${index}`"
+            as="div"
+            class="skeleton-enter flex flex-wrap items-center gap-3"
+            :style="{ '--skeleton-enter-index': index - 1 }"
+          >
+            <SkeletonBlock class="h-10 w-10 shrink-0 rounded-full" />
+            <div class="min-w-0 flex-1 space-y-2">
+              <SkeletonBlock class="block h-4 w-28 rounded" />
+              <SkeletonBlock class="block h-3 w-40 rounded" />
+            </div>
+            <SkeletonBlock class="h-9 w-20 rounded-full" />
+          </ListSurfaceRow>
+        </SurfacePanel>
         <InlineMessage v-else-if="memberError" tone="error">{{ memberError }}</InlineMessage>
         <InlineMessage v-if="membersTruncated" tone="warning">{{ t('adminCenter.memberListTruncated') }}</InlineMessage>
         <EmptyStatePanel
@@ -74,7 +94,7 @@
           description="adminCenter.noCurrentAssigneesHelp"
           icon="lock"
         />
-        <SurfacePanel v-else-if="assignees.length" variant="list">
+        <SurfacePanel v-else-if="!membersLoading && assignees.length" variant="list">
           <ListSurfaceRow v-for="assignee in assignees" :key="assignee.uid" as="div" class="flex flex-wrap items-center gap-3">
             <UserAvatar :photo-url="assignee.photoUrl" :name="assignee.name" size="md" />
             <div class="min-w-0 flex-1">
@@ -103,48 +123,105 @@
         <div class="flex items-start gap-3">
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-bold text-white dark:bg-ink-50 dark:text-ink-950">3</span>
           <div class="min-w-0 flex-1">
-            <label for="access-member-filter" class="block text-sm font-bold text-ink-950 dark:text-ink-50">
+            <label for="access-member-lookup" class="block text-sm font-bold text-ink-950 dark:text-ink-50">
               {{ t('adminCenter.findMemberStep') }}
             </label>
             <p class="mt-1 text-xs leading-5 text-ink-500">{{ t('adminCenter.findMemberHelp') }}</p>
-            <input
-              id="access-member-filter"
-              v-model="memberFilter"
-              type="search"
-              class="field mt-3 w-full"
-              autocomplete="off"
-              :placeholder="t('adminCenter.filterMembersPlaceholder')"
-              :disabled="membersLoading || Boolean(savingUid)"
-            />
+            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                id="access-member-lookup"
+                v-model="memberLookup"
+                type="search"
+                class="field min-w-0 flex-1"
+                autocomplete="off"
+                :placeholder="t('adminCenter.lookupMemberPlaceholder')"
+                :disabled="Boolean(savingUid)"
+                @keydown.enter.prevent="lookupMember"
+              />
+              <AppButton
+                variant="secondary"
+                class="shrink-0"
+                :disabled="!canLookup || Boolean(savingUid)"
+                @click="lookupMember"
+              >
+                <BusyButtonContent
+                  :busy="lookupLoading"
+                  :label="t('adminCenter.lookupMember')"
+                  :busy-label="t('common.loading')"
+                />
+              </AppButton>
+            </div>
           </div>
         </div>
 
-        <InlineMessage v-if="membersLoading">{{ t('common.loading') }}</InlineMessage>
-        <InlineMessage v-if="memberError" tone="error">{{ memberError }}</InlineMessage>
+        <SurfacePanel
+          v-if="lookupLoading"
+          variant="list"
+          aria-busy="true"
+          :aria-label="t('common.loading')"
+        >
+          <ListSurfaceRow
+            as="div"
+            class="skeleton-enter flex flex-wrap items-center gap-3"
+            :style="{ '--skeleton-enter-index': 0 }"
+          >
+            <SkeletonBlock class="h-10 w-10 shrink-0 rounded-full" />
+            <div class="min-w-0 flex-1 space-y-2">
+              <SkeletonBlock class="block h-4 w-28 rounded" />
+              <SkeletonBlock class="block h-3 w-40 rounded" />
+            </div>
+            <SkeletonBlock class="h-9 w-20 rounded-full" />
+          </ListSurfaceRow>
+        </SurfacePanel>
+        <InlineMessage v-else-if="lookupError" tone="error">{{ lookupError }}</InlineMessage>
         <EmptyStatePanel
-          v-if="!membersLoading && !memberError && filteredCandidates.length === 0"
-          :title="memberFilter.trim() ? 'adminCenter.noMatchingMembers' : 'adminCenter.noAssignableMembers'"
-          :description="memberFilter.trim() ? 'adminCenter.noMatchingMembersHelp' : 'adminCenter.noAssignableMembersHelp'"
+          v-else-if="lookupAttempted && !lookupCandidate"
+          title="adminCenter.noMatchingMembers"
+          description="adminCenter.noMatchingMembersHelp"
           icon="inbox"
         />
-        <SurfacePanel v-if="!membersLoading && filteredCandidates.length > 0" variant="list">
-          <ListSurfaceRow v-for="candidate in filteredCandidates" :key="candidate.uid" as="div" class="flex flex-wrap items-center gap-3">
-            <UserAvatar :photo-url="candidate.photoUrl" :name="candidate.name" size="md" />
+        <EmptyStatePanel
+          v-else-if="!lookupAttempted"
+          title="adminCenter.noMemberSelected"
+          description="adminCenter.noMemberSelectedHelp"
+          icon="inbox"
+        />
+        <SurfacePanel v-else-if="lookupCandidate" variant="list">
+          <ListSurfaceRow as="div" class="flex flex-wrap items-center gap-3">
+            <UserAvatar :photo-url="lookupCandidate.photoUrl" :name="lookupCandidate.name" size="md" />
             <div class="min-w-0 flex-1">
-              <h4 class="truncate text-sm font-bold text-ink-900 dark:text-ink-100">{{ candidate.name }}</h4>
-              <p class="mt-0.5 truncate text-xs text-ink-500">{{ candidate.email || candidate.uid }}</p>
-              <p class="mt-1 text-xs text-ink-500">{{ accessSummary(candidate) }}</p>
+              <h4 class="truncate text-sm font-bold text-ink-900 dark:text-ink-100">{{ lookupCandidate.name }}</h4>
+              <p class="mt-0.5 truncate text-xs text-ink-500">{{ lookupCandidate.email || lookupCandidate.uid }}</p>
+              <p class="mt-1 text-xs text-ink-500">{{ accessSummary(lookupCandidate) }}</p>
+              <p class="mt-1 text-xs font-semibold" :class="userHasSelectedAccess(lookupCandidate) ? 'text-success' : 'text-ink-500'">
+                {{ t(userHasSelectedAccess(lookupCandidate) ? 'adminCenter.accessAlreadyGranted' : 'adminCenter.accessNotGranted') }}
+              </p>
             </div>
             <AppButton
+              v-if="!userHasSelectedAccess(lookupCandidate)"
               size="sm"
               variant="primary"
               class="shrink-0"
               :disabled="Boolean(savingUid)"
-              @click="grantCandidate(candidate)"
+              @click="grantCandidate(lookupCandidate)"
             >
               <BusyButtonContent
-                :busy="savingUid === candidate.uid"
+                :busy="savingUid === lookupCandidate.uid"
                 :label="t('adminCenter.grantAccess')"
+                :busy-label="t('common.saving')"
+              />
+            </AppButton>
+            <AppButton
+              v-else
+              size="sm"
+              variant="danger"
+              class="shrink-0"
+              :disabled="Boolean(savingUid)"
+              @click="revokeAssignee(lookupCandidate)"
+            >
+              <BusyButtonContent
+                :busy="savingUid === lookupCandidate.uid"
+                :label="t('adminCenter.removeAccess')"
                 :busy-label="t('common.saving')"
               />
             </AppButton>
@@ -162,6 +239,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
 import BusyButtonContent from '@/components/ui/atoms/BusyButtonContent.vue';
 import InlineMessage from '@/components/ui/atoms/InlineMessage.vue';
+import SkeletonBlock from '@/components/ui/atoms/SkeletonBlock.vue';
 import UserAvatar from '@/components/ui/atoms/UserAvatar.vue';
 import EmptyStatePanel from '@/components/ui/molecules/EmptyStatePanel.vue';
 import ListSurfaceRow from '@/components/ui/molecules/ListSurfaceRow.vue';
@@ -173,6 +251,7 @@ import { useCategories } from '@/composables/useCategories';
 import { useI18n } from '@/i18n';
 import {
   listScopeMembers,
+  lookupAccessMember,
   setUserRoles,
   type AccessScope,
   type AccessUser,
@@ -186,14 +265,19 @@ const { activeFacilityCategories, activeIssueCategories, refresh } = useCategori
 const { show } = useActionFeedback();
 const scopeKind = ref<AccessScopeKind>('issue');
 const selectedCategoryId = ref('');
-const memberFilter = ref('');
+const memberLookup = ref('');
 const savingUid = ref('');
-const members = ref<AccessUser[]>([]);
+const assignees = ref<AccessUser[]>([]);
 const membersLoading = ref(false);
 const membersTruncated = ref(false);
 const memberError = ref('');
+const lookupCandidate = ref<AccessUser | null>(null);
+const lookupLoading = ref(false);
+const lookupError = ref('');
+const lookupAttempted = ref(false);
 const memberDirectory = ref<HTMLElement | null>(null);
-let memberRequestSequence = 0;
+let assigneeRequestSequence = 0;
+let lookupRequestSequence = 0;
 
 const scopeOptions = computed(() => [
   { value: 'issue' as const, label: t('adminCenter.proposalResponsibility'), description: t('adminCenter.proposalResponsibilityHelp') },
@@ -217,6 +301,7 @@ const selectedAccessScope = computed<AccessScope | null>(() => {
 const selectedCategory = computed(() => selectableCategories.value.find((category) => category.id === selectedCategoryId.value));
 const selectedScopeLabel = computed(() => selectedCategory.value?.label
   ?? t('access.announcementManagement'));
+const canLookup = computed(() => memberLookup.value.trim().length > 0);
 
 function userHasSelectedAccess(accessUser: AccessUser) {
   if (scopeKind.value === 'issue') return accessUser.managedIssueCategoryIds.includes(selectedCategoryId.value);
@@ -224,16 +309,11 @@ function userHasSelectedAccess(accessUser: AccessUser) {
   return accessUser.roles.includes('announcement-manager');
 }
 
-const assignees = computed(() => members.value.filter(userHasSelectedAccess));
-const candidates = computed(() => members.value.filter((member) => !userHasSelectedAccess(member)));
-const filteredCandidates = computed(() => {
-  const query = memberFilter.value.trim().toLocaleLowerCase();
-  if (!query) return candidates.value;
-  return candidates.value.filter((member) => [member.name, member.email, member.uid]
-    .some((value) => value?.toLocaleLowerCase().includes(query)));
-});
 const memberDirectoryStatus = computed(() => scopeReady.value
-  ? t('adminCenter.memberDirectoryStatus', { assigned: assignees.value.length, available: candidates.value.length })
+  ? t('adminCenter.memberDirectoryStatus', {
+    assigned: assignees.value.length,
+    available: lookupCandidate.value && !userHasSelectedAccess(lookupCandidate.value) ? 1 : 0,
+  })
   : '');
 
 function categoryDescription(label: string) {
@@ -249,38 +329,69 @@ function accessSummary(accessUser: AccessUser) {
   return t('adminCenter.scopedAccessSummary', { count });
 }
 
-async function loadMembers() {
+async function loadAssignees() {
   const scope = selectedAccessScope.value;
-  const requestSequence = ++memberRequestSequence;
+  const requestSequence = ++assigneeRequestSequence;
   if (!scope) {
-    members.value = [];
+    assignees.value = [];
     membersLoading.value = false;
     membersTruncated.value = false;
     memberError.value = '';
     return;
   }
   membersLoading.value = true;
-  members.value = [];
+  assignees.value = [];
   membersTruncated.value = false;
   memberError.value = '';
   try {
     const result = await listScopeMembers(scope);
-    if (requestSequence !== memberRequestSequence) return;
-    members.value = result.users;
+    if (requestSequence !== assigneeRequestSequence) return;
+    assignees.value = result.users;
     membersTruncated.value = result.truncated;
   } catch (caught) {
-    if (requestSequence === memberRequestSequence) {
+    if (requestSequence === assigneeRequestSequence) {
       memberError.value = t(caught instanceof Error ? caught.message : 'access.theSearchFailed');
     }
   } finally {
-    if (requestSequence === memberRequestSequence) membersLoading.value = false;
+    if (requestSequence === assigneeRequestSequence) membersLoading.value = false;
   }
+}
+
+async function lookupMember() {
+  const query = memberLookup.value.trim();
+  const scope = selectedAccessScope.value;
+  if (!query || !scope || lookupLoading.value) return;
+  const requestSequence = ++lookupRequestSequence;
+  lookupLoading.value = true;
+  lookupError.value = '';
+  lookupAttempted.value = true;
+  lookupCandidate.value = null;
+  try {
+    const result = await lookupAccessMember(query);
+    if (requestSequence !== lookupRequestSequence) return;
+    lookupCandidate.value = result.users[0] ?? null;
+  } catch (caught) {
+    if (requestSequence === lookupRequestSequence) {
+      lookupError.value = t(caught instanceof Error ? caught.message : 'access.theSearchFailed');
+    }
+  } finally {
+    if (requestSequence === lookupRequestSequence) lookupLoading.value = false;
+  }
+}
+
+function resetLookup() {
+  lookupCandidate.value = null;
+  lookupError.value = '';
+  lookupAttempted.value = false;
+  lookupLoading.value = false;
+  lookupRequestSequence += 1;
 }
 
 watch(scopeKind, () => {
   selectedCategoryId.value = '';
-  memberFilter.value = '';
+  memberLookup.value = '';
   memberError.value = '';
+  resetLookup();
 });
 
 watch(selectableCategories, (categories) => {
@@ -300,8 +411,9 @@ async function focusMemberDirectory() {
 }
 
 watch(selectedAccessScope, (scope) => {
-  memberFilter.value = '';
-  void loadMembers();
+  memberLookup.value = '';
+  resetLookup();
+  void loadAssignees();
   if (scope) void focusMemberDirectory();
 }, { immediate: true });
 
@@ -322,7 +434,16 @@ async function saveAccess(accessUser: AccessUser, grant: boolean) {
     }
     const result = await setUserRoles(accessUser.uid, roles, issueIds, facilityIds);
     const updated = { ...accessUser, ...result };
-    members.value = members.value.map((member) => member.uid === accessUser.uid ? updated : member);
+    if (grant) {
+      if (!assignees.value.some((member) => member.uid === updated.uid)) {
+        assignees.value = [...assignees.value, updated];
+      } else {
+        assignees.value = assignees.value.map((member) => member.uid === updated.uid ? updated : member);
+      }
+    } else {
+      assignees.value = assignees.value.filter((member) => member.uid !== updated.uid);
+    }
+    if (lookupCandidate.value?.uid === updated.uid) lookupCandidate.value = updated;
     show(t('adminCenter.accessSaved'), 'success');
     return true;
   } catch (caught) {

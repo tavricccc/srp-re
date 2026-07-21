@@ -49,6 +49,7 @@
           :announcements="[]"
           :can-manage="isAdmin"
           :loading="true"
+          :loading-count="1"
         />
       </template>
 

@@ -1,11 +1,11 @@
 <template>
   <div class="issue-card-grid" :aria-label="t(loadingLabel)" aria-busy="true">
     <SurfacePanel
-      v-for="index in CARD_COUNT"
+      v-for="index in count"
       :key="index"
       as="article"
       class="issue-card skeleton-card"
-      :style="{ '--skeleton-card-index': index - 1 }"
+      :style="{ '--skeleton-enter-index': index - 1 }"
     >
       <header class="flex min-w-0 items-center gap-2">
         <SkeletonBlock class="h-5 w-14 shrink-0 rounded-full" />
@@ -65,11 +65,10 @@ import { useI18n } from "@/i18n";
 type SkeletonActionShape = "icon" | "pill";
 type SkeletonSupplement = "none" | "progress" | "summary";
 
-const CARD_COUNT = 2;
-
 withDefaults(
   defineProps<{
     actionShapes?: readonly SkeletonActionShape[];
+    count?: number;
     loadingLabel: string;
     showAdmin?: boolean;
     showAuthor?: boolean;
@@ -77,6 +76,7 @@ withDefaults(
   }>(),
   {
     actionShapes: () => [],
+    count: 2,
     showAdmin: false,
     showAuthor: true,
     supplement: "none",
