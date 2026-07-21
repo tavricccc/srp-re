@@ -1,7 +1,5 @@
 <template>
   <ContentCardShell
-    :author-name="announcement.author_name"
-    :author-photo-url="announcement.author_photo_url"
     :author-uid="announcement.author_uid"
     status-class="bg-ink-100/70 text-ink-700 dark:bg-ink-800 dark:text-ink-300"
     status-label="announcement.announcement"

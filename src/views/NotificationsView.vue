@@ -75,12 +75,10 @@
             <AuthorAvatar
               v-if="isComment(notification)"
               :author-uid="notification.actor_uid"
-              :photo-url="notification.actor_photo_url ?? null"
-              :name="notification.actor_name ?? t('navigation.user')"
               size="sm"
               :alt-text="
                 t('notification.nameAvatar', {
-                  name: notification.actor_name ?? t('navigation.user'),
+                  name: actorName(notification),
                 })
               "
               class="mt-0.5 shrink-0"
@@ -179,7 +177,7 @@ import type { NotificationRecord } from "@/types";
 import { useI18n } from "@/i18n";
 
 const { openNotificationTarget } = useNotificationNavigation();
-const { body, icon, iconClass, isComment, title } = useNotificationDisplay();
+const { actorName, body, icon, iconClass, isComment, title } = useNotificationDisplay();
 const { t } = useI18n();
 const {
   notifications,

@@ -201,8 +201,6 @@ function normalizeNotificationRecord(
     comment_id: normalizeNullableString(data.comment_id),
     title: String(data.title ?? ''),
     actor_uid: normalizeNullableString(data.actor_uid),
-    actor_name: normalizeNullableString(data.actor_name),
-    actor_photo_url: normalizeNullableString(data.actor_photo_url),
     body_preview: normalizeNullableString(data.body_preview),
     issue_category: isIssueCategory(data.issue_category) ? data.issue_category : null,
     old_status: normalizeOptionalStatus(data.old_status),

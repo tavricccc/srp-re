@@ -15,8 +15,6 @@
 
     <template #details="{ compact, scrollContent }">
       <ContentDetailBody
-        :author-name="authorName"
-        :author-photo-url="authorPhotoUrl"
         :author-secondary="authorSecondary"
         :author-uid="authorUid"
         :compact="compact"
@@ -47,8 +45,6 @@ import ContentDetailBody from '@/components/ContentDetailBody.vue';
 import DetailPageShell from '@/components/ui/organisms/DetailPageShell.vue';
 
 withDefaults(defineProps<{
-  authorName: string;
-  authorPhotoUrl?: string | null;
   authorSecondary?: string;
   authorUid?: string | null;
   backLabel: string;
@@ -67,7 +63,6 @@ withDefaults(defineProps<{
   showMobileBackButton?: boolean;
   title: string;
 }>(), {
-  authorPhotoUrl: null,
   authorSecondary: '',
   authorUid: null,
   commentCount: 0,

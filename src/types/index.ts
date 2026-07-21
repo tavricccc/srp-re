@@ -53,8 +53,6 @@ export interface IssueRecord {
   canViewAuthor: boolean;
   deleting?: boolean;
   author_uid: string | null;
-  author_name: string | null;
-  author_photo_url?: string | null;
 }
 
 export interface OperationTimeListItem {
@@ -85,8 +83,6 @@ export interface DiscussionCommentRecord {
   content: string;
   parent_comment_id: string | null;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   created_at: Date | null;
   replies: DiscussionCommentRecord[];
 }
@@ -114,8 +110,6 @@ export interface FacilitySummary {
   created_at: Date | null;
   updated_at: Date | null;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   isOwnFacility: boolean;
   currentUserAffected: boolean;
   canManageFacility: boolean;
@@ -226,8 +220,6 @@ export interface NotificationRecord {
   comment_id: string | null;
   title: string;
   actor_uid: string | null;
-  actor_name: string | null;
-  actor_photo_url: string | null;
   body_preview: string | null;
   issue_category: IssueCategory | null;
   old_status?: IssueStatus | FacilityStatus;
@@ -241,8 +233,6 @@ export interface AnnouncementRecord {
   title: string;
   content: string;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   published_at: Date | null;
   like_count: number;
   comment_count: number;
@@ -257,6 +247,13 @@ export interface AnnouncementCommentRecord extends DiscussionCommentRecord {
 export interface AnnouncementInput {
   title: string;
   content: string;
+}
+
+export interface UserPublicProfile {
+  uid: string;
+  displayName: string;
+  photoUrl: string | null;
+  version: number;
 }
 
 export interface MarkdownImageRecord {

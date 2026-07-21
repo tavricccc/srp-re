@@ -40,8 +40,6 @@ interface IssueResponseRecord {
   canManageIssue?: boolean;
   canViewAuthor?: boolean;
   author_uid?: string | null;
-  author_name?: string | null;
-  author_photo_url?: string | null;
 }
 
 interface SupportResponse {
@@ -78,8 +76,6 @@ function normalizeIssueResponse(issue: IssueResponseRecord): IssueRecord {
     canManageIssue: issue.canManageIssue,
     canViewAuthor: issue.canViewAuthor,
     author_uid: issue.author_uid,
-    author_name: issue.author_name,
-    author_photo_url: issue.author_photo_url,
   });
   return record;
 }
@@ -90,8 +86,6 @@ function normalizeDiscussionCommentResponse(comment: CommentResponseRecord): Dis
     parent_comment_id: comment.parent_comment_id,
     content: comment.content,
     author_uid: comment.author_uid,
-    author_name: comment.author_name,
-    author_photo_url: comment.author_photo_url,
     created_at: dateFromMs(comment.created_at_ms),
     replies: (comment.replies ?? []).map(normalizeDiscussionCommentResponse),
   };

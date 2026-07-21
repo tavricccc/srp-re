@@ -39,8 +39,6 @@ export async function handleFacilityAction(
     await validateMarkdownUploadsBeforeCreate(supabase, auth.uid, content, "facility");
     const { data, error } = await supabase.schema("app_api").rpc("backend_create_facility", {
       actor_uid: auth.uid,
-      actor_name: auth.name,
-      actor_photo_url: auth.photoUrl,
       facility_title: title,
       facility_location: location,
       facility_content: content,

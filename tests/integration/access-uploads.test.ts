@@ -153,12 +153,65 @@ integrationTest("access, role, idempotency, avatar, and upload actions", async (
 
   const avatar = asRecord(await callAction("cacheUserAvatar", {}, user.auth));
   assert.equal(avatar.photoUrl, null);
-  const avatars = asRecord(await callAction(
-    "getUserAvatarUrls",
+  const profiles = asRecord(await callAction(
+    "getUserPublicProfiles",
     { uids: [user.auth.uid, target.auth.uid] },
     user.auth,
   ));
-  assert.ok(user.auth.uid in asRecord(avatars.avatars));
+  const publicProfiles = asRecord(profiles.profiles);
+  const publicProfile = asRecord(publicProfiles[user.auth.uid]);
+  assert.equal(publicProfile.uid, user.auth.uid);
+  assert.equal(publicProfile.displayName, user.auth.name);
+  assert.equal(publicProfile.photoUrl, null);
+  assert.equal(publicProfile.version, 1);
+
+  const renamedDisplayName = `${user.auth.name} renamed`;
+  const { error: renameError } = await supabase.schema("app_private").from("user_profiles")
+    .update({ display_name: renamedDisplayName }).eq("uid", user.auth.uid);
+  if (renameError) throw renameError;
+  const refreshedProfiles = asRecord(await callAction(
+    "getUserPublicProfiles",
+    { uids: [user.auth.uid] },
+    user.auth,
+  ));
+  const refreshedProfile = asRecord(asRecord(refreshedProfiles.profiles)[user.auth.uid]);
+  assert.equal(refreshedProfile.displayName, renamedDisplayName);
+  assert.equal(refreshedProfile.version, 2);
+
+  const previousAvatarPublicId = `srp/avatars/${user.auth.uid}_previous`;
+  const nextAvatarPublicId = `srp/avatars/${user.auth.uid}_next`;
+  const { error: seedAvatarError } = await supabase.schema("app_private").from("user_profiles")
+    .update({ avatar_public_id: previousAvatarPublicId, avatar_version: 1 }).eq("uid", user.auth.uid);
+  if (seedAvatarError) throw seedAvatarError;
+  const { error: commitAvatarError } = await supabase.schema("app_api").rpc("backend_commit_user_avatar", {
+    actor_uid: user.auth.uid,
+    next_avatar_hash: "integration-avatar-hash",
+    next_avatar_public_id: nextAvatarPublicId,
+    next_avatar_source_url: "https://lh3.googleusercontent.com/integration-avatar",
+    next_cached_photo_url: "https://res.cloudinary.com/integration/avatar-next",
+    next_avatar_version: 2,
+    next_display_name: renamedDisplayName,
+  });
+  if (commitAvatarError) throw commitAvatarError;
+  const committedAvatarProfile = await tableRow("user_profiles", "uid", user.auth.uid);
+  assert.equal(committedAvatarProfile?.avatar_public_id, nextAvatarPublicId);
+  const { data: previousAvatarJobs, error: previousAvatarJobsError } = await supabase
+    .schema("app_private").from("deletion_jobs").select("cloudinary_public_id,target_type")
+    .eq("cloudinary_public_id", previousAvatarPublicId);
+  if (previousAvatarJobsError) throw previousAvatarJobsError;
+  assert.deepEqual(previousAvatarJobs, [{ cloudinary_public_id: previousAvatarPublicId, target_type: "avatar" }]);
+
+  for (const [table, removedColumn] of [
+    ["issues", "author_name"],
+    ["comments", "author_photo_url"],
+    ["announcements", "author_name"],
+    ["announcement_comments", "author_photo_url"],
+    ["facility_reports", "author_name"],
+    ["notifications", "actor_photo_url"],
+  ] as const) {
+    const { error } = await supabase.schema("app_private").from(table).select(removedColumn).limit(1);
+    assert.equal(error?.code, "42703", `${table}.${removedColumn} must be removed`);
+  }
 
   const createUploadRequestId = requestId("create-upload");
   const uploadResult = asRecord(await callAction("createImageUploadSessions", {

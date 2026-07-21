@@ -99,12 +99,6 @@ export function normalizeIssueRecord(id: string, data: Record<string, unknown>):
     author_uid: data.canViewAuthor === true && typeof data.author_uid === 'string'
       ? data.author_uid
       : null,
-    author_name: data.canViewAuthor === true && typeof data.author_name === 'string'
-      ? data.author_name
-      : null,
-    author_photo_url: data.canViewAuthor === true && typeof data.author_photo_url === 'string'
-      ? data.author_photo_url
-      : null,
   };
 
   return record;

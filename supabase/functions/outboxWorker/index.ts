@@ -107,17 +107,14 @@ function notificationForEvent(event: OutboxEvent): Record<string, unknown> | nul
     };
   }
   if (event.event_type === "issue.comment_created") {
-    const authorName = asString(event.payload.author_name).trim() || "匿名使用者";
     return {
       source: "user",
       type: "issue_comment_created",
       target_type: "issue",
       target_id: event.target_id,
       comment_id: commentIdForEvent(event),
-      title: `來自 ${authorName} 的留言`,
+      title: "收到新留言",
       actor_uid: event.actor_uid,
-      actor_name: asString(event.payload.author_name),
-      actor_photo_url: asString(event.payload.author_photo_url),
       body_preview: preview(event.payload.content),
       issue_category: asString(event.payload.issue_category),
     };
@@ -176,17 +173,14 @@ function notificationForEvent(event: OutboxEvent): Record<string, unknown> | nul
     };
   }
   if (event.event_type === "announcement.comment_created") {
-    const authorName = asString(event.payload.author_name).trim() || "匿名使用者";
     return {
       source: "user",
       type: "announcement_comment_created",
       target_type: "announcement",
       target_id: event.target_id,
       comment_id: commentIdForEvent(event),
-      title: `來自 ${authorName} 的留言`,
+      title: "收到新留言",
       actor_uid: event.actor_uid,
-      actor_name: asString(event.payload.author_name),
-      actor_photo_url: asString(event.payload.author_photo_url),
       body_preview: preview(event.payload.content),
     };
   }
@@ -256,28 +250,24 @@ async function findAnnouncementCommentRecipientUid(
   return asString(data?.author_uid);
 }
 
-async function findCachedAvatarUrl(supabase: AppSupabase, uid: string) {
+async function findDisplayName(supabase: AppSupabase, uid: string) {
   if (!uid) return "";
   const { data, error } = await supabase
     .schema("app_private")
     .from("user_profiles")
-    .select("cached_photo_url")
+    .select("display_name")
     .eq("uid", uid)
     .maybeSingle();
   if (error) throw error;
-  return asString(data?.cached_photo_url);
+  return asString(data?.display_name);
 }
 
 async function resolveNotification(
   supabase: AppSupabase,
   event: OutboxEvent,
 ) {
-  let notification = notificationForEvent(event);
+  const notification = notificationForEvent(event);
   if (!notification) return null;
-  const actorPhotoUrl = await findCachedAvatarUrl(supabase, event.actor_uid);
-  if (actorPhotoUrl) {
-    notification = { ...notification, actor_photo_url: actorPhotoUrl };
-  }
 
   if (event.event_type === "issue.comment_created") {
     const recipientUid = await findIssueAuthorUid(supabase, event);
@@ -366,6 +356,13 @@ async function sendPushes(
   notification: Record<string, unknown>,
   explicitRecipientUids: string[] = [],
 ) {
+  if (isCommentNotificationType(asString(notification.type))) {
+    const actorName = await findDisplayName(supabase, asString(notification.actor_uid));
+    notification = {
+      ...notification,
+      title: actorName ? `來自 ${actorName} 的留言` : "收到新留言",
+    };
+  }
   const source = asString(notification.source);
   const recipientUid = asString(notification.recipient_uid);
   const recipientUids = [...new Set(
@@ -576,10 +573,8 @@ async function createNotificationsForEvent(
   event: OutboxEvent,
 ) {
   if (event.event_type === "issue.created" || event.event_type === "facility.created") {
-    let base = notificationForEvent(event);
+    const base = notificationForEvent(event);
     if (!base) return { hasNotification: false };
-    const actorPhotoUrl = await findCachedAvatarUrl(supabase, event.actor_uid);
-    if (actorPhotoUrl) base = { ...base, actor_photo_url: actorPhotoUrl };
     const isFacility = event.event_type === "facility.created";
     const categoryId = asString(event.payload[isFacility ? "category_id" : "category"]);
     const assignmentTable = isFacility
@@ -621,10 +616,8 @@ async function createNotificationsForEvent(
     || event.event_type === "support.goal_met"
     || event.event_type === "issue.deleted"
   ) {
-    let base = notificationForEvent(event);
+    const base = notificationForEvent(event);
     if (!base) return { hasNotification: false };
-    const actorPhotoUrl = await findCachedAvatarUrl(supabase, event.actor_uid);
-    if (actorPhotoUrl) base = { ...base, actor_photo_url: actorPhotoUrl };
 
     const authorUid = await findIssueAuthorUid(supabase, event);
     let supporterUids = asStringArray(event.payload.supporter_uids);

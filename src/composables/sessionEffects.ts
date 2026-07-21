@@ -5,6 +5,7 @@ import { clearResolvedUploadCache } from '@/services/uploads';
 import { clearContentReadCache, clearContentReadMemoryCache, setContentCacheScope } from '@/services/content-read-cache';
 import { ensureContentRevisionsFresh, resetContentRevisionState } from '@/services/content-revisions';
 import { registerAppResumeHandler } from '@/composables/useAppResume';
+import { clearAuthorProfileCache } from '@/composables/useAuthorProfile';
 
 export const mySupportedIssueIds = ref<Set<string>>(new Set());
 export const customPhotoUrl = ref<string | null>(null);
@@ -12,7 +13,6 @@ export const customPhotoUrl = ref<string | null>(null);
 let activeSessionToken = 0;
 const VISIT_RECORD_INTERVAL_MS = 6 * 60 * 60 * 1_000;
 const VISIT_RECORDED_AT_KEY = 'novae:platform-visit-recorded-at';
-const AVATAR_CACHE_PREFIX = 'novae:avatar-cached-source:';
 const CONTENT_REVISION_RESUME_MS = 10 * 60_000;
 let revisionResumeInitialized = false;
 
@@ -39,22 +39,18 @@ export async function initActiveSessionData(uid: string) {
   mySupportedIssueIds.value = new Set();
   customPhotoUrl.value = null;
   clearResolvedUploadCache();
+  clearAuthorProfileCache();
   setContentCacheScope(uid);
   clearContentReadMemoryCache();
   initializeContentRevisionResume();
 }
 
 export async function cacheUserAvatarOnLogin(photoURL: string) {
-  const cachedPhotoUrl = localStorage.getItem(`${AVATAR_CACHE_PREFIX}${photoURL}`);
-  if (cachedPhotoUrl) {
-    customPhotoUrl.value = cachedPhotoUrl;
-    return;
-  }
   try {
     const photoUrl = await cacheUserAvatar(photoURL);
     if (photoUrl) {
       customPhotoUrl.value = photoUrl;
-      localStorage.setItem(`${AVATAR_CACHE_PREFIX}${photoURL}`, photoUrl);
+      clearAuthorProfileCache();
     }
   } catch {
     void 0;

@@ -13,10 +13,8 @@
       <div class="shrink-0 pt-0.5">
         <AuthorAvatar
           :author-uid="comment.author_uid"
-          :photo-url="comment.author_photo_url"
-          :name="comment.author_name"
           size="sm"
-          :alt-text="t('comments.nameSAvatar', { name: comment.author_name })"
+          :alt-text="t('comments.nameSAvatar', { name: authorName })"
         />
       </div>
 
@@ -25,7 +23,7 @@
           <div class="min-w-0">
             <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <p class="max-w-full truncate text-[13px] font-bold leading-5 text-ink-900 dark:text-ink-100">
-                {{ comment.author_name }}
+                {{ authorName }}
               </p>
               <p class="text-xs leading-5 text-ink-500/80 dark:text-ink-400/80">
                 {{ formatDate(comment.created_at) }}
@@ -34,7 +32,7 @@
             <div class="comment-content-compact mt-0.5 max-w-none text-sm leading-5 text-ink-800 dark:text-ink-200">
               <MarkdownMediaContent
                 :content="comment.content"
-                :fallback-alt="t('comments.nameSCommentImage', { name: comment.author_name })"
+                :fallback-alt="t('comments.nameSCommentImage', { name: authorName })"
                 plain-text
               />
             </div>
@@ -112,6 +110,7 @@ import AppButton from '@/components/ui/atoms/AppButton.vue';
 import { formatDate } from '@/lib/format';
 import { useI18n } from '@/i18n';
 import type { DiscussionCommentRecord } from '@/types';
+import { useAuthorProfile } from '@/composables/useAuthorProfile';
 
 const props = defineProps<{
   canDelete: boolean;
@@ -125,6 +124,8 @@ const props = defineProps<{
   isReply?: boolean;
 }>();
 const { t } = useI18n();
+const authorProfile = useAuthorProfile(() => props.comment.author_uid);
+const authorName = computed(() => authorProfile.value?.displayName || t('navigation.user'));
 
 const emit = defineEmits<{
   delete: [];

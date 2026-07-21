@@ -1,7 +1,5 @@
 <template>
   <ContentDetailPagePanel
-    :author-name="facility.author_name"
-    :author-photo-url="facility.author_photo_url"
     :author-secondary="authorSecondary"
     :author-uid="facility.author_uid"
     back-label="facility.backToFacilityList"

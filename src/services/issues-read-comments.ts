@@ -57,8 +57,6 @@ export async function fetchComments(
         parent_comment_id: comment.parent_comment_id,
         content: comment.content,
         author_uid: comment.author_uid,
-        author_name: comment.author_name,
-        author_photo_url: comment.author_photo_url,
         created_at: comment.created_at_ms === null ? null : new Date(comment.created_at_ms),
         replies: (comment.replies ?? []).map((reply) => ({
           id: reply.id,
@@ -66,8 +64,6 @@ export async function fetchComments(
           parent_comment_id: reply.parent_comment_id,
           content: reply.content,
           author_uid: reply.author_uid,
-          author_name: reply.author_name,
-          author_photo_url: reply.author_photo_url,
           created_at: reply.created_at_ms === null ? null : new Date(reply.created_at_ms),
           replies: [],
         })),

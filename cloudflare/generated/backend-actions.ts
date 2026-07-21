@@ -100,7 +100,7 @@ export const BACKEND_ACTION_POLICIES = {
   "getPushNotificationPreference": {
     "group": "read"
   },
-  "getUserAvatarUrls": {
+  "getUserPublicProfiles": {
     "group": "read"
   },
   "listAnnouncementComments": {

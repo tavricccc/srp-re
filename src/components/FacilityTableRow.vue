@@ -1,7 +1,5 @@
 <template>
   <ContentCardShell
-    :author-name="facility.author_name"
-    :author-photo-url="facility.author_photo_url"
     :author-uid="facility.author_uid"
     :highlight-query="highlightQuery"
     :status-class="statusClass"

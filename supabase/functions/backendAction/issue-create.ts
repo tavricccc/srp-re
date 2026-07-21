@@ -29,8 +29,6 @@ export async function createIssue(payload: JsonRecord, auth: AuthContext, supaba
     : null;
   const { data, error } = await supabase.schema("app_api").rpc("backend_create_issue", {
     actor_uid: auth.uid,
-    actor_name: auth.name,
-    actor_photo_url: auth.photoUrl,
     issue_title: title,
     issue_content: content,
     issue_category: category,

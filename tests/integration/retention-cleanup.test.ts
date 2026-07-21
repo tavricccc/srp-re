@@ -33,6 +33,7 @@ integrationTest("configured retention cleanup removes every expired data class a
   const futureAt = new Date(Date.now() + DAY_MS).toISOString();
   const admin = await seedActor(`retention-admin-${runId}`, { roles: ["platform-admin"] });
   const owner = await seedActor(`retention-owner-${runId}`);
+  const avatarOwner = await seedActor(`retention-avatar-${runId}`);
 
   const { data: issueCategories, error: issueCategoryError } = await supabase.schema("app_private")
     .from("issue_categories").select("id").eq("is_active", true).order("sort_order");
@@ -327,19 +328,38 @@ integrationTest("configured retention cleanup removes every expired data class a
   };
   const functionsUrl = requiredEnv("SUPABASE_FUNCTIONS_URL").replace(/\/+$/u, "");
   const staleUploadIds = [uploadIds.pending, uploadIds.readyUnattached, uploadIds.failed];
+  const currentAvatarPublicId = `srp/avatars/${avatarOwner.auth.uid}_current`;
+  const oldAvatarPublicId = `srp/avatars/${owner.auth.uid}_old`;
+  const { error: avatarProfileError } = await supabase.schema("app_private").from("user_profiles")
+    .update({ avatar_public_id: currentAvatarPublicId }).eq("uid", avatarOwner.auth.uid);
+  if (avatarProfileError) throw avatarProfileError;
+  const { error: avatarJobsError } = await supabase.schema("app_private").from("deletion_jobs").insert([
+    {
+      cloudinary_public_id: currentAvatarPublicId,
+      target_id: avatarOwner.auth.uid,
+      target_type: "avatar",
+    },
+    {
+      cloudinary_public_id: oldAvatarPublicId,
+      target_id: owner.auth.uid,
+      target_type: "avatar",
+    },
+  ]);
+  if (avatarJobsError) throw avatarJobsError;
+  const deletionTargetIds = [...staleUploadIds, avatarOwner.auth.uid, owner.auth.uid];
   let completedUploadJobs: Array<{ status: string; target_id: string }> = [];
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const response = await fetch(`${functionsUrl}/processDeletionJobs`, { headers, method: "POST" });
     assert.ok(response.ok || response.status === 429, `deletion worker returned ${response.status}`);
     const { data, error } = await supabase.schema("app_private").from("deletion_jobs")
-      .select("status,target_id").in("target_id", staleUploadIds);
+      .select("status,target_id").in("target_id", deletionTargetIds);
     if (error) throw error;
     completedUploadJobs = data ?? [];
-    if (completedUploadJobs.length === staleUploadIds.length
+    if (completedUploadJobs.length === deletionTargetIds.length
       && completedUploadJobs.every((job) => job.status === "completed")) break;
     await new Promise((resolve) => setTimeout(resolve, 550));
   }
-  assert.equal(completedUploadJobs.length, staleUploadIds.length);
+  assert.equal(completedUploadJobs.length, deletionTargetIds.length);
   assert.ok(completedUploadJobs.every((job) => job.status === "completed"));
 
   const providerUrl = requiredEnv("FCM_EMULATOR_URL").replace("host.docker.internal", "127.0.0.1");
@@ -352,6 +372,8 @@ integrationTest("configured retention cleanup removes every expired data class a
     .filter((request) => request.path.endsWith("/image/destroy"))
     .map((request) => String(request.body.public_id)));
   for (const id of staleUploadIds) assert.ok(destroyedPublicIds.has(`retention/${id}`));
+  assert.ok(destroyedPublicIds.has(oldAvatarPublicId), "superseded avatar must be deleted");
+  assert.equal(destroyedPublicIds.has(currentAvatarPublicId), false, "current avatar must never be deleted");
 
   await new Promise((resolve) => setTimeout(resolve, 1_100));
   const maintenanceResponse = await fetch(`${functionsUrl}/maintenanceCleanup`, { headers, method: "POST" });

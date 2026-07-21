@@ -914,6 +914,7 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
   const issueSupporterNotificationMigration = await read('supabase/migrations/202607160005_issue_supporter_notifications.sql');
   const notificationView = await read('src/views/NotificationsView.vue');
   const notificationDisplay = await read('src/composables/useNotificationDisplay.ts');
+  const uidOnlyMigration = await read('supabase/migrations/202607210001_uid_only_author_profiles.sql');
 
   assert.match(atomicOutboxMigration, /'issue\.comment_created'/u);
   assert.match(atomicOutboxMigration, /'issue_author_uid', issue_record\.author_uid/u);
@@ -949,18 +950,23 @@ test('personal notification writes and pushes are scoped to the recipient', asyn
   assert.match(outboxWorker, /title: isReviewApproved \? "提案審核已通過" : "提案狀態已變更"/u);
   assert.match(outboxWorker, /`\$\{title\} 已通過審核並開放附議。`/u);
   assert.match(outboxWorker, /`\$\{title\} 現在狀態為 \$\{issueStatusLabel\(newStatus\)\}`/u);
-  assert.match(outboxWorker, /title: `來自 \$\{authorName\} 的留言`/u);
+  assert.match(outboxWorker, /async function findDisplayName/u);
+  assert.match(outboxWorker, /title: actorName \? `來自 \$\{actorName\} 的留言` : "收到新留言"/u);
   assert.match(outboxWorker, /title: "提案已達附議門檻"/u);
   assert.match(outboxWorker, /title: "提案已被刪除"/u);
   assert.match(outboxWorker, /title: "有新的公告"/u);
   assert.match(outboxWorker, /source: "broadcast"[\s\S]*type: "announcement_created"/u);
-  assert.match(outboxWorker, /title: `來自 \$\{authorName\} 的留言`/u);
+  assert.match(outboxWorker, /title: "收到新留言"/u);
   assert.match(outboxWorker, /return text\.slice\(0, 80\)/u);
   assert.match(notificationView, /useNotificationDisplay/u);
   assert.doesNotMatch(notificationView, /return t\(notification\.title\)/u);
   assert.match(notificationDisplay, /notification\.commentTitle/u);
   assert.match(notificationDisplay, /notification\.statusChangedBody/u);
   assert.match(notificationDisplay, /LEGACY_STATUS_SUFFIX/u);
+  assert.match(notificationDisplay, /resolveAuthorProfile\(notification\.actor_uid\)/u);
+  assert.match(uidOnlyMigration, /drop column author_name, drop column author_photo_url/u);
+  assert.match(uidOnlyMigration, /drop column actor_name, drop column actor_photo_url/u);
+  assert.match(uidOnlyMigration, /payload - 'author_name' - 'author_photo_url'/u);
 });
 
 test('timestamps stay UTC at rest and render in the device time zone', async () => {

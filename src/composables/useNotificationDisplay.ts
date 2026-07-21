@@ -2,6 +2,7 @@ import type { AppIconName } from '@/components/ui/atoms/AppIcon.vue';
 import { FACILITY_STATUS_LABELS, ISSUE_STATUS_LABELS } from '@/constants/statuses';
 import { useI18n } from '@/i18n';
 import type { NotificationRecord } from '@/types';
+import { resolveAuthorProfile } from '@/composables/useAuthorProfile';
 
 const LEGACY_STATUS_SUFFIX =
   /\s+(?:\u73fe\u5728\u72c0\u614b\u70ba\s+.+|\u5df2\u901a\u904e\u5be9\u6838\u4e26\u958b\u653e\u9644\u8b70\u3002)$/u;
@@ -14,10 +15,14 @@ export function useNotificationDisplay() {
       || notification.type === 'issue_comment_created';
   }
 
+  function actorName(notification: NotificationRecord) {
+    return resolveAuthorProfile(notification.actor_uid)?.displayName || t('navigation.user');
+  }
+
   function title(notification: NotificationRecord) {
     if (isComment(notification)) {
       return t('notification.commentTitle', {
-        name: notification.actor_name?.trim() || t('navigation.user'),
+        name: actorName(notification),
       });
     }
     if (notification.type === 'announcement_created') return t('notification.announcementCreated');
@@ -88,6 +93,7 @@ export function useNotificationDisplay() {
   }
 
   return {
+    actorName,
     body,
     icon,
     iconClass,

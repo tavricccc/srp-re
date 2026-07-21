@@ -9,14 +9,12 @@
       </h2>
 
       <div
-        v-if="showAuthor"
+        v-if="showAuthor && authorUid"
         class="flex items-center border-b border-ink-100 text-sm dark:border-ink-800"
         :class="compact ? 'flex-wrap gap-2 pb-2' : 'gap-3 pb-3'"
       >
         <AuthorAvatar
           :author-uid="authorUid"
-          :photo-url="authorPhotoUrl"
-          :name="authorName"
           :size="compact ? 'sm' : 'md'"
           :alt-text="t('notification.nameAvatar', { name: authorName })"
         />
@@ -57,12 +55,12 @@
 import AuthorAvatar from '@/components/AuthorAvatar.vue';
 import MarkdownMediaContent from '@/components/MarkdownMediaContent.vue';
 import { useI18n } from '@/i18n';
+import { computed } from 'vue';
+import { useAuthorProfile } from '@/composables/useAuthorProfile';
 
 const { t } = useI18n();
 
-withDefaults(defineProps<{
-  authorName: string;
-  authorPhotoUrl?: string | null;
+const props = withDefaults(defineProps<{
   authorSecondary?: string;
   authorUid?: string | null;
   compact?: boolean;
@@ -76,7 +74,6 @@ withDefaults(defineProps<{
   showAuthor?: boolean;
   title: string;
 }>(), {
-  authorPhotoUrl: null,
   authorSecondary: '',
   authorUid: null,
   compact: false,
@@ -88,4 +85,7 @@ withDefaults(defineProps<{
   scrollContent: false,
   showAuthor: true,
 });
+
+const authorProfile = useAuthorProfile(() => props.authorUid);
+const authorName = computed(() => authorProfile.value?.displayName || t('navigation.user'));
 </script>

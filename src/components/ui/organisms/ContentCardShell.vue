@@ -19,10 +19,8 @@
 
       <div class="mt-3 flex min-w-0 items-center gap-2.5">
         <AuthorAvatar
-          v-if="showAuthor"
+          v-if="showAuthor && authorUid"
           :author-uid="authorUid"
-          :photo-url="authorPhotoUrl"
-          :name="authorName"
           size="sm"
           :alt-text="t('notification.nameAvatar', { name: authorName })"
           class="shrink-0"
@@ -31,7 +29,7 @@
           <h3 class="line-clamp-2 text-[15px] font-semibold leading-6 tracking-[0.01em] text-ink-950 dark:text-ink-50 sm:text-base">
             <SearchHighlight :text="title" :query="highlightQuery" />
           </h3>
-          <p v-if="showAuthor" class="mt-0.5 truncate text-xs text-ink-500 dark:text-ink-400">
+          <p v-if="showAuthor && authorUid" class="mt-0.5 truncate text-xs text-ink-500 dark:text-ink-400">
             {{ authorName }}
           </p>
         </div>
@@ -53,12 +51,12 @@ import AuthorAvatar from '@/components/AuthorAvatar.vue';
 import TagBadge from '@/components/ui/atoms/TagBadge.vue';
 import SearchHighlight from '@/components/ui/molecules/SearchHighlight.vue';
 import { useI18n } from '@/i18n';
+import { computed } from 'vue';
+import { useAuthorProfile } from '@/composables/useAuthorProfile';
 
 const { t } = useI18n();
 
-withDefaults(defineProps<{
-  authorName: string;
-  authorPhotoUrl?: string | null;
+const props = withDefaults(defineProps<{
   authorUid?: string | null;
   highlightQuery?: string;
   showAuthor?: boolean;
@@ -67,12 +65,14 @@ withDefaults(defineProps<{
   timeLabel: string;
   title: string;
 }>(), {
-  authorPhotoUrl: null,
   authorUid: null,
   highlightQuery: '',
   showAuthor: true,
   statusClass: '',
 });
+
+const authorProfile = useAuthorProfile(() => props.authorUid);
+const authorName = computed(() => authorProfile.value?.displayName || t('navigation.user'));
 
 const emit = defineEmits<{
   open: [];

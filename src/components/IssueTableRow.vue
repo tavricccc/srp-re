@@ -1,7 +1,6 @@
 <template>
   <ContentCardShell
-    :author-name="displayAuthorName"
-    :author-photo-url="displayPhotoUrl"
+    :author-uid="issue.canViewAuthor ? issue.author_uid : null"
     :highlight-query="highlightQuery"
     :show-author="issue.canViewAuthor"
     :status-class="statusClass"
@@ -108,8 +107,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const {
-  displayAuthorName,
-  displayPhotoUrl,
   statusLabel,
   primaryTimeValueLabel,
   isAdmin,

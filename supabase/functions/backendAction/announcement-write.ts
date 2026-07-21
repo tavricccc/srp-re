@@ -18,8 +18,6 @@ async function createAnnouncement(payload: JsonRecord, auth: AuthContext, supaba
   await validateMarkdownUploadsBeforeCreate(supabase, auth.uid, content, "announcement");
   const { data, error } = await supabase.schema("app_api").rpc("backend_create_announcement", {
     actor_uid: auth.uid,
-    actor_name: auth.name || auth.email || auth.uid,
-    actor_photo_url: auth.photoUrl,
     announcement_title: requiredText(payload.title, "title", INPUT_LIMITS.title),
     announcement_content: content,
   });

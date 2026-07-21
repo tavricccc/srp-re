@@ -34,8 +34,6 @@ async function createAnnouncementComment(payload: JsonRecord, auth: AuthContext,
     announcement_id: announcementId,
     parent_comment_id: parentCommentId,
     actor_uid: auth.uid,
-    actor_name: auth.name,
-    actor_photo_url: auth.photoUrl,
     comment_content: content,
   });
   if (error) throw error;

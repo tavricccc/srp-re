@@ -8,6 +8,7 @@ import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { requirePermission } from "./auth.ts";
 
 const ACCESS_LIST_LIMIT = 100;
+const AVATAR_REVALIDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const ACCESS_SCOPE_KINDS = new Set(["announcement", "facility", "issue"]);
 
 async function scopedAccessUids(payload: JsonRecord, supabase: BackendSupabase) {
@@ -84,7 +85,7 @@ export function isUserAction(action: string) {
     || action === "listRoleAssignments"
     || action === "setUserRoles"
     || action === "cacheUserAvatar"
-    || action === "getUserAvatarUrls";
+    || action === "getUserPublicProfiles";
 }
 
 export async function handleUserAction(
@@ -164,11 +165,17 @@ export async function handleUserAction(
     const { data: existing, error: existingError } = await supabase
       .schema("app_private")
       .from("user_profiles")
-      .select("avatar_hash,avatar_public_id,avatar_source_url,avatar_version,cached_photo_url")
+      .select("avatar_checked_at,avatar_hash,avatar_public_id,avatar_source_url,avatar_version,cached_photo_url")
       .eq("uid", auth.uid)
       .maybeSingle();
     if (existingError) throw existingError;
-    if (existing?.avatar_source_url === sourceUrl && existing.cached_photo_url) {
+    const checkedAt = Date.parse(asString(existing?.avatar_checked_at));
+    if (
+      existing?.avatar_source_url === sourceUrl
+      && existing.cached_photo_url
+      && Number.isFinite(checkedAt)
+      && Date.now() - checkedAt < AVATAR_REVALIDATE_INTERVAL_MS
+    ) {
       return { photoUrl: existing.cached_photo_url };
     }
 
@@ -192,6 +199,7 @@ export async function handleUserAction(
       const { error } = await supabase.schema("app_private").from("user_profiles").upsert({
         uid: auth.uid,
         avatar_source_url: sourceUrl,
+        avatar_checked_at: new Date().toISOString(),
         display_name: auth.name,
         photo_url: sourceUrl,
         updated_at: new Date().toISOString(),
@@ -201,44 +209,38 @@ export async function handleUserAction(
     }
 
     const nextVersion = Number(existing?.avatar_version ?? 0) + 1;
-    const nextPublicId = `srp/avatars/${auth.uid}_${nextVersion}`;
+    const nextPublicId = `srp/avatars/${auth.uid}_${nextVersion}_${crypto.randomUUID()}`;
     await uploadCloudinaryAuthenticatedImage(
       nextPublicId,
       new Blob([imageBuffer], { type: contentType }),
     );
     const cachedPhotoUrl = await createCloudinaryAuthenticatedImageUrl(nextPublicId);
-    const previousPublicId = asString(existing?.avatar_public_id);
-
-    const { error } = await supabase.schema("app_private").from("user_profiles").upsert({
-      uid: auth.uid,
-      avatar_hash: avatarHash,
-      avatar_public_id: nextPublicId,
-      avatar_source_url: sourceUrl,
-      avatar_version: nextVersion,
-      display_name: auth.name,
-      photo_url: sourceUrl,
-      cached_photo_url: cachedPhotoUrl,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "uid" });
+    const { error } = await supabase.schema("app_api").rpc("backend_commit_user_avatar", {
+      actor_uid: auth.uid,
+      next_avatar_hash: avatarHash,
+      next_avatar_public_id: nextPublicId,
+      next_avatar_source_url: sourceUrl,
+      next_cached_photo_url: cachedPhotoUrl,
+      next_avatar_version: nextVersion,
+      next_display_name: auth.name,
+    });
     if (error) throw error;
-    if (previousPublicId && previousPublicId !== nextPublicId) {
-      const { error: deletionError } = await supabase.schema("app_private").from("deletion_jobs").insert({
-        cloudinary_public_id: previousPublicId,
-        target_id: auth.uid,
-        target_type: "avatar",
-      });
-      if (deletionError) throw deletionError;
-    }
     return { photoUrl: cachedPhotoUrl };
   }
 
   const uids = Array.isArray(payload.uids) ? payload.uids.map((uid) => asString(uid)).filter(Boolean).slice(0, 50) : [];
-  const { data, error } = await supabase.schema("app_private").from("user_profiles").select("uid,cached_photo_url,photo_url").in("uid", uids);
+  const { data, error } = await supabase.schema("app_private").from("user_profiles")
+    .select("uid,display_name,cached_photo_url,photo_url,profile_version").in("uid", uids);
   if (error) throw error;
   return {
-    avatars: Object.fromEntries((data ?? []).map((profile) => [
+    profiles: Object.fromEntries((data ?? []).map((profile) => [
       profile.uid,
-      profile.cached_photo_url ?? profile.photo_url ?? null,
+      {
+        uid: profile.uid,
+        displayName: profile.display_name,
+        photoUrl: profile.cached_photo_url ?? profile.photo_url ?? null,
+        version: profile.profile_version,
+      },
     ])),
   };
 }

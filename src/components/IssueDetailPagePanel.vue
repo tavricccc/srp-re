@@ -1,7 +1,6 @@
 <template>
   <ContentDetailPagePanel
-    :author-name="displayAuthorName"
-    :author-photo-url="displayPhotoUrl"
+    :author-uid="issue.canViewAuthor ? issue.author_uid : null"
     :initial-tab="initialTab"
     back-label="issue.returnToProposalList"
     :comment-count="mobileCommentCount"
@@ -148,8 +147,6 @@ const { t } = useI18n();
 const { run } = useActionFeedback();
 
 const {
-  displayAuthorName,
-  displayPhotoUrl,
   derivedStatus,
   categoryLabel,
   statusLabel,

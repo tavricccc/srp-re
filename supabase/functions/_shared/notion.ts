@@ -421,6 +421,15 @@ async function getOrCreateNotionPage(
 // Public API — called from outboxWorker
 // ---------------------------------------------------------------------------
 
+async function resolveDisplayName(supabase: AppSupabase, uid: unknown) {
+  const normalizedUid = typeof uid === "string" ? uid : "";
+  if (!normalizedUid) return "使用者";
+  const { data, error } = await supabase.schema("app_private").from("user_profiles")
+    .select("display_name").eq("uid", normalizedUid).maybeSingle();
+  if (error) throw error;
+  return String(data?.display_name ?? normalizedUid);
+}
+
 /**
  * Mark a Notion page as deleted by setting its 狀態 to 已刪除.
  * Called when the target content is deleted from the platform.
@@ -447,10 +456,11 @@ export async function syncIssueCreatedToNotion(
   const { data: issue } = await supabase
     .schema("app_private")
     .from("issues")
-    .select("title, content, category, status, author_name, support_count, support_goal, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
+    .select("title, content, category, status, author_uid, support_count, support_goal, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
     .eq("id", targetId)
     .maybeSingle();
 
+  const authorName = await resolveDisplayName(supabase, issue?.author_uid ?? payload.author_uid);
   const pageId = await getOrCreateNotionPage(
     supabase,
     "issue",
@@ -458,7 +468,7 @@ export async function syncIssueCreatedToNotion(
     String(issue?.title ?? payload.title ?? "未命名提案"),
     String(issue?.category ?? payload.category ?? "公共議題"),
     String(issue?.status ?? "pending"),
-    String(issue?.author_name ?? "未提供"),
+    authorName,
     issue?.support_count ?? payload.support_count,
     issue?.support_goal ?? payload.support_goal,
   );
@@ -481,13 +491,14 @@ export async function syncFacilityCreatedToNotion(
 ): Promise<void> {
   if (!notionEnabled()) return;
   const { data: facility, error } = await supabase.schema("app_private").from("facility_reports")
-    .select("title,content,location,status,author_name,affected_count,category_id,created_at,started_at,closed_at,result_content")
+    .select("title,content,location,status,author_uid,affected_count,category_id,created_at,started_at,closed_at,result_content")
     .eq("id", targetId).maybeSingle();
   if (error) throw error;
   if (!facility) return;
+  const authorName = await resolveDisplayName(supabase, facility.author_uid);
   const pageId = await getOrCreateNotionPage(
     supabase, "facility", targetId, String(facility.title ?? payload.title ?? "設備"),
-    String(facility.category_id), translateFacilityStatus(String(facility.status)), String(facility.author_name), facility.affected_count, null, "遇到人數",
+    String(facility.category_id), translateFacilityStatus(String(facility.status)), authorName, facility.affected_count, null, "遇到人數",
   );
   if (!pageId) return;
   await Promise.all([ensureRichTextProperty("地點"), ...["建立時間", "開始處理時間", "結案時間"].map(ensureDateProperty)]);
@@ -507,14 +518,15 @@ export async function syncFacilityStatusToNotion(
 ): Promise<void> {
   if (!notionEnabled()) return;
   const { data: facility, error } = await supabase.schema("app_private").from("facility_reports")
-    .select("title,status,author_name,affected_count,category_id,created_at,started_at,closed_at,result_content")
+    .select("title,status,author_uid,affected_count,category_id,created_at,started_at,closed_at,result_content")
     .eq("id", targetId).maybeSingle();
   if (error) throw error;
   if (!facility) return;
   const terminal = ["completed", "unable-to-handle"].includes(String(facility.status));
   if (!terminal) return;
+  const authorName = await resolveDisplayName(supabase, facility.author_uid);
   const pageId = await getOrCreateNotionPage(supabase, "facility", targetId, String(facility.title), String(facility.category_id),
-    translateFacilityStatus(String(facility.status)), String(facility.author_name), 1, null, "遇到人數");
+    translateFacilityStatus(String(facility.status)), authorName, 1, null, "遇到人數");
   if (!pageId) return;
   const statusLabel = translateFacilityStatus(String(facility.status));
   await Promise.all([
@@ -550,10 +562,11 @@ export async function syncIssueStatusChangedToNotion(
   const { data: issue } = await supabase
     .schema("app_private")
     .from("issues")
-    .select("title, category, author_name, support_count, support_goal, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
+    .select("title, category, author_uid, support_count, support_goal, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
     .eq("id", targetId)
     .maybeSingle();
 
+  const authorName = await resolveDisplayName(supabase, issue?.author_uid ?? payload.author_uid);
   const pageId = await getOrCreateNotionPage(
     supabase,
     "issue",
@@ -561,7 +574,7 @@ export async function syncIssueStatusChangedToNotion(
     String(issue?.title ?? payload.title ?? "提案"),
     String(issue?.category ?? "公共議題"),
     newStatus,
-    String(issue?.author_name ?? "未提供"),
+    authorName,
     issue?.support_count ?? payload.support_count,
     issue?.support_goal ?? payload.support_goal,
   );
@@ -592,10 +605,11 @@ export async function syncIssueSupportToNotion(
   const { data: issue } = await supabase
     .schema("app_private")
     .from("issues")
-    .select("title, category, status, author_name, support_count, support_goal, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
+    .select("title, category, status, author_uid, support_count, support_goal, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
     .eq("id", targetId)
     .maybeSingle();
 
+  const authorName = await resolveDisplayName(supabase, issue?.author_uid);
   const pageId = await getOrCreateNotionPage(
     supabase,
     "issue",
@@ -603,7 +617,7 @@ export async function syncIssueSupportToNotion(
     String(issue?.title ?? "提案"),
     String(issue?.category ?? "公共議題"),
     String(issue?.status ?? "pending"),
-    String(issue?.author_name ?? "未提供"),
+    authorName,
     issue?.support_count,
     issue?.support_goal,
   );
@@ -632,10 +646,11 @@ export async function syncIssueResultUpdatedToNotion(
   const { data: issue } = await supabase
     .schema("app_private")
     .from("issues")
-    .select("title, category, status, author_name, support_count, support_goal, result_content, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
+    .select("title, category, status, author_uid, support_count, support_goal, result_content, created_at, review_approved_at, support_deadline_at, support_met_at, response_deadline_at, closed_at")
     .eq("id", targetId)
     .maybeSingle();
 
+  const authorName = await resolveDisplayName(supabase, issue?.author_uid ?? payload.author_uid);
   const pageId = await getOrCreateNotionPage(
     supabase,
     "issue",
@@ -643,7 +658,7 @@ export async function syncIssueResultUpdatedToNotion(
     String(issue?.title ?? payload.title ?? "提案"),
     String(issue?.category ?? "公共議題"),
     String(issue?.status ?? "pending"),
-    String(issue?.author_name ?? "未提供"),
+    authorName,
     issue?.support_count ?? payload.support_count,
     issue?.support_goal ?? payload.support_goal,
   );
@@ -674,7 +689,7 @@ export async function syncIssueCommentToNotion(
     .maybeSingle();
   if (!pageRow?.notion_page_id) return;
 
-  const authorName = String(payload.author_name ?? "使用者");
+  const authorName = await resolveDisplayName(supabase, payload.author_uid);
   const contentPreview = String(payload.content ?? "").slice(0, 150);
 
   await appendBlock(
@@ -696,10 +711,11 @@ export async function syncAnnouncementCreatedToNotion(
   const { data: announcement } = await supabase
     .schema("app_private")
     .from("announcements")
-    .select("title,content,author_name")
+    .select("title,content,author_uid")
     .eq("id", targetId)
     .maybeSingle();
 
+  const authorName = await resolveDisplayName(supabase, announcement?.author_uid ?? payload.author_uid);
   const pageId = await getOrCreateNotionPage(
     supabase,
     "announcement",
@@ -707,7 +723,7 @@ export async function syncAnnouncementCreatedToNotion(
     String(announcement?.title ?? payload.title ?? "未命名公告"),
     "公告",
     "發布",
-    String(announcement?.author_name ?? "管理員"),
+    authorName,
     0,
     null,
   );
@@ -715,7 +731,7 @@ export async function syncAnnouncementCreatedToNotion(
     await callNotionAPI(`/pages/${pageId}`, "PATCH", {
       properties: {
         "名稱": { title: [{ text: { content: String(announcement?.title ?? payload.title ?? "未命名公告") } }] },
-        "作者": { rich_text: [{ text: { content: String(announcement?.author_name ?? "管理員") } }] },
+        "作者": { rich_text: [{ text: { content: authorName } }] },
       },
     });
     await replaceManagedContent(

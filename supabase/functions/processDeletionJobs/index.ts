@@ -40,7 +40,18 @@ Deno.serve(async (request) => {
     const processJob = async (job: DeletionJob) => {
       try {
         if (job.cloudinary_public_id) {
-          await deleteCloudinaryAsset(job.cloudinary_public_id);
+          let isCurrentAvatar = false;
+          if (job.target_type === "avatar") {
+            const { data: profile, error: profileError } = await supabase
+              .schema("app_private")
+              .from("user_profiles")
+              .select("avatar_public_id")
+              .eq("uid", job.target_id)
+              .maybeSingle();
+            if (profileError) throw profileError;
+            isCurrentAvatar = profile?.avatar_public_id === job.cloudinary_public_id;
+          }
+          if (!isCurrentAvatar) await deleteCloudinaryAsset(job.cloudinary_public_id);
         }
         if (job.notion_page_id) {
           await markNotionPageDeleted(job.notion_page_id);

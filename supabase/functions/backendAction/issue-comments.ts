@@ -50,8 +50,6 @@ async function createComment(payload: JsonRecord, auth: AuthContext, supabase: B
   const { data, error } = await supabase.schema("app_api").rpc("backend_create_issue_comment", {
     issue_id: issueId,
     parent_comment_id: parentCommentId,
-    actor_name: auth.name,
-    actor_photo_url: auth.photoUrl,
     comment_content: content,
     ...await issueCommentPolicyParams(supabase, auth, canManageIssueCategory(auth, asString(issue.category))),
   });

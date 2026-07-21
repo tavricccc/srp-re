@@ -27,7 +27,7 @@ export const BACKEND_ACTION_NAMES = [
   'getNotificationSnapshot',
   'getPlatformDashboard',
   'getPushNotificationPreference',
-  'getUserAvatarUrls',
+  'getUserPublicProfiles',
   'listAnnouncementComments',
   'listAnnouncements',
   'listComments',

@@ -53,8 +53,6 @@ function normalizeAnnouncementRecord(data: Record<string, unknown>): Announcemen
     title: String(data.title ?? ''),
     content: String(data.content ?? ''),
     author_uid: String(data.author_uid ?? ''),
-    author_name: String(data.author_name ?? 'access.administrator'),
-    author_photo_url: data.author_photo_url ? String(data.author_photo_url) : null,
     published_at: dateFromMs(data.published_at_ms ?? data.published_at),
     like_count: Number(data.like_count ?? 0),
     comment_count: Number(data.comment_count ?? 0),
@@ -70,8 +68,6 @@ function normalizeAnnouncementComment(data: Record<string, unknown>): Announceme
     parent_comment_id: typeof data.parent_comment_id === 'string' ? data.parent_comment_id : null,
     content: String(data.content ?? ''),
     author_uid: String(data.author_uid ?? ''),
-    author_name: String(data.author_name ?? 'access.administrator'),
-    author_photo_url: data.author_photo_url ? String(data.author_photo_url) : null,
     created_at: dateFromMs(data.created_at_ms ?? data.created_at),
     replies: Array.isArray(data.replies)
       ? data.replies.map((reply) => normalizeAnnouncementComment({

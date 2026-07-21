@@ -27,7 +27,7 @@
   "getNotificationUnreadHint": { "group": "read" },
   "getPlatformDashboard": { "group": "read" },
   "getPushNotificationPreference": { "group": "read" },
-  "getUserAvatarUrls": { "group": "read" },
+  "getUserPublicProfiles": { "group": "read" },
   "listAnnouncementComments": { "group": "read" },
   "listAnnouncements": { "group": "read" },
   "listComments": { "group": "read" },

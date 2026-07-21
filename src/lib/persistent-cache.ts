@@ -1,5 +1,5 @@
 const DATABASE_NAME = 'novae-content-cache';
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const STORE_NAME = 'entries';
 
 export interface PersistentCacheEntry<T> {
@@ -26,6 +26,8 @@ function openDatabase() {
       if (!database.objectStoreNames.contains(STORE_NAME)) {
         const store = database.createObjectStore(STORE_NAME, { keyPath: 'key' });
         store.createIndex('scope', 'scope', { unique: false });
+      } else {
+        request.transaction?.objectStore(STORE_NAME).clear();
       }
     };
     request.onsuccess = () => resolve(request.result);

@@ -39,8 +39,6 @@ export function issueToReadableResponse(issue: JsonRecord, auth: AuthContext): J
     canManageIssue,
     canViewAuthor,
     author_uid: canViewAuthor ? response.author_uid : null,
-    author_name: canViewAuthor ? response.author_name : null,
-    author_photo_url: canViewAuthor ? response.author_photo_url : null,
   };
 }
 

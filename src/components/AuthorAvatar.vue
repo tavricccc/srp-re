@@ -1,7 +1,7 @@
 <template>
   <UserAvatar
-    :photo-url="resolvedPhotoUrl"
-    :name="name"
+    :photo-url="profile?.photoUrl ?? null"
+    :name="profile?.displayName ?? ''"
     :size="size"
     :alt-text="altText"
   />
@@ -9,23 +9,16 @@
 
 <script setup lang="ts">
 import UserAvatar from '@/components/ui/atoms/UserAvatar.vue';
-import { useAuthorAvatarUrl } from '@/composables/useAuthorAvatar';
+import { useAuthorProfile } from '@/composables/useAuthorProfile';
 
 const props = withDefaults(defineProps<{
   altText?: string;
-  authorUid?: string | null;
-  name: string;
-  photoUrl?: string | null;
+  authorUid: string | null;
   size?: 'sm' | 'md' | 'lg';
 }>(), {
   altText: 'settings.userAvatar',
-  authorUid: null,
-  photoUrl: null,
   size: 'md',
 });
 
-const resolvedPhotoUrl = useAuthorAvatarUrl(
-  () => props.authorUid,
-  () => props.photoUrl,
-);
+const profile = useAuthorProfile(() => props.authorUid);
 </script>

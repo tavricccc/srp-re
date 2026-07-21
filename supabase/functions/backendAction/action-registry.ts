@@ -123,7 +123,7 @@ export const backendActionDefinitions = [
   }),
   action("recordPlatformVisit", "user", "general-write", userHandler),
   action("cacheUserAvatar", "user", "sensitive-write", userHandler),
-  action("getUserAvatarUrls", "user", "read", userHandler),
+  action("getUserPublicProfiles", "user", "read", userHandler),
 
   idempotentWrite("createImageUploadSessions", "upload", "upload-write", uploadHandler),
   idempotentWrite("finalizeImageUploads", "upload", "upload-write", uploadHandler),

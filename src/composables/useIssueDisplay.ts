@@ -4,7 +4,6 @@ import { formatDate } from '@/lib/format';
 import { getIssueOperationTimeItems, isClosedIssueStatus } from '@/lib/issue-timeline';
 import { getIssueCategoryLabel, issueRequiresReview } from '@/constants/categories';
 import { ISSUE_STATUS_LABELS } from '@/constants/statuses';
-import { useAuthorAvatarUrl } from '@/composables/useAuthorAvatar';
 import type { IssueOperationTimeItem, IssueRecord } from '@/types';
 import { useI18n } from '@/i18n';
 
@@ -15,25 +14,6 @@ export function useIssueDisplay(issue: Ref<IssueRecord> | (() => IssueRecord)) {
   });
 
   const isOwnIssue = computed(() => resolvedIssue.value.isOwnIssue);
-
-  const displayAuthorName = computed(() => {
-    const i = resolvedIssue.value;
-    return i.canViewAuthor ? i.author_name || '' : '';
-  });
-
-  const displayAuthorUid = computed(() => {
-    const i = resolvedIssue.value;
-    return i.canViewAuthor ? i.author_uid : null;
-  });
-
-  const fallbackPhotoUrl = computed(() => {
-    const i = resolvedIssue.value;
-    return i.canViewAuthor ? i.author_photo_url || null : null;
-  });
-  const displayPhotoUrl = useAuthorAvatarUrl(
-    displayAuthorUid,
-    fallbackPhotoUrl,
-  );
 
   const derivedStatus = computed(() => getDerivedIssueStatus(resolvedIssue.value));
   const categoryLabel = computed(() => getIssueCategoryLabel(resolvedIssue.value.category));
@@ -61,8 +41,6 @@ export function useIssueDisplay(issue: Ref<IssueRecord> | (() => IssueRecord)) {
   const remainingDays = computed(() => getRemainingCalendarDays(resolvedIssue.value.support_deadline_at));
 
   return {
-    displayAuthorName,
-    displayPhotoUrl,
     derivedStatus,
     categoryLabel,
     statusLabel,

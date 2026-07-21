@@ -15,8 +15,6 @@ type AppFunction<Args extends Record<string, unknown>, Returns> = {
 interface IssueRow {
   id: string;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   category: string;
   comments_enabled: boolean;
   read_access: string;
@@ -45,8 +43,6 @@ interface CommentRow {
   issue_id: string;
   parent_comment_id: string | null;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   content: string;
   created_at: string;
 }
@@ -54,8 +50,6 @@ interface CommentRow {
 interface AnnouncementRow {
   id: string;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   title: string;
   content: string;
   like_count: number;
@@ -68,8 +62,6 @@ interface AnnouncementCommentRow {
   announcement_id: string;
   parent_comment_id: string | null;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   content: string;
   created_at: string;
 }
@@ -84,8 +76,6 @@ interface NotificationRow {
   comment_id: string | null;
   title: string;
   actor_uid: string | null;
-  actor_name: string | null;
-  actor_photo_url: string | null;
   body_preview: string | null;
   issue_category: string | null;
   old_status: string | null;
@@ -190,9 +180,11 @@ interface UserProfileRow {
   avatar_public_id: string | null;
   avatar_source_url: string | null;
   avatar_version: number;
+  avatar_checked_at: string | null;
   cached_photo_url: string | null;
   photo_url: string | null;
   display_name: string | null;
+  profile_version: number;
   updated_at: string;
 }
 
@@ -205,8 +197,6 @@ interface UserRoleRow {
 interface FacilityRow {
   id: string;
   author_uid: string;
-  author_name: string;
-  author_photo_url: string | null;
   title: string;
   title_search: string;
   location: string;
@@ -287,14 +277,6 @@ interface AppPrivateTables {
   notification_states: Table<NotificationStateRow>;
   notifications: Table<NotificationRow>;
   outbox_events: Table<OutboxEventRow>;
-  private_issue_authors: Table<{
-    issue_id: string;
-    author_uid: string;
-    author_name: string;
-    author_photo_url: string | null;
-    created_at: string;
-    updated_at: string;
-  }>;
   push_delivery_logs: Table<{
     id: string;
     error_trace_id: string | null;
@@ -336,6 +318,15 @@ interface AppPrivateTables {
 }
 
 interface AppApiFunctions {
+  backend_commit_user_avatar: AppFunction<{
+    actor_uid: string;
+    next_avatar_hash: string;
+    next_avatar_public_id: string;
+    next_avatar_source_url: string;
+    next_cached_photo_url: string;
+    next_avatar_version: number;
+    next_display_name: string;
+  }, Json>;
   backend_complete_initial_setup: AppFunction<{
     actor_uid: string; issue_categories: Json; facility_categories: Json;
     issues_enabled: boolean; facilities_enabled: boolean;
@@ -346,7 +337,7 @@ interface AppApiFunctions {
   backend_get_access_context: AppFunction<{ actor_uid: string }, Json>;
   backend_get_notification_unread_hint: AppFunction<{ actor_is_admin: boolean; actor_uid: string }, Json>;
   backend_create_facility: AppFunction<{
-    actor_uid: string; actor_name: string; actor_photo_url: string | null;
+    actor_uid: string;
     facility_title: string; facility_location: string; facility_content: string; facility_category: string;
   }, Json>;
   backend_get_facility: AppFunction<{ facility_id: string; actor_uid: string; actor_can_manage: boolean }, Json>;
@@ -365,8 +356,6 @@ interface AppApiFunctions {
     announcement_record: AnnouncementRow;
   }, Json>;
   backend_create_announcement: AppFunction<{
-    actor_name: string;
-    actor_photo_url: string | null;
     actor_uid: string;
     announcement_content: string;
     announcement_title: string;
@@ -388,8 +377,6 @@ interface AppApiFunctions {
     replies?: Json;
   }, Json>;
   backend_create_announcement_comment: AppFunction<{
-    actor_name: string;
-    actor_photo_url: string | null;
     actor_uid: string;
     announcement_id: string;
     comment_content: string;
@@ -397,8 +384,6 @@ interface AppApiFunctions {
   }, Json>;
   backend_create_issue_comment: AppFunction<{
     actor_is_admin: boolean;
-    actor_name: string;
-    actor_photo_url: string | null;
     actor_uid: string;
     comment_content: string;
     issue_id: string;
@@ -409,8 +394,6 @@ interface AppApiFunctions {
   }, Json>;
   backend_create_issue: AppFunction<{
     actor_is_admin: boolean;
-    actor_name: string;
-    actor_photo_url: string | null;
     actor_uid: string;
     author_is_private: boolean;
     author_private_categories: string[];

@@ -2,8 +2,6 @@
   <ContentDetailPagePanel
     v-if="announcement"
     back-label="announcement.returnToAnnouncementList"
-    :author-name="announcement.author_name"
-    :author-photo-url="announcement.author_photo_url"
     :author-uid="announcement.author_uid"
     :comment-count="announcement.comment_count"
     :content="announcement.content"

@@ -30,7 +30,6 @@ function normalizeFacility(value: RawFacility): FacilityRecord {
     ...value,
     content: value.content ?? '',
     result_content: value.result_content ?? null,
-    author_photo_url: value.author_photo_url ?? null,
     closed_at: date(value.closed_at),
     created_at: date(value.created_at),
     started_at: date(value.started_at),
