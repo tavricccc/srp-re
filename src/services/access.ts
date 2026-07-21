@@ -21,17 +21,17 @@ interface AccessUserList {
   users: AccessUser[];
 }
 
-export async function findRoleAssignment(query: string) {
-  const fn = invokeBackendAction<{ query: string }, AccessUserList>('listRoleAssignments');
-  return (await fn({ query })).users[0] ?? null;
-}
-
-export async function listScopeAssignments(scope: AccessScope) {
+export async function listScopeMembers(scope: AccessScope) {
   const fn = invokeBackendAction<
-    { categoryId?: string; query: string; scopeKind: AccessScope['kind'] },
+    { categoryId?: string; includeDirectory: true; query: string; scopeKind: AccessScope['kind'] },
     AccessUserList
   >('listRoleAssignments');
-  return await fn({ categoryId: 'categoryId' in scope ? scope.categoryId : undefined, query: '', scopeKind: scope.kind });
+  return await fn({
+    categoryId: 'categoryId' in scope ? scope.categoryId : undefined,
+    includeDirectory: true,
+    query: '',
+    scopeKind: scope.kind,
+  });
 }
 
 export async function setUserRoles(

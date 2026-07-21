@@ -3,13 +3,20 @@
     <article
       class="issue-card surface-card surface-card--interactive list-row-trigger relative overflow-hidden"
       data-list-row-trigger
-      @click="emit('open')"
+      @click="handleCardClick"
     >
+      <button
+        type="button"
+        class="pointer-events-none absolute inset-0 z-0 rounded-[var(--radius-outer)] border-0 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-outline/70"
+        :aria-label="title"
+        @click.stop="emit('open')"
+      ></button>
+
       <header class="flex min-w-0 items-center gap-2">
         <TagBadge size="sm" class="shrink-0 font-semibold" :class="statusClass">
           {{ t(statusLabel) }}
         </TagBadge>
-        <span class="ml-auto truncate text-xs text-ink-400 dark:text-ink-500">
+        <span class="ml-auto truncate text-xs text-ink-500 dark:text-ink-400">
           {{ timeLabel }}
         </span>
         <div v-if="$slots.admin" class="shrink-0" @click.stop>
@@ -77,6 +84,26 @@ const authorName = computed(() => authorProfile.value?.displayName || t('navigat
 const emit = defineEmits<{
   open: [];
 }>();
+
+const NESTED_INTERACTIVE_SELECTOR = [
+  'a[href]',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'summary',
+  '[contenteditable="true"]',
+  '[role="button"]',
+  '[role="link"]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function handleCardClick(event: MouseEvent) {
+  if (!(event.target instanceof Element) || !(event.currentTarget instanceof HTMLElement)) return;
+  const nestedControl = event.target.closest(NESTED_INTERACTIVE_SELECTOR);
+  if (nestedControl && nestedControl !== event.currentTarget) return;
+  emit('open');
+}
 
 defineSlots<{
   actions(): unknown;

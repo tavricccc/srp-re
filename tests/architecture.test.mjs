@@ -773,9 +773,10 @@ test('proposal and facility manager access is runtime-configured and category-sc
   assert.match(issueRead, /canManageIssueCategory\(auth, category\)/u);
   assert.match(users, /if \(!rawQuery && !scoped\) return \{ truncated: false, users: \[\] \}/u);
   assert.match(users, /const rawQuery = asString\(payload\.query\)\.trim\(\)/u);
+  assert.match(users, /payload\.includeDirectory === true[\s\S]*accessDirectoryUids[\s\S]*!user\.roles\.includes\("platform-admin"\)/u);
   assert.match(users, /rawQuery\.includes\("@"\) \? rawQuery\.toLowerCase\(\) : rawQuery/u);
   assert.match(users, /profileQuery = query\.includes\("@"\) \? profileQuery\.eq\("email", query\) : profileQuery\.eq\("uid", query\)/u);
-  assert.match(users, /scopeKind === "announcement"[\s\S]*\.eq\("role_code", "announcement-manager"\)/u);
+  assert.match(users, /scope\.kind === "announcement"[\s\S]*\.eq\("role_code", "announcement-manager"\)/u);
   assert.doesNotMatch(users, /const roleCodes = \["platform-admin"/u);
   assert.match(lookupMigration, /user_profiles_email_unique_idx/u);
   assert.match(lookupMigration, /backend_update_facility_status\.result_content/u);
@@ -787,7 +788,12 @@ test('proposal and facility manager access is runtime-configured and category-sc
   }
   assert.doesNotMatch(accessView, /accessInheritedFromPlatformAdmin|fullAccessSummary|hasInheritedAccess/u);
   assert.doesNotMatch(accessView, /value: 'platform'|platformAdminTitle/u);
-  assert.ok(accessView.indexOf('chooseResponsibilityStep') < accessView.indexOf('access-user-lookup'));
+  assert.ok(accessView.indexOf('chooseResponsibilityStep') < accessView.indexOf('access-member-filter'));
+  assert.match(accessView, /listScopeMembers[\s\S]*filteredCandidates[\s\S]*grantCandidate/u);
+  assert.match(accessView, /aria-live="polite"[\s\S]*memberDirectoryStatus/u);
+  assert.match(accessView, /prefers-reduced-motion/u);
+  assert.match(accessView, /scrollIntoView/u);
+  assert.match(accessView, /categories\.length === 1[\s\S]*selectedCategoryId\.value/u);
   assert.match(facilityDialog, /StatusTransitionDialog/u);
   assert.match(statusTransitionDialog, /SelectionOptionButton/u);
   assert.match(selectionControl, /button-toolbar--active[\s\S]*SelectionMark/u);
@@ -1289,6 +1295,7 @@ test('primary navigation keeps desktop chrome and persistent mobile navigation',
   const detailShell = await read('src/components/ui/organisms/DetailPageShell.vue');
   const detailSkeleton = await read('src/components/ui/organisms/SkeletonDetail.vue');
   const issueBoard = await read('src/components/IssueBoard.vue');
+  const issueBoardView = await read('src/views/IssueBoardView.vue');
   const facilitiesView = await read('src/views/FacilitiesView.vue');
   const routeComponents = await read('src/router/route-components.ts');
   const hierarchy = await read('src/router/navigation-hierarchy.ts');
@@ -1303,6 +1310,8 @@ test('primary navigation keeps desktop chrome and persistent mobile navigation',
   assert.match(appShell, /app-main-content relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden/u);
   assert.match(appShell, /<AppMobileHeader[\s\S]*<ViewportFrame as="main"[\s\S]*<slot \/>/u);
   assert.match(issueBoard, /overflow-y-auto overflow-x-hidden overscroll-contain/u);
+  assert.match(issueBoard, /<section class="relative flex min-h-0 flex-1 flex-col gap-5">/u);
+  assert.match(issueBoardView, /v-else-if="sessionLoading"[\s\S]*flex min-h-0 flex-1 flex-col gap-5[\s\S]*route-scroll-through[\s\S]*overflow-y-auto overflow-x-hidden/u);
   assert.match(facilitiesView, /overflow-y-auto overflow-x-hidden overscroll-contain/u);
   assert.match(app, /requestIdleCallback/u);
   assert.match(app, /preloadPrimaryRouteComponents/u);
@@ -1487,6 +1496,8 @@ test('initial setup reuses the settings-style selected category editor', async (
   const setup = await read('src/views/SetupView.vue');
   const sessionRole = await read('src/services/session-role.ts');
   const setupCategorySection = await read('src/components/categories/SetupCategorySection.vue');
+  const categoryManagementSection = await read('src/components/categories/CategoryManagementSection.vue');
+  const categorySelectorList = await read('src/components/categories/CategorySelectorList.vue');
   const categoryEditor = await read('src/components/categories/CategoryEditorCard.vue');
 
   assert.match(setup, /<PlatformFeatureToggle[\s\S]*<SelectionOptionButton[\s\S]*<SetupCategorySection/u);
@@ -1498,7 +1509,10 @@ test('initial setup reuses the settings-style selected category editor', async (
   assert.doesNotMatch(setup, /categoryAdmin\.(?:managerAssignment|skippedForNow|managerSkipHelp)/u);
   assert.doesNotMatch(setup, /v-for="\(category, index\) in (?:issue|facility)Categories"/u);
   assert.match(setupCategorySection, /lg:grid-cols-\[15rem_minmax\(0,1fr\)\]/u);
-  assert.match(setupCategorySection, /<SurfacePanel variant="list"/u);
+  assert.match(setupCategorySection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"/u);
+  assert.match(categoryManagementSection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"[\s\S]*show-status/u);
+  assert.match(categorySelectorList, /<SurfacePanel variant="list"[\s\S]*v-for="\(category, index\) in categories"/u);
+  assert.match(categorySelectorList, /:aria-current="selectedIndex === index \? 'true' : undefined"/u);
   assert.match(setupCategorySection, /<CategoryEditorCard[\s\S]*flat/u);
   assert.match(categoryEditor, /:is="flat \? 'article' : SurfacePanel"/u);
   assert.match(setup, /continueToPlatform[\s\S]*router\.replace\(getDefaultAuthenticatedRoute\(\)\)/u);
@@ -1590,7 +1604,7 @@ test('navigation and contextual creation share the same responsive information a
   assert.ok(desktopSidebar.indexOf('to="/notifications"') < desktopSidebar.indexOf('to="/settings"'));
   assert.match(boardControls, /v-if="createLabel"[\s\S]*name="plus"/u);
   assert.ok(boardControls.indexOf('name="search"') < boardControls.indexOf('v-if="createLabel"'));
-  assert.match(boardControls, /<AppButton[\s\S]{0,120}variant="contextual"[\s\S]{0,120}class="h-8 w-8 min-w-8[\s\S]*name="plus"/u);
+  assert.match(boardControls, /<AppButton[\s\S]{0,120}variant="contextual"[\s\S]{0,120}class="tap-target shrink-0 p-0"[\s\S]*name="plus"/u);
   assert.doesNotMatch(boardControls, /<span class="truncate">\{\{ createLabel \}\}<\/span>/u);
   assert.match(issueBoard, /t\('issue\.addToCategory'/u);
   assert.match(facilitiesView, /:create-label="t\('facility\.addFacility'\)"[\s\S]*@create="composerOpen = true"/u);
@@ -1709,6 +1723,7 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   const dropdownMenu = await read('src/components/ui/molecules/DropdownMenu.vue');
   const contentCard = await read('src/components/ui/organisms/ContentCardShell.vue');
   const contentCardCollection = await read('src/components/ui/organisms/ContentCardCollection.vue');
+  const tableGridPicker = await read('src/components/ui/molecules/TableGridPicker.vue');
   const dialogShell = await read('src/components/ui/organisms/DialogShell.vue');
   const confirmDialog = await read('src/components/ConfirmDialog.vue');
   const entryComposer = await read('src/components/ui/organisms/EntryComposerShell.vue');
@@ -1718,6 +1733,7 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   const facilityMenu = await read('src/components/FacilityAdminMenu.vue');
   const boardControls = await read('src/components/BoardControls.vue');
   const loginPanel = await read('src/components/LoginPanel.vue');
+  const loginView = await read('src/views/LoginView.vue');
   const settingsPanel = await read('src/components/SettingsPanelContent.vue');
   const languageSelector = await read('src/components/LanguageSelector.vue');
   const commentComposer = await read('src/components/CommentComposer.vue');
@@ -1771,7 +1787,9 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   assert.match(appButton, /type ButtonVariant =[\s\S]*\| 'contextual'[\s\S]*\| 'toolbar'/u);
   assert.match(appButton, /'icon-pill': 'button-icon-pill'/u);
   assert.match(iconTile, /tone\?: 'danger' \| 'info' \| 'inverse' \| 'neutral' \| 'surface' \| 'warning'/u);
-  assert.match(switchIndicator, /role="switch"[\s\S]*:aria-checked="checked"/u);
+  assert.match(switchIndicator, /aria-hidden="true"/u);
+  assert.doesNotMatch(switchIndicator, /role="switch"|aria-checked/u);
+  assert.match(settingsPanel, /role="switch"[\s\S]*:aria-checked="pushEnabled"/u);
   assert.match(characterCount, /current > warningAt[\s\S]*\{\{ current \}\} \/ \{\{ max \}\}/u);
   assert.match(inlineAlert, /class="inline-alert"[\s\S]*inline-alert--\$\{tone\}[\s\S]*:aria-live="live"/u);
   assert.match(inlineMessage, /class="inline-message"[\s\S]*inline-message--\$\{tone\}[\s\S]*inline-message--\$\{size\}/u);
@@ -1791,7 +1809,22 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   assert.match(listSurfaceRow, /class="list-surface-row"[\s\S]*list-surface-row--interactive/u);
   assert.match(dropdownPanel, /class="dropdown-panel"/u);
   assert.match(dropdownMenu, /<DropdownPanel[\s\S]*useDropdownPosition[\s\S]*useClickOutside/u);
+  assert.match(dropdownMenu, /tabindex="-1"[\s\S]*@keydown="handlePanelKeydown"/u);
+  assert.match(dropdownMenu, /nextTick\(\(\) => focusItem\(menuItems\(\)\[0\]/u);
+  assert.match(dropdownMenu, /\['ArrowDown', 'ArrowUp', 'Home', 'End'\]/u);
+  assert.match(dropdownMenu, /item\?\.focus\(\{ preventScroll: true \}\)/u);
+  assert.match(dropdownMenu, /focusTarget\.focus\(\{ preventScroll: true \}\)/u);
+  assert.match(dropdownMenu, /useClickOutside\([\s\S]*\(\) => close\(focusIsWithinMenu\(\)\)[\s\S]*\{ escape: true \}/u);
   assert.match(contentCard, /surface-card surface-card--interactive/u);
+  assert.match(contentCard, /<button[\s\S]*pointer-events-none absolute inset-0[\s\S]*:aria-label="title"[\s\S]*@click\.stop="emit\('open'\)"/u);
+  assert.match(contentCard, /NESTED_INTERACTIVE_SELECTOR[\s\S]*event\.target\.closest[\s\S]*emit\('open'\)/u);
+  assert.match(tableGridPicker, /role="grid"[\s\S]*role="row"[\s\S]*role="gridcell"[\s\S]*type="button"/u);
+  assert.match(tableGridPicker, /:aria-label="t\('markdown\.createTable', \{ rows: r, columns: c \}\)"/u);
+  assert.match(tableGridPicker, /:tabindex="cellIndex\(r - 1, c - 1\) === focusedIndex \? 0 : -1"/u);
+  for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter']) {
+    assert.match(tableGridPicker, new RegExp(`event\\.key === '${key}'`, 'u'));
+  }
+  assert.match(tableGridPicker, /event\.key === ' '/u);
   assert.match(dialogShell, /<DialogOverlay[\s\S]*ref="dialogRef"[\s\S]*useBodyScrollLock[\s\S]*useDialogFocus/u);
   assert.match(confirmDialog, /<DialogShell[\s\S]*described-by="confirm-dialog-message"/u);
   assert.match(confirmDialog, /<DialogActionRow>[\s\S]*<AppButton/u);
@@ -1804,6 +1837,7 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   assert.match(settingsPanel, /<LabeledListSection[\s\S]*<IconListRow/u);
   assert.match(settingsPanel, /<LabeledListSection :label="t\('settings\.language'\)">[\s\S]*<LanguageSelector/u);
   assert.match(languageSelector, /<DropdownMenu[\s\S]*role="listbox"[\s\S]*v-for="option in languageOptions"/u);
+  assert.match(languageSelector, /<IconListRow[\s\S]*icon="switch-horizontal"[\s\S]*#trailing/u);
   assert.doesNotMatch(contentStyles, /\.settings-row \{[\s\S]{0,100}\bpx-0\b/u);
   assert.match(settingsPanel, /<SwitchIndicator[\s\S]*:checked=/u);
   assert.match(settingsPanel, /<ListSurfaceRow[\s\S]*interactive/u);
@@ -1818,6 +1852,7 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   assert.match(notifications, /<ListSurfaceRow[\s\S]*as="div"[\s\S]*class="notification-group-row"/u);
   assert.match(settingsView, /v-if="loading"[\s\S]*<SurfacePanel variant="list"/u);
   assert.match(loginPanel, /<InlineAlert[\s\S]*tone="error"[\s\S]*compact/u);
+  assert.match(loginView, /items-start justify-center[\s\S]*md:pt-\[clamp\(5rem,16dvh,10rem\)\]/u);
   assert.match(contentCardCollection, /<InlineMessage v-else-if="error"[\s\S]*size="sm"/u);
   assert.equal([...dashboardView.matchAll(/<SectionHeader\b/gu)].length, 4);
   assert.equal([...markdownImageEditor.matchAll(/<EditorModeBar\b/gu)].length, 3);

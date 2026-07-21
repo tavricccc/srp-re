@@ -27,7 +27,7 @@
         <div class="static md:relative" @click.stop @pointerdown.stop>
           <AppButton
             variant="toolbar"
-            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
+            class="tap-target flex shrink-0 items-center justify-center rounded-full p-0"
             :active="isSortOpen || sortOption !== 'latest'"
             :title="t('common.filterBoard', { board: boardTitle })"
             :aria-label="t('common.filterBoard', { board: boardTitle })"
@@ -64,7 +64,7 @@
         <div class="static md:relative" @click.stop @pointerdown.stop>
           <AppButton
             variant="toolbar"
-            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 md:h-9 md:w-9"
+            class="tap-target flex shrink-0 items-center justify-center rounded-full p-0"
             :active="Boolean(isSearchOpen || searchQuery)"
             :title="t('common.searchBoard', { board: boardTitle })"
             :aria-label="t('common.searchBoard', { board: boardTitle })"
@@ -81,21 +81,21 @@
               size="search"
             >
               <form class="relative" role="search" @submit.prevent="emit('submitSearch')">
-                <AppIcon name="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-ink-500" />
+                <AppIcon name="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 dark:text-ink-400" />
                 <input
                   ref="searchInputRef"
                   :value="searchQuery"
                   type="search"
                   autocomplete="off"
                   :aria-label="t('common.searchBoard', { board: boardTitle })"
-                  class="field appearance-none !h-8 !py-1 !pl-8 !pr-8 text-xs placeholder:text-ink-400 dark:placeholder:text-ink-500"
+                  class="field appearance-none !h-11 !py-1 !pl-9 !pr-12 text-xs placeholder:text-ink-400 dark:placeholder:text-ink-500"
                   :placeholder="searchPlaceholder"
                   @input="(e) => emit('update:searchQuery', (e.target as HTMLInputElement).value)"
                 />
                 <AppButton
                   v-if="searchQuery"
                   variant="toolbar"
-                  class="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full p-0"
+                  class="tap-target absolute right-0 top-1/2 -translate-y-1/2 rounded-full p-0"
                   :aria-label="t('common.clearSearch')"
                   @click="emit('clearSearch')"
                 >
@@ -116,7 +116,7 @@
         <AppButton
           v-if="createLabel"
           variant="contextual"
-          class="h-8 w-8 min-w-8 shrink-0 p-0"
+          class="tap-target shrink-0 p-0"
           :aria-label="createLabel"
           :title="createLabel"
           @click="$emit('create')"

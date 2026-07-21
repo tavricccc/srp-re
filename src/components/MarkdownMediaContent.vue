@@ -22,7 +22,7 @@
         <SkeletonBlock
           v-else-if="image.uploadId && !image.isUploadResolved"
           as="div"
-          class="flex aspect-[4/3] w-full items-center justify-center text-ink-400 dark:text-ink-500"
+          class="flex aspect-[4/3] w-full items-center justify-center text-ink-500 dark:text-ink-400"
         >
           <LoadingSpinner :size="5" />
         </SkeletonBlock>
@@ -46,39 +46,45 @@
       <MarkdownRenderer v-else :content="textContent" />
     </div>
 
-    <Teleport to="body">
-      <Transition name="dialog" appear>
-        <div
-          v-if="selectedImage"
-          class="fixed inset-0 z-[70] flex h-dvh items-center justify-center bg-ink-950/90 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm"
-          @click.self="selectedImage = null"
-        >
-          <AppButton
-            variant="icon-filled"
-            class="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] border-white/20 bg-white text-ink-950 hover:bg-white/90"
-            :aria-label="t('markdown.closeImage')"
-            @click="selectedImage = null"
-          >
-            <AppIcon name="close" :size="5" />
-          </AppButton>
-          <img
-            :src="selectedImage.fullSrc || selectedImage.src"
-            :alt="selectedImage.alt || fallbackAlt"
-            class="max-h-full max-w-full object-contain"
-          />
-        </div>
-      </Transition>
-    </Teleport>
+    <DialogShell
+      :open="Boolean(selectedImage)"
+      :labelled-by="lightboxTitleId"
+      :padded-surface="false"
+      overlay-class="!bg-ink-950/90"
+      surface-class="relative flex max-h-full max-w-full items-center justify-center !rounded-none !border-0 !bg-transparent !shadow-none"
+      z-index-class="z-[70]"
+      @close="selectedImage = null"
+    >
+      <h2 :id="lightboxTitleId" class="sr-only">
+        {{ t('media.zoom', { alt: selectedImage?.alt || fallbackAlt }) }}
+      </h2>
+      <AppButton
+        variant="icon-filled"
+        class="absolute right-0 top-0 z-10 border-white/20 bg-white text-ink-950 hover:bg-white/90"
+        :aria-label="t('markdown.closeImage')"
+        data-autofocus
+        @click="selectedImage = null"
+      >
+        <AppIcon name="close" :size="5" />
+      </AppButton>
+      <img
+        v-if="selectedImage"
+        :src="selectedImage.fullSrc || selectedImage.src"
+        :alt="selectedImage.alt || fallbackAlt"
+        class="max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] object-contain"
+      />
+    </DialogShell>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, useId } from "vue";
 import MarkdownRenderer from "@/components/MarkdownRenderer.vue";
 import LoadingSpinner from "@/components/ui/atoms/LoadingSpinner.vue";
 import SkeletonBlock from "@/components/ui/atoms/SkeletonBlock.vue";
 import AppIcon from "@/components/ui/atoms/AppIcon.vue";
 import AppButton from "@/components/ui/atoms/AppButton.vue";
+import DialogShell from "@/components/ui/organisms/DialogShell.vue";
 import { stripMarkdownImages } from "@/lib/markdown-images";
 import { useResolvedMarkdown } from "@/composables/useResolvedMarkdown";
 import type { MarkdownImageRecord } from "@/types";
@@ -90,6 +96,7 @@ const props = defineProps<{
   plainText?: boolean;
 }>();
 const { t } = useI18n();
+const lightboxTitleId = useId();
 
 const selectedImage = ref<MarkdownImageRecord | null>(null);
 const { images, resolvedContent } = useResolvedMarkdown(() => props.content);

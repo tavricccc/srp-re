@@ -2,6 +2,8 @@
   <SurfacePanel variant="control" padding="sm">
     <ListSurfaceRow
       interactive
+      role="switch"
+      :aria-checked="enabled"
       :aria-disabled="disabled || undefined"
       :disabled="disabled || undefined"
       :class="disabled ? 'opacity-60' : ''"
@@ -11,7 +13,7 @@
         <span class="block text-sm font-bold text-ink-950 dark:text-ink-50">{{ t(label) }}</span>
         <span class="mt-1 block text-xs leading-5 text-ink-500">{{ t(description) }}</span>
       </span>
-      <SwitchIndicator :checked="enabled" :label="t(label)" />
+      <SwitchIndicator :checked="enabled" />
     </ListSurfaceRow>
   </SurfacePanel>
 </template>

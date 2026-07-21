@@ -10,7 +10,7 @@
 
     <div
       v-else-if="sessionLoading"
-      class="space-y-5"
+      class="flex min-h-0 flex-1 flex-col gap-5"
       :aria-label="t('issue.loadingProposals')"
       aria-busy="true"
     >
@@ -27,7 +27,11 @@
           </div>
         </div>
       </div>
-      <IssueBoardTable :issues="[]" :loading="true" error="" />
+      <div
+        class="route-scroll-through scroll-shadow-bleed scrollbar-none min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+      >
+        <IssueBoardTable :issues="[]" :loading="true" error="" />
+      </div>
     </div>
 
     <div v-else-if="!isAllowedUser" class="sr-only" role="status">
@@ -36,7 +40,6 @@
 
     <IssueBoard
       v-if="isAllowedUser"
-      class="min-h-0 flex-1"
       :is-form-open="isFormOpen"
       @toggle-form="toggleForm"
     />

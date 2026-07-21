@@ -1,18 +1,26 @@
 @layer components {
   .button-icon {
     @apply relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-surface text-ink-500 shadow-control hover:text-ink-900 dark:bg-surface dark:text-ink-400 dark:hover:text-ink-100 disabled:cursor-not-allowed disabled:opacity-40;
+    min-height: var(--tap-target);
+    min-width: var(--tap-target);
   }
 
   .button-icon-filled {
     @apply relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-ink-800 text-white shadow-control hover:bg-ink-700 dark:bg-ink-100 dark:text-ink-900 dark:hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40;
+    min-height: var(--tap-target);
+    min-width: var(--tap-target);
   }
 
   .button-icon-pill {
     @apply relative inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border-0 bg-surface px-3.5 text-ink-500 shadow-control hover:text-ink-900 dark:bg-surface dark:text-ink-400 dark:hover:text-ink-100 disabled:cursor-not-allowed disabled:opacity-40 gap-1.5;
+    min-height: var(--tap-target);
+    min-width: var(--tap-target);
   }
 
   .button-icon-pill-filled {
     @apply relative inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border-0 bg-ink-800 px-3.5 text-white shadow-control hover:bg-ink-700 dark:bg-ink-100 dark:text-ink-900 dark:hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40 gap-1.5;
+    min-height: var(--tap-target);
+    min-width: var(--tap-target);
   }
 
   .author-avatar {
@@ -72,6 +80,8 @@
 
   .button-danger-icon {
     @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-error-container/70 text-error shadow-control hover:bg-error-container disabled:cursor-not-allowed disabled:opacity-50;
+    min-height: var(--tap-target);
+    min-width: var(--tap-target);
   }
 
   .button-action {

@@ -61,9 +61,9 @@
             <div
               v-for="row in 3"
               :key="row"
-              class="grid grid-cols-[1fr_5rem_5rem_4rem] items-center gap-3 px-4 py-3"
+              class="grid grid-cols-3 items-center gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_5rem_5rem_4rem]"
             >
-              <SkeletonBlock class="h-4 rounded" />
+              <SkeletonBlock class="col-span-3 h-4 rounded sm:col-span-1" />
               <SkeletonBlock class="h-4 rounded" />
               <SkeletonBlock class="h-4 rounded" />
               <SkeletonBlock class="h-4 rounded" />

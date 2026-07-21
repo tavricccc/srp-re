@@ -7,38 +7,11 @@
     </SectionHeader>
 
     <div class="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <SurfacePanel variant="list" padding="sm" class="space-y-1">
-        <p class="px-2 pb-2 text-xs font-semibold text-ink-500">
-          {{ t('adminCenter.categoryListCount', { count: model.length }) }}
-        </p>
-        <ListSurfaceRow
-          v-for="(category, index) in model"
-          :key="category.id || `new-${index}`"
-          as="button"
-          interactive
-          class="w-full text-left"
-          :class="selectedIndex === index ? 'button-toolbar--active' : ''"
-          :aria-current="selectedIndex === index ? 'true' : undefined"
-          @click="selectedIndex = index"
-        >
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-sm font-semibold text-ink-900 dark:text-ink-100">
-              {{ category.label || t('categoryAdmin.untitledCategory') }}
-            </span>
-            <span class="mt-0.5 block truncate text-xs text-ink-500">
-              {{ category.id || t('adminCenter.notSavedYet') }}
-            </span>
-          </span>
-          <div class="shrink-0 flex flex-col items-end gap-1">
-            <span class="text-[11px] font-semibold" :class="category.isActive ? 'text-success' : 'text-ink-400'">
-              {{ t(category.isActive ? 'categoryAdmin.active' : 'categoryAdmin.archived') }}
-            </span>
-            <span v-if="category.isDefault" class="rounded bg-primary-50 px-1 py-0.5 text-[9px] font-bold text-primary-700 dark:bg-primary-950/30 dark:text-primary-400">
-              {{ t('categoryAdmin.defaultCategory') }}
-            </span>
-          </div>
-        </ListSurfaceRow>
-      </SurfacePanel>
+      <CategorySelectorList
+        v-model:selected-index="selectedIndex"
+        :categories="model"
+        show-status
+      />
 
       <div v-if="selectedCategory" class="min-w-0 space-y-2">
         <CategoryEditorCard
@@ -51,12 +24,17 @@
         />
 
         <SurfacePanel variant="control" padding="sm" class="space-y-2">
-          <ListSurfaceRow interactive @click="selectedCategory.isActive = !selectedCategory.isActive">
+          <ListSurfaceRow
+            interactive
+            role="switch"
+            :aria-checked="selectedCategory.isActive"
+            @click="selectedCategory.isActive = !selectedCategory.isActive"
+          >
             <span class="min-w-0 flex-1">
               <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('adminCenter.acceptNewRecords') }}</span>
               <span class="mt-0.5 block text-xs leading-5 text-ink-500">{{ t('adminCenter.acceptNewRecordsHelp') }}</span>
             </span>
-            <SwitchIndicator :checked="selectedCategory.isActive" :label="t('adminCenter.acceptNewRecords')" />
+            <SwitchIndicator :checked="selectedCategory.isActive" />
           </ListSurfaceRow>
           <SelectionOptionButton
             label="categoryAdmin.defaultCategory"
@@ -120,6 +98,7 @@
 <script setup lang="ts" generic="T extends IssueCategoryConfig | FacilityCategoryConfig">
 import { computed, ref, watch } from 'vue';
 import CategoryEditorCard from '@/components/categories/CategoryEditorCard.vue';
+import CategorySelectorList from '@/components/categories/CategorySelectorList.vue';
 import CategoryWizardDialog from '@/components/admin/CategoryWizardDialog.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';

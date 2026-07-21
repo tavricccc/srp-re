@@ -11,7 +11,12 @@ const ACCESS_LIST_LIMIT = 100;
 const AVATAR_REVALIDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const ACCESS_SCOPE_KINDS = new Set(["announcement", "facility", "issue"]);
 
-async function scopedAccessUids(payload: JsonRecord, supabase: BackendSupabase) {
+interface AccessScopeSelector {
+  categoryId: string;
+  kind: "announcement" | "facility" | "issue";
+}
+
+function readAccessScope(payload: JsonRecord): AccessScopeSelector | null {
   const scopeKind = asString(payload.scopeKind);
   if (!scopeKind) return null;
   if (!ACCESS_SCOPE_KINDS.has(scopeKind)) throw new Error("validation-required");
@@ -19,17 +24,23 @@ async function scopedAccessUids(payload: JsonRecord, supabase: BackendSupabase) 
   if ((scopeKind === "issue" || scopeKind === "facility") && !categoryId) {
     throw new Error("validation-required");
   }
+  return {
+    categoryId,
+    kind: scopeKind as AccessScopeSelector["kind"],
+  };
+}
 
-  const roleQuery = scopeKind === "announcement"
+async function scopedAccessUids(scope: AccessScopeSelector, supabase: BackendSupabase) {
+  const roleQuery = scope.kind === "announcement"
     ? supabase.schema("app_private").from("user_role_assignments")
       .select("uid").eq("role_code", "announcement-manager").limit(ACCESS_LIST_LIMIT + 1)
     : Promise.resolve({ data: [], error: null });
-  const categoryQuery = scopeKind === "issue"
+  const categoryQuery = scope.kind === "issue"
     ? supabase.schema("app_private").from("user_issue_category_assignments")
-      .select("uid").eq("category_id", categoryId).limit(ACCESS_LIST_LIMIT + 1)
-    : scopeKind === "facility"
+      .select("uid").eq("category_id", scope.categoryId).limit(ACCESS_LIST_LIMIT + 1)
+    : scope.kind === "facility"
     ? supabase.schema("app_private").from("user_facility_category_assignments")
-      .select("uid").eq("category_id", categoryId).limit(ACCESS_LIST_LIMIT + 1)
+      .select("uid").eq("category_id", scope.categoryId).limit(ACCESS_LIST_LIMIT + 1)
     : Promise.resolve({ data: [], error: null });
   const [roleResult, categoryResult] = await Promise.all([roleQuery, categoryQuery]);
   if (roleResult.error) throw roleResult.error;
@@ -40,6 +51,17 @@ async function scopedAccessUids(payload: JsonRecord, supabase: BackendSupabase) 
   ];
   const uniqueUids = [...new Set(allUids)];
   return { truncated: uniqueUids.length > ACCESS_LIST_LIMIT, uids: uniqueUids.slice(0, ACCESS_LIST_LIMIT) };
+}
+
+async function accessDirectoryUids(supabase: BackendSupabase) {
+  const { data, error } = await supabase.schema("app_private").from("user_profiles")
+    .select("uid")
+    .order("display_name", { ascending: true })
+    .order("uid", { ascending: true })
+    .limit(ACCESS_LIST_LIMIT + 1);
+  if (error) throw error;
+  const uids = (data ?? []).map((profile) => profile.uid);
+  return { truncated: uids.length > ACCESS_LIST_LIMIT, uids: uids.slice(0, ACCESS_LIST_LIMIT) };
 }
 
 async function accessUsersForUids(uids: string[], supabase: BackendSupabase) {
@@ -120,7 +142,21 @@ export async function handleUserAction(
   if (action === "listRoleAssignments") {
     requirePermission(auth, "role.manage");
     const rawQuery = asString(payload.query).trim();
-    const scoped = await scopedAccessUids(payload, supabase);
+    const scope = readAccessScope(payload);
+    if (payload.includeDirectory === true) {
+      if (!scope) throw new Error("validation-required");
+      const [directory, scoped] = await Promise.all([
+        accessDirectoryUids(supabase),
+        scopedAccessUids(scope, supabase),
+      ]);
+      const uids = [...new Set([...scoped.uids, ...directory.uids])];
+      const users = await accessUsersForUids(uids, supabase);
+      return {
+        truncated: directory.truncated || scoped.truncated,
+        users: users.filter((user) => !user.roles.includes("platform-admin")),
+      };
+    }
+    const scoped = scope ? await scopedAccessUids(scope, supabase) : null;
     if (!rawQuery && !scoped) return { truncated: false, users: [] };
     const query = rawQuery.includes("@") ? rawQuery.toLowerCase() : rawQuery;
     let uids = scoped?.uids ?? [];

@@ -21,7 +21,7 @@
       <p class="text-sm text-ink-600 dark:text-ink-400 font-medium">
         {{ t("markdown.tableNone") }}
       </p>
-      <p class="text-xs text-ink-400 dark:text-ink-500 mt-1 max-w-xs">
+      <p class="text-xs text-ink-500 dark:text-ink-400 mt-1 max-w-xs">
         {{ t("markdown.tableNoneHelp") }}
       </p>
       <AppButton

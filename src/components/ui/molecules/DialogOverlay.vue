@@ -4,7 +4,7 @@
       <div
         v-if="open"
         class="dialog-overlay fixed inset-0 flex items-center justify-center bg-ink-900/50"
-        :class="[zIndexClass, { 'backdrop-blur-sm': !isFullScreen }]"
+        :class="[zIndexClass, overlayClass, { 'backdrop-blur-sm': !isFullScreen }]"
         :data-padding="paddingMode"
         @click.self="handleOverlayClick"
       >
@@ -21,12 +21,14 @@ import { useDialogThemeColor } from '@/composables/useDialogThemeColor';
 const props = withDefaults(defineProps<{
   open: boolean;
   noPadding?: boolean;
+  overlayClass?: string;
   padded?: boolean;
   transitionName?: string;
   zIndexClass?: string;
   persistent?: boolean;
 }>(), {
   noPadding: false,
+  overlayClass: '',
   padded: false,
   transitionName: 'dialog',
   zIndexClass: 'z-50',

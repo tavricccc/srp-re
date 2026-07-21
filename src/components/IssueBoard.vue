@@ -1,5 +1,5 @@
 <template>
-  <section class="relative flex min-h-0 flex-col gap-5">
+  <section class="relative flex min-h-0 flex-1 flex-col gap-5">
     <BoardControls
       v-model:status-tab="statusTab"
       v-model:search-query="searchQuery"

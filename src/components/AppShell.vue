@@ -11,6 +11,7 @@
   >
     <div class="app-background-fill pointer-events-none absolute inset-0"></div>
     <div class="app-background-wash pointer-events-none absolute inset-x-0 top-0 h-80 dark:hidden"></div>
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ routeAnnouncement }}</p>
 
     <AppMobileHeader
       :back-label="mobileBackLabel"
@@ -169,6 +170,7 @@ const mobileHeaderTitle = computed(() => {
   return t('issue.proposal');
 });
 const showMobileBackButton = computed(() => ['issue-detail', 'facility-detail', 'announcement-detail', 'dashboard', 'administration'].includes(route.name as string) || isMyProposalsRouteActive.value);
+const routeAnnouncement = ref('');
 const mobileBackLabel = computed(() => {
   if (route.name === 'dashboard') return t('navigation.returnMy');
   if (route.name === 'administration') return t('navigation.returnMy');
@@ -233,6 +235,7 @@ async function handleMobileBack() {
 }
 
 watch(() => route.fullPath, (newPath, oldPath) => {
+  routeAnnouncement.value = '';
   if (oldPath && mainContentRef.value) {
     mainScrollPositions.set(oldPath, mainContentRef.value.scrollTop);
     if (mainScrollPositions.size > SCROLL_POSITION_LIMIT) {
@@ -240,7 +243,10 @@ watch(() => route.fullPath, (newPath, oldPath) => {
       if (oldestPath) mainScrollPositions.delete(oldestPath);
     }
   }
-  nextTick(() => mainContentRef.value?.scrollTo({ behavior: 'auto', left: 0, top: mainScrollPositions.get(newPath) ?? 0 }));
+  nextTick(() => {
+    mainContentRef.value?.scrollTo({ behavior: 'auto', left: 0, top: mainScrollPositions.get(newPath) ?? 0 });
+    routeAnnouncement.value = mobileHeaderTitle.value;
+  });
 });
 
 onMounted(() => {

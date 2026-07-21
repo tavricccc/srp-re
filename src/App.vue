@@ -87,7 +87,7 @@ import { usePushPermissionPrompt } from '@/composables/usePushPermissionPrompt';
 import { useSession } from '@/composables/useSession';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { computed, onBeforeUnmount, watch } from 'vue';
-import { getDefaultIssueRouteFilter } from '@/constants/categories';
+import { getDefaultAuthenticatedRoute } from '@/router/default-route';
 import { preloadPrimaryRouteComponents } from '@/router/route-components';
 import { useI18n } from '@/i18n';
 
@@ -186,13 +186,6 @@ const {
   reason: installPromptReason,
 } = useAppInstallPrompt();
 
-function defaultAuthenticatedRoute() {
-  return {
-    name: 'issues',
-    params: { filter: getDefaultIssueRouteFilter() },
-  };
-}
-
 function normalizeRedirectPath(value: unknown) {
   const rawValue = Array.isArray(value) ? value[0] : value;
   const path = typeof rawValue === 'string' ? rawValue.trim() : '';
@@ -220,7 +213,7 @@ watch(
     if (!ready) return;
 
     if (route.meta.publicOnly && uid) {
-      void router.replace(normalizeRedirectPath(route.query.redirect) || defaultAuthenticatedRoute());
+      void router.replace(normalizeRedirectPath(route.query.redirect) || getDefaultAuthenticatedRoute());
       return;
     }
 

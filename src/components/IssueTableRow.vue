@@ -27,7 +27,7 @@
           <span class="font-semibold tabular-nums text-ink-700 dark:text-ink-300">
             {{ t('issue.countGoalSupports', { count: supportCount, goal: issue.support_goal ?? 0 }) }}
           </span>
-          <span v-if="supportRemainingLabel" class="text-ink-400 dark:text-ink-500">
+          <span v-if="supportRemainingLabel" class="text-ink-500 dark:text-ink-400">
             {{ supportRemainingLabel }}
           </span>
         </div>
@@ -38,7 +38,7 @@
           ></div>
         </div>
       </SurfacePanel>
-      <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500">{{ t('issue.thisProposalDoesNotRequireSupport') }}</p>
+      <p v-else class="mt-4 text-xs text-ink-500 dark:text-ink-400">{{ t('issue.thisProposalDoesNotRequireSupport') }}</p>
     </template>
 
     <template #actions>

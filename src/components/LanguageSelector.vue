@@ -6,28 +6,23 @@
     :width="240"
   >
     <template #trigger="{ open, toggle }">
-      <ListSurfaceRow
-        class="settings-row"
-        interactive
+      <IconListRow
+        icon="switch-horizontal"
+        :label="t(currentLanguage.label)"
+        :description="t('settings.changeTheInterfaceLanguage')"
         aria-haspopup="listbox"
         :aria-expanded="open"
         @click="toggle"
       >
-        <span class="min-w-0 flex-1">
-          <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">
-            {{ t(currentLanguage.label) }}
-          </span>
-          <span class="mt-0.5 block text-xs text-ink-500 dark:text-ink-400">
-            {{ t('settings.changeTheInterfaceLanguage') }}
-          </span>
-        </span>
-        <AppIcon
-          name="chevron-down"
-          :size="4"
-          class="shrink-0 text-ink-400 transition-transform"
-          :class="{ 'rotate-180': open }"
-        />
-      </ListSurfaceRow>
+        <template #trailing>
+          <AppIcon
+            name="chevron-down"
+            :size="4"
+            class="shrink-0 text-ink-400 transition-transform"
+            :class="{ 'rotate-180': open }"
+          />
+        </template>
+      </IconListRow>
     </template>
 
     <template #default="{ close }">
@@ -56,7 +51,7 @@ import { computed } from 'vue';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import SelectionMark from '@/components/ui/atoms/SelectionMark.vue';
 import DropdownMenu from '@/components/ui/molecules/DropdownMenu.vue';
-import ListSurfaceRow from '@/components/ui/molecules/ListSurfaceRow.vue';
+import IconListRow from '@/components/ui/molecules/IconListRow.vue';
 import { useI18n, type AppLocale } from '@/i18n';
 
 const { locale, setLocale, t } = useI18n();

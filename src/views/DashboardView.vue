@@ -71,7 +71,7 @@
               >
                 <div class="min-w-0">
                   <p class="truncate text-sm font-bold text-ink-900 dark:text-ink-100">{{ t(row.label) }}</p>
-                  <p class="mt-1 text-xs font-medium text-ink-400 dark:text-ink-500">{{ t(row.detail) }}</p>
+                  <p class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400">{{ t(row.detail) }}</p>
                 </div>
                 <p class="text-sm font-semibold tabular-nums text-ink-700 dark:text-ink-200">{{ row.value }}</p>
                 <p class="text-left text-xs font-bold sm:text-right" :class="row.toneClass">{{ t(row.statusLabel) }}</p>
@@ -90,7 +90,7 @@
               </template>
             </SectionHeader>
             <SurfacePanel variant="inset" class="mt-4 overflow-hidden">
-              <div class="grid grid-cols-[1fr_5rem_5rem_4rem] gap-3 border-b border-ink-200/35 px-4 py-2.5 text-xs font-semibold tracking-[0.02em] text-ink-500 dark:border-ink-700/30 dark:text-ink-400">
+              <div class="hidden grid-cols-[minmax(0,1fr)_5rem_5rem_4rem] gap-3 border-b border-ink-200/35 px-4 py-2.5 text-xs font-semibold tracking-[0.02em] text-ink-500 dark:border-ink-700/30 dark:text-ink-400 sm:grid">
                 <span>{{ t('dashboard.category') }}</span>
                 <span class="text-right">{{ t('issue.proposal') }}</span>
                 <span class="text-right">{{ t('dashboard.comment') }}</span>
@@ -99,17 +99,26 @@
               <div
                 v-for="row in categoryComparisonRows"
                 :key="row.label"
-                class="grid grid-cols-[1fr_5rem_5rem_4rem] items-center gap-3 border-b border-ink-200/30 px-4 py-3.5 last:border-b-0 dark:border-ink-700/25"
+                class="grid grid-cols-3 items-end gap-x-3 gap-y-2 border-b border-ink-200/30 px-4 py-3.5 last:border-b-0 dark:border-ink-700/25 sm:grid-cols-[minmax(0,1fr)_5rem_5rem_4rem] sm:items-center"
               >
-                <div class="min-w-0">
+                <div class="col-span-3 min-w-0 sm:col-span-1">
                   <p class="truncate text-sm font-bold text-ink-900 dark:text-ink-100">{{ t(row.label) }}</p>
                   <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800">
                     <div class="h-full rounded-full" :class="row.barClass" :style="{ width: `${row.percent}%` }"></div>
                   </div>
                 </div>
-                <p class="text-right text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">{{ row.issues }}</p>
-                <p class="text-right text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">{{ row.comments }}</p>
-                <p class="text-right text-xs font-semibold tabular-nums text-ink-400 dark:text-ink-500">{{ row.percentLabel }}</p>
+                <div>
+                  <span class="block text-[0.6875rem] font-medium text-ink-500 dark:text-ink-400 sm:hidden">{{ t('issue.proposal') }}</span>
+                  <p class="mt-0.5 text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50 sm:mt-0 sm:text-right">{{ row.issues }}</p>
+                </div>
+                <div>
+                  <span class="block text-[0.6875rem] font-medium text-ink-500 dark:text-ink-400 sm:hidden">{{ t('dashboard.comment') }}</span>
+                  <p class="mt-0.5 text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50 sm:mt-0 sm:text-right">{{ row.comments }}</p>
+                </div>
+                <div>
+                  <span class="block text-[0.6875rem] font-medium text-ink-500 dark:text-ink-400 sm:hidden">{{ t('dashboard.proportion') }}</span>
+                  <p class="mt-0.5 text-xs font-semibold tabular-nums text-ink-500 dark:text-ink-400 sm:mt-0 sm:text-right">{{ row.percentLabel }}</p>
+                </div>
               </div>
             </SurfacePanel>
           </SurfacePanel>
@@ -131,7 +140,7 @@
               >
                 <div class="flex items-center justify-between gap-3">
                   <p class="text-sm font-semibold text-ink-600 dark:text-ink-300">{{ t(item.label) }}</p>
-                  <span class="text-xs font-bold text-ink-400 dark:text-ink-500">{{ t(item.caption) }}</span>
+                  <span class="text-xs font-bold text-ink-500 dark:text-ink-400">{{ t(item.caption) }}</span>
                 </div>
                 <p class="mt-2 text-2xl font-bold tabular-nums text-ink-950 dark:text-ink-50">{{ item.value }}</p>
               </SurfacePanel>
@@ -153,7 +162,7 @@
               >
                 <div class="flex items-start justify-between gap-3">
                   <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ failure.sourceLabel }}</p>
-                  <p class="text-xs font-semibold text-ink-400 dark:text-ink-500">{{ failure.updatedLabel }}</p>
+                  <p class="text-xs font-semibold text-ink-500 dark:text-ink-400">{{ failure.updatedLabel }}</p>
                 </div>
                 <InlineMessage class="mt-2 break-all">
                   {{ t('dashboard.trackingCodeCode', { code: failure.trackingCode }) }}

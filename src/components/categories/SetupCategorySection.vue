@@ -9,30 +9,10 @@
     </SectionHeader>
 
     <div class="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <SurfacePanel variant="list" padding="sm" class="space-y-1">
-        <p class="px-2 pb-2 text-xs font-semibold text-ink-500">
-          {{ t('adminCenter.categoryListCount', { count: model.length }) }}
-        </p>
-        <ListSurfaceRow
-          v-for="(category, index) in model"
-          :key="category.id || `new-${index}`"
-          as="button"
-          interactive
-          class="w-full text-left"
-          :class="selectedIndex === index ? 'button-toolbar--active' : ''"
-          :aria-current="selectedIndex === index ? 'true' : undefined"
-          @click="selectedIndex = index"
-        >
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-sm font-semibold text-ink-900 dark:text-ink-100">
-              {{ category.label || t('categoryAdmin.untitledCategory') }}
-            </span>
-            <span class="mt-0.5 block truncate text-xs text-ink-500">
-              {{ category.id || t('adminCenter.notSavedYet') }}
-            </span>
-          </span>
-        </ListSurfaceRow>
-      </SurfacePanel>
+      <CategorySelectorList
+        v-model:selected-index="selectedIndex"
+        :categories="model"
+      />
 
       <CategoryEditorCard
         v-if="selectedCategory"
@@ -50,10 +30,9 @@
 <script setup lang="ts" generic="T extends IssueCategoryDraft | FacilityCategoryDraft">
 import { computed, ref, watch } from 'vue';
 import CategoryEditorCard from '@/components/categories/CategoryEditorCard.vue';
+import CategorySelectorList from '@/components/categories/CategorySelectorList.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
-import ListSurfaceRow from '@/components/ui/molecules/ListSurfaceRow.vue';
 import SectionHeader from '@/components/ui/molecules/SectionHeader.vue';
-import SurfacePanel from '@/components/ui/molecules/SurfacePanel.vue';
 import { useI18n } from '@/i18n';
 import type { FacilityCategoryDraft, IssueCategoryDraft } from '@/types/categories';
 

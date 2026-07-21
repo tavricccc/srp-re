@@ -43,12 +43,28 @@ integrationTest("access, role, idempotency, avatar, and upload actions", async (
     "permission-denied",
     () => callAction("listRoleAssignments", { query: target.auth.uid }, user.auth),
   );
+  await expectActionError(
+    "permission-denied",
+    () => callAction("listRoleAssignments", {
+      categoryId: "public-issues", includeDirectory: true, query: "", scopeKind: "issue",
+    }, user.auth),
+  );
   const roleSearch = asRecord(await callAction(
     "listRoleAssignments",
     { query: target.auth.uid },
     admin.auth,
   ));
   assert.equal((roleSearch.users as unknown[]).length, 1);
+  const assignableMembers = asRecord(await callAction("listRoleAssignments", {
+    categoryId: "public-issues", includeDirectory: true, query: "", scopeKind: "issue",
+  }, admin.auth));
+  const assignableMemberUids = (assignableMembers.users as Array<{ uid: string }>).map((member) => member.uid);
+  assert.ok(assignableMemberUids.includes(user.auth.uid));
+  assert.ok(assignableMemberUids.includes(target.auth.uid));
+  assert.ok(!assignableMemberUids.includes(admin.auth.uid), "platform admins must not appear as category candidates");
+  await expectActionError("validation-required", () => callAction("listRoleAssignments", {
+    includeDirectory: true, query: "",
+  }, admin.auth));
 
   await expectActionError(
     "validation-required",

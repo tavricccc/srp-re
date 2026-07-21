@@ -14,7 +14,7 @@
       <AppButton
         v-if="showClose"
         variant="toolbar"
-        class="-mr-1 h-9 w-9 shrink-0 rounded-full p-0"
+        class="tap-target -mr-1 shrink-0 rounded-full p-0"
         :aria-label="t('settings.closeSettings')"
         data-autofocus
         @click="emit('close')"
@@ -43,10 +43,10 @@
               {{ email }}
             </p>
             <div class="settings-account__uid-row flex min-w-0 items-center gap-1">
-              <p class="truncate text-[11px] leading-5 text-ink-400 dark:text-ink-500">{{ t('account.uidLabel') }}{{ uid }}</p>
+              <p class="truncate text-[11px] leading-5 text-ink-500 dark:text-ink-400">{{ t('account.uidLabel') }}{{ uid }}</p>
               <AppButton
                 variant="toolbar"
-                class="settings-account__uid-copy shrink-0 rounded-full p-0"
+                class="settings-account__uid-copy tap-target shrink-0 rounded-full p-0"
                 :title="t('settings.copyUid')"
                 :aria-label="t('settings.copyUid')"
                 @click="copyUid"
@@ -57,7 +57,7 @@
           </div>
           <AppButton
             variant="secondary"
-            class="h-8 min-h-8 shrink-0 gap-1.5 px-2.5 py-1 text-xs font-semibold"
+            class="tap-target shrink-0 gap-1.5 px-2.5 py-1 text-xs font-semibold"
             @click="emit('switchAccount')"
           >
             <AppIcon name="switch-horizontal" :size="3" :stroke-width="2" />
@@ -70,6 +70,8 @@
         <ListSurfaceRow
           class="settings-row"
           interactive
+          role="switch"
+          :aria-checked="pushEnabled"
           :class="(pushLoading || !pushActionLabel) ? 'opacity-60 cursor-not-allowed' : ''"
           :disabled="pushLoading || !pushActionLabel"
           @click="emit('togglePush')"
@@ -82,8 +84,6 @@
           <SwitchIndicator
             v-if="pushActionLabel"
             :checked="pushEnabled"
-            :disabled="pushLoading"
-            :label="t('dashboard.pushNotification')"
           />
         </ListSurfaceRow>
       </SurfacePanel>
@@ -94,6 +94,8 @@
           :key="option.key"
           class="settings-row"
           interactive
+          role="switch"
+          :aria-checked="personalPreferences[option.key]"
           :disabled="pushLoading"
           @click="emit('setPreference', option.key, !personalPreferences[option.key])"
         >
@@ -103,8 +105,6 @@
           </span>
           <SwitchIndicator
             :checked="personalPreferences[option.key]"
-            :disabled="pushLoading"
-            :label="option.label"
           />
         </ListSurfaceRow>
       </LabeledListSection>

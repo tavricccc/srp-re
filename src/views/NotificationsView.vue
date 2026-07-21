@@ -111,7 +111,7 @@
                 {{ body(notification) }}
               </span>
               <span
-                class="mt-1.5 block text-[11px] font-medium text-ink-400 dark:text-ink-500"
+                class="mt-1.5 block text-[11px] font-medium text-ink-500 dark:text-ink-400"
               >
                 {{ formatDate(notification.created_at) }}
               </span>

@@ -70,7 +70,7 @@
 - `views/DashboardView.vue` — 管理員統計
 - `views/AdministrationView.vue` — 單一系統設定中心，以大型選項卡切換分類／流程與人員／權限兩個操作階段；舊 `/admin/access`、`/admin/categories` 會導向對應區段
 - `components/admin/CategoryWorkflowPanel.vue` / `MemberAccessPanel.vue` / `CategoryWizardDialog.vue` — 動態分類規則編輯、引導式新增分類精靈，以及「先分類／功能、只顯示明確指派的現有負責人、再搜尋成員」的責任指派；平台總管理員只由 `ADMIN_EMAILS` 同步，不混入分類負責人名單，也不提供 UI 或一般權限 API 修改入口
-- `components/categories/CategoryManagementSection.vue` / `CategoryEditorCard.vue` / `PlatformFeatureToggle.vue` — 一次選取並編輯一個分類的清單與規則表單，以及由初始設定／後續設定共用的提案與設備功能開關
+- `components/categories/CategoryManagementSection.vue` / `SetupCategorySection.vue` / `CategorySelectorList.vue` / `CategoryEditorCard.vue` / `PlatformFeatureToggle.vue` — 初始設定與後續管理共用分類選擇清單，一次選取並編輯一個分類的規則表單，以及共用的提案與設備功能開關
 - `views/SetupView.vue` / `components/LanguageSelector.vue` / `components/categories/SetupCategorySection.vue` — ADMIN_EMAILS 首次設定依序確認系統語言、啟用功能與其分類；只驗證啟用功能的必填資料，未完成時停用送出，相同語言選擇器亦供設定頁覆用
 
 ---
@@ -100,7 +100,7 @@
 - 看板：`IssueBoard`、`BoardControls`、`BoardCategorySelector`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailSupportFooter`；提案與設備共用分類選擇器
 - 公告：`AnnouncementTable`、`AnnouncementTableRow`、`AnnouncementDetailPagePanel`、`AnnouncementDetailActions`、`CompactActionMenu`
 - 設備：`FacilityComposer`、`FacilityStatusDialog`、`FacilityAdminMenu`、`FacilityTable`、`FacilityTableRow`、`FacilityDetailPagePanel`、`FacilityDetailActions`；三領域共用 Composer、詳情內容、loading／錯誤、Skeleton、操作列與確認 Dialog，僅保留地點及設備狀態等領域差異
-- 分類：`categories/CategoryEditorCard.vue` / `CategoryManagementSection.vue` / `PlatformFeatureToggle.vue` — 初始設定與後續管理共用的分類表單、功能開關與狀態控制
+- 分類：`categories/CategorySelectorList.vue` / `CategoryEditorCard.vue` / `CategoryManagementSection.vue` / `SetupCategorySection.vue` / `PlatformFeatureToggle.vue` — 初始設定與後續管理共用的分類選擇、表單、功能開關與狀態控制
 
 ---
 

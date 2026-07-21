@@ -2,6 +2,7 @@
   <DialogOverlay
     :open="open"
     :no-padding="noPadding"
+    :overlay-class="overlayClass"
     :padded="padded"
     :persistent="persistent"
     :transition-name="transitionName"
@@ -37,6 +38,7 @@ const props = withDefaults(defineProps<{
   describedBy?: string;
   labelledBy?: string;
   noPadding?: boolean;
+  overlayClass?: string;
   open: boolean;
   padded?: boolean;
   paddedSurface?: boolean;
@@ -51,6 +53,7 @@ const props = withDefaults(defineProps<{
   describedBy: '',
   labelledBy: '',
   noPadding: false,
+  overlayClass: '',
   padded: true,
   paddedSurface: true,
   persistent: false,

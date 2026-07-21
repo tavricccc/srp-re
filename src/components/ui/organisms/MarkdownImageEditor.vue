@@ -149,7 +149,7 @@
       <!-- Right Column: Split Live Preview -->
       <EditorSurface class="flex min-h-0 flex-col overflow-y-auto p-4">
         <h3
-          class="text-xs font-bold text-ink-400 dark:text-ink-500 mb-3 uppercase tracking-wider shrink-0"
+          class="text-xs font-bold text-ink-500 dark:text-ink-400 mb-3 uppercase tracking-wider shrink-0"
         >
           {{ t("markdown.livePreview") }}
         </h3>

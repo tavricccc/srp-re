@@ -90,19 +90,29 @@
         </div>
 
         <div class="grid gap-2">
-          <ListSurfaceRow interactive @click="issueDraft.commentsEnabled = !issueDraft.commentsEnabled">
+          <ListSurfaceRow
+            interactive
+            role="switch"
+            :aria-checked="issueDraft.commentsEnabled"
+            @click="issueDraft.commentsEnabled = !issueDraft.commentsEnabled"
+          >
             <span class="min-w-0 flex-1">
               <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('categoryAdmin.allowComments') }}</span>
               <span class="mt-0.5 block text-xs leading-5 text-ink-500">{{ t('categoryAdmin.futureProposalsOnly') }}</span>
             </span>
-            <SwitchIndicator :checked="issueDraft.commentsEnabled" :label="t('categoryAdmin.allowComments')" />
+            <SwitchIndicator :checked="issueDraft.commentsEnabled" />
           </ListSurfaceRow>
-          <ListSurfaceRow interactive @click="toggleSupport">
+          <ListSurfaceRow
+            interactive
+            role="switch"
+            :aria-checked="issueDraft.supportEnabled === true"
+            @click="toggleSupport"
+          >
             <span class="min-w-0 flex-1">
               <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('categoryAdmin.enableSupport') }}</span>
               <span class="mt-0.5 block text-xs leading-5 text-ink-500">{{ t('categoryAdmin.futureProposalsOnly') }}</span>
             </span>
-            <SwitchIndicator :checked="issueDraft.supportEnabled === true" :label="t('categoryAdmin.enableSupport')" />
+            <SwitchIndicator :checked="issueDraft.supportEnabled === true" />
           </ListSurfaceRow>
         </div>
 
