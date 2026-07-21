@@ -365,7 +365,9 @@ test('outbox, webhooks, FCM, and Notion deletion marks are guarded', async () =>
   assert.match(cloudinary, /createCloudinaryUploadSignature/u);
   assert.match(googleOauth, /npm:google-auth-library/u);
   assert.match(googleOauth, /cachedToken/u);
-  assert.match(fcm, /fcm\.googleapis\.com\/v1\/projects/u);
+  assert.match(fcm, /https:\/\/fcm\.googleapis\.com/u);
+  assert.match(fcm, /\/v1\/projects\/\$\{projectId\}\/messages:send/u);
+  assert.match(fcm, /FCM_EMULATOR_URL/u);
   assert.match(webhook, /x-cld-signature/u);
   assert.match(webhook, /timingSafeEqual/u);
   assert.match(cloudinaryWebhook, /verifyCloudinarySignature/u);

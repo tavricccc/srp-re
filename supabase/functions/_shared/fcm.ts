@@ -1,5 +1,5 @@
 import { getGoogleAccessToken } from "./google-oauth.ts";
-import { requireEnv } from "./env.ts";
+import { optionalEnv, requireEnv } from "./env.ts";
 
 export interface FcmMessage {
   token?: string;
@@ -14,6 +14,15 @@ export interface FcmMessage {
 
 const FCM_TOPICS = new Set(["srp-broadcast"]);
 
+function emulatorBaseUrl() {
+  return optionalEnv("FCM_EMULATOR_URL").replace(/\/+$/u, "");
+}
+
+async function messagingAuthorization(scopes: string[]) {
+  if (emulatorBaseUrl()) return "Bearer local-fcm-emulator";
+  return `Bearer ${await getGoogleAccessToken(scopes)}`;
+}
+
 function assertTopic(topic: string) {
   if (!FCM_TOPICS.has(topic)) throw new Error("invalid-fcm-topic");
 }
@@ -21,11 +30,11 @@ function assertTopic(topic: string) {
 async function updateTopicSubscriptions(tokens: string[], topic: string, operation: "batchAdd" | "batchRemove") {
   assertTopic(topic);
   if (tokens.length === 0) return;
-  const accessToken = await getGoogleAccessToken(["https://www.googleapis.com/auth/firebase.messaging"]);
-  const response = await fetch(`https://iid.googleapis.com/iid/v1:${operation}`, {
+  const emulatorUrl = emulatorBaseUrl();
+  const response = await fetch(`${emulatorUrl || "https://iid.googleapis.com"}/iid/v1:${operation}`, {
     method: "POST",
     headers: {
-      authorization: `Bearer ${accessToken}`,
+      authorization: await messagingAuthorization(["https://www.googleapis.com/auth/firebase.messaging"]),
       "content-type": "application/json",
       "access_token_auth": "true",
     },
@@ -77,16 +86,15 @@ export function isInvalidFcmTokenError(error: unknown) {
 
 export async function sendFcmMessage(message: FcmMessage) {
   const projectId = requireEnv("FIREBASE_PROJECT_ID");
-  const accessToken = await getGoogleAccessToken([
-    "https://www.googleapis.com/auth/firebase.messaging",
-  ]);
+  const scopes = ["https://www.googleapis.com/auth/firebase.messaging"];
+  const emulatorUrl = emulatorBaseUrl();
 
   const response = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+    `${emulatorUrl || "https://fcm.googleapis.com"}/v1/projects/${projectId}/messages:send`,
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: await messagingAuthorization(scopes),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ message }),

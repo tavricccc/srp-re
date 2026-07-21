@@ -12,10 +12,42 @@ import {
   supabase,
 } from "./helpers.ts";
 
+const notificationStressScale = Math.min(
+  20,
+  Math.max(4, Number(Deno.env.get("NOVAE_STRESS_SCALE") ?? 4)),
+);
+
 function requiredEnv(name: string) {
   const value = Deno.env.get(name)?.trim();
   if (!value) throw new Error(`${name} is required for local integration tests.`);
   return value;
+}
+
+interface FcmRequest {
+  body: {
+    message?: {
+      data?: Record<string, string>;
+      token?: string;
+      topic?: string;
+    };
+  };
+  path: string;
+}
+
+function fcmReceiverUrl() {
+  return requiredEnv("FCM_EMULATOR_URL").replace("host.docker.internal", "127.0.0.1");
+}
+
+async function resetFcmRequests() {
+  const response = await fetch(`${fcmReceiverUrl()}/__requests`, { method: "DELETE" });
+  assert.equal(response.status, 200);
+}
+
+async function readFcmRequests() {
+  const response = await fetch(`${fcmReceiverUrl()}/__requests`);
+  assert.equal(response.status, 200);
+  const result = await response.json() as { requests: FcmRequest[] };
+  return result.requests;
 }
 
 function base64Url(value: string | Uint8Array) {
@@ -155,10 +187,35 @@ integrationTest("new proposal and facility notifications are personal to categor
     requestId: requestId("notification-facility-category"),
   }, admin.auth);
 
-  const managers = await Promise.all(Array.from({ length: 4 }, (_, index) => seedActor(
+  const managers = await Promise.all(Array.from({ length: notificationStressScale }, (_, index) => seedActor(
     `category-notification-manager-${index}-${crypto.randomUUID()}`,
     { categoryIds: [issueCategoryId], facilityCategoryIds: [facilityCategoryId] },
   )));
+  for (let index = 0; index < managers.length; index += 1) {
+    await callAction("registerPushToken", {
+      deviceId: `category-notification-device-${index}`,
+      permission: "granted",
+      platform: "integration",
+      token: `category-notification-token-${index}`,
+      userAgent: "Category notification integration test",
+    }, managers[index].auth);
+    await callAction("updatePushNotificationPreferences", {
+      deviceId: `category-notification-device-${index}`,
+      permission: "granted",
+      preferences: {
+        comments: true,
+        facilityUpdates: index % 3 !== 1,
+        issueUpdates: index % 3 !== 2,
+      },
+    }, managers[index].auth);
+  }
+  const { error: disableFacilityNotificationError } = await supabase.schema("app_private")
+    .from("user_facility_category_assignments")
+    .update({ notify_on_created: false })
+    .eq("uid", managers.at(-1)!.auth.uid)
+    .eq("category_id", facilityCategoryId);
+  if (disableFacilityNotificationError) throw disableFacilityNotificationError;
+  await resetFcmRequests();
   const issueAuthor = await seedActor(`category-notification-issue-author-${crypto.randomUUID()}`);
   const facilityAuthor = await seedActor(`category-notification-facility-author-${crypto.randomUUID()}`);
   const issueResult = asRecord(await callAction("createIssue", {
@@ -203,7 +260,7 @@ integrationTest("new proposal and facility notifications are personal to categor
   const issueNotifications = (notifications ?? []).filter((row) => row.target_id === issueId);
   const facilityNotifications = (notifications ?? []).filter((row) => row.target_id === facilityId);
   assert.equal(issueNotifications.length, managerUids.size);
-  assert.equal(facilityNotifications.length, managerUids.size);
+  assert.equal(facilityNotifications.length, managerUids.size - 1);
   for (const notification of [...issueNotifications, ...facilityNotifications]) {
     assert.equal(notification.source, "user");
     assert.ok(managerUids.has(String(notification.recipient_uid)));
@@ -211,6 +268,122 @@ integrationTest("new proposal and facility notifications are personal to categor
   }
   assert.ok(issueNotifications.every((row) => row.type === "issue_created"));
   assert.ok(facilityNotifications.every((row) => row.type === "facility_report_created"));
+  assert.ok(!facilityNotifications.some((row) => row.recipient_uid === managers.at(-1)!.auth.uid));
+
+  const pushRequests = (await readFcmRequests())
+    .map((request) => request.body.message)
+    .filter((message) => message?.data?.target_id === issueId || message?.data?.target_id === facilityId);
+  const issuePushTokens = new Set(pushRequests
+    .filter((message) => message?.data?.target_id === issueId)
+    .map((message) => message?.token));
+  const facilityPushTokens = new Set(pushRequests
+    .filter((message) => message?.data?.target_id === facilityId)
+    .map((message) => message?.token));
+  assert.deepEqual(issuePushTokens, new Set(managers
+    .map((_, index) => index)
+    .filter((index) => index % 3 !== 2)
+    .map((index) => `category-notification-token-${index}`)));
+  assert.deepEqual(facilityPushTokens, new Set(managers
+    .map((_, index) => index)
+    .filter((index) => index !== managers.length - 1 && index % 3 !== 1)
+    .map((index) => `category-notification-token-${index}`)));
+  assert.ok(pushRequests.some((message) =>
+    message?.data?.link === `/issues/${issueCategoryId}/${issueId}`
+  ));
+  assert.ok(pushRequests.some((message) => message?.data?.link === `/facilities/${facilityId}`));
+});
+
+integrationTest("announcement and nested comment notifications cover broadcast, personal, and push routing", async () => {
+  const manager = await seedActor(`notification-announcement-manager-${crypto.randomUUID()}`, {
+    roles: ["announcement-manager"],
+  });
+  const commenter = await seedActor(`notification-announcement-commenter-${crypto.randomUUID()}`);
+  const replier = await seedActor(`notification-announcement-replier-${crypto.randomUUID()}`);
+  for (const [index, actor] of [manager, commenter].entries()) {
+    await callAction("registerPushToken", {
+      deviceId: `announcement-notification-device-${index}`,
+      permission: "granted",
+      platform: "integration",
+      token: `announcement-notification-token-${index}`,
+      userAgent: "Announcement notification integration test",
+    }, actor.auth);
+  }
+  await callAction("updatePushNotificationPreferences", {
+    deviceId: "announcement-notification-device-0",
+    permission: "granted",
+    preferences: { comments: false, facilityUpdates: true, issueUpdates: true },
+  }, manager.auth);
+  await resetFcmRequests();
+
+  const created = asRecord(await callAction("createAnnouncement", {
+    content: "Notification routing announcement content",
+    requestId: requestId("notification-announcement"),
+    title: "Notification routing",
+  }, manager.auth));
+  const announcementId = String(asRecord(created.announcement).id);
+  const root = asRecord(await callAction("createAnnouncementComment", {
+    announcementId,
+    content: "Root announcement notification comment",
+    requestId: requestId("notification-announcement-root"),
+  }, commenter.auth));
+  const rootCommentId = String(asRecord(root.comment).id);
+  const reply = asRecord(await callAction("createAnnouncementComment", {
+    announcementId,
+    content: "Nested announcement notification reply",
+    parentCommentId: rootCommentId,
+    requestId: requestId("notification-announcement-reply"),
+  }, replier.auth));
+  const replyCommentId = String(asRecord(reply.comment).id);
+
+  const workerUrl = `${requiredEnv("SUPABASE_FUNCTIONS_URL").replace(/\/+$/u, "")}/outboxWorker`;
+  for (let attempt = 0; attempt < 15; attempt += 1) {
+    const { data, error } = await supabase.schema("app_private").from("notifications")
+      .select("comment_id,recipient_uid,source,type")
+      .eq("target_id", announcementId);
+    if (error) throw error;
+    if ((data ?? []).some((row) => row.type === "announcement_created")
+      && (data ?? []).some((row) => row.comment_id === rootCommentId)
+      && (data ?? []).some((row) => row.comment_id === replyCommentId)) break;
+    const response = await fetch(workerUrl, {
+      headers: {
+        authorization: `Bearer ${requiredEnv("WEBHOOK_SECRET")}`,
+        "x-novae-origin-secret": requiredEnv("EDGE_ORIGIN_SECRET"),
+      },
+      method: "POST",
+    });
+    assert.ok(response.ok || response.status === 429, `outbox worker returned ${response.status}`);
+    await new Promise((resolve) => setTimeout(resolve, 550));
+  }
+
+  const { data: rows, error: rowError } = await supabase.schema("app_private").from("notifications")
+    .select("comment_id,recipient_uid,source,type")
+    .eq("target_id", announcementId);
+  if (rowError) throw rowError;
+  const broadcast = (rows ?? []).find((row) => row.type === "announcement_created");
+  assert.equal(broadcast?.source, "broadcast");
+  assert.equal(broadcast?.recipient_uid, null);
+  assert.ok((rows ?? []).some((row) =>
+    row.comment_id === rootCommentId && row.recipient_uid === manager.auth.uid
+  ));
+  assert.ok((rows ?? []).some((row) =>
+    row.comment_id === replyCommentId && row.recipient_uid === commenter.auth.uid
+  ));
+
+  const messages = (await readFcmRequests()).map((request) => request.body.message).filter(Boolean);
+  assert.ok(messages.some((message) =>
+    message?.topic === "srp-broadcast"
+    && message.data?.target_id === announcementId
+    && message.data?.link === `/announcements/${announcementId}`
+  ));
+  assert.ok(!messages.some((message) =>
+    message?.token === "announcement-notification-token-0"
+    && message.data?.comment_id === rootCommentId
+  ));
+  assert.ok(messages.some((message) =>
+    message?.token === "announcement-notification-token-1"
+    && message.data?.comment_id === replyCommentId
+    && message.data?.link === `/announcements/${announcementId}?tab=comments&comment=${replyCommentId}`
+  ));
 });
 
 integrationTest("worker database lifecycles and maintenance RPC", async () => {

@@ -1,7 +1,11 @@
-import { requireEnv } from "./env.ts";
+import { optionalEnv, requireEnv } from "./env.ts";
 
 export const CLOUDINARY_IMAGE_UPLOAD_PRESET = "srp-secure-images";
 let uploadPresetVerifiedUntil = 0;
+
+function cloudinaryApiBaseUrl() {
+  return optionalEnv("CLOUDINARY_API_BASE_URL").replace(/\/+$/u, "") || "https://api.cloudinary.com";
+}
 
 function toHex(buffer: ArrayBuffer) {
   return Array.from(new Uint8Array(buffer))
@@ -69,7 +73,7 @@ export async function getCloudinaryAuthenticatedImageMetadata(publicId: string) 
   const apiSecret = requireEnv("CLOUDINARY_API_SECRET");
   const encodedPublicId = publicId.split("/").map((part) => encodeURIComponent(part)).join("/");
   const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/authenticated/${encodedPublicId}`,
+    `${cloudinaryApiBaseUrl()}/v1_1/${cloudName}/resources/image/authenticated/${encodedPublicId}`,
     {
       headers: { authorization: `Basic ${btoa(`${apiKey}:${apiSecret}`)}` },
       signal: AbortSignal.timeout(8_000),
@@ -108,7 +112,7 @@ export async function ensureCloudinaryImageUploadPreset(maxFileSize: number, max
     "content-type": "application/x-www-form-urlencoded",
   };
   const update = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/upload_presets/${CLOUDINARY_IMAGE_UPLOAD_PRESET}`,
+    `${cloudinaryApiBaseUrl()}/v1_1/${cloudName}/upload_presets/${CLOUDINARY_IMAGE_UPLOAD_PRESET}`,
     {
       body: preset,
       headers,
@@ -125,7 +129,7 @@ export async function ensureCloudinaryImageUploadPreset(maxFileSize: number, max
   }
 
   preset.set("name", CLOUDINARY_IMAGE_UPLOAD_PRESET);
-  const create = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload_presets`, {
+  const create = await fetch(`${cloudinaryApiBaseUrl()}/v1_1/${cloudName}/upload_presets`, {
     body: preset,
     headers,
     method: "POST",
@@ -176,7 +180,7 @@ export async function uploadCloudinaryAuthenticatedImage(publicId: string, sourc
   body.set("signature", await signCloudinaryParams(params));
 
   const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    `${cloudinaryApiBaseUrl()}/v1_1/${cloudName}/image/upload`,
     { method: "POST", body, signal: AbortSignal.timeout(20_000) },
   );
   if (!response.ok) {
@@ -200,7 +204,7 @@ export async function deleteCloudinaryAsset(publicId: string) {
     signature: await signCloudinaryParams(params),
   });
   const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+    `${cloudinaryApiBaseUrl()}/v1_1/${cloudName}/image/destroy`,
     {
       method: "POST",
       headers: {

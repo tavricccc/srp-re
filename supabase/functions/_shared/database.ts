@@ -243,6 +243,18 @@ interface MaintenanceRunRow {
   task_name: string;
 }
 
+interface RealtimeEventRow {
+  actor_uid: string | null;
+  category: string | null;
+  created_at: string;
+  event_type: string;
+  expires_at: string;
+  id: string;
+  parent_id: string | null;
+  target_id: string;
+  target_type: string;
+}
+
 interface ContentRevisionRow {
   domain: string;
   revision: number;
@@ -294,6 +306,7 @@ interface AppPrivateTables {
     created_at: string;
     updated_at: string;
   }>;
+  realtime_events: Table<RealtimeEventRow>;
   runtime_settings: Table<{ key: string; value: string; updated_at: string }>;
   push_tokens: Table<PushTokenRow>;
   supports: Table<{ issue_id: string; uid: string; created_at: string }>;

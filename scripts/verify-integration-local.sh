@@ -99,6 +99,8 @@ FUNCTION_LOG="$(mktemp)"
 FUNCTION_PID=""
 FIREBASE_LOG="$(mktemp)"
 FIREBASE_PID=""
+FCM_LOG="$(mktemp)"
+FCM_PID=""
 UPSTASH_LOG="$(mktemp)"
 UPSTASH_PID=""
 WORKER_LOG="$(mktemp)"
@@ -130,7 +132,11 @@ cleanup() {
     kill "$FIREBASE_PID" >/dev/null 2>&1 || true
     wait "$FIREBASE_PID" >/dev/null 2>&1 || true
   fi
-  rm -f "$TEMP_ENV" "$FUNCTION_ENV" "$FUNCTION_LOG" "$FIREBASE_LOG" "$UPSTASH_LOG" "$WORKER_LOG"
+  if [[ -n "$FCM_PID" ]] && kill -0 "$FCM_PID" >/dev/null 2>&1; then
+    kill "$FCM_PID" >/dev/null 2>&1 || true
+    wait "$FCM_PID" >/dev/null 2>&1 || true
+  fi
+  rm -f "$TEMP_ENV" "$FUNCTION_ENV" "$FUNCTION_LOG" "$FIREBASE_LOG" "$FCM_LOG" "$UPSTASH_LOG" "$WORKER_LOG"
   if [[ "$KEEP_RUNNING" != "true" ]]; then
     supabase stop >/dev/null 2>&1 || true
   fi
@@ -183,10 +189,14 @@ supabase db lint --local --level error --fail-on error
   printf 'CLOUDINARY_API_KEY=integration-api-key\n'
   printf 'CLOUDINARY_API_SECRET=integration-api-secret\n'
   printf 'CLOUDINARY_CLOUD_NAME=integration-cloud\n'
+  printf 'CLOUDINARY_API_BASE_URL=http://127.0.0.1:54330\n'
   printf 'CLOUDINARY_WEBHOOK_SECRET=integration-cloudinary-webhook\n'
   printf 'EDGE_ORIGIN_SECRET=integration-origin-secret\n'
+  printf 'EDGE_FUNCTION_DELETE_URL=%s/functions/v1/processDeletionJobs\n' "$API_URL"
+  printf 'EDGE_FUNCTION_OUTBOX_URL=%s/functions/v1/outboxWorker\n' "$API_URL"
   printf 'FIREBASE_PROJECT_ID=integration-project\n'
   printf 'FIREBASE_WEB_API_KEY=integration-web-api-key\n'
+  printf 'FCM_EMULATOR_URL=http://127.0.0.1:54330\n'
   printf 'ADMIN_EMAILS=admin@integration.invalid\n'
   printf 'WEBHOOK_SECRET=integration-worker-secret\n'
   printf '\nAPP_SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SERVICE_ROLE_KEY"
@@ -207,6 +217,10 @@ fi
 chmod 600 "$TEMP_ENV"
 grep -v '^SUPABASE_' "$TEMP_ENV" >"$FUNCTION_ENV"
 sed -i 's#UPSTASH_REDIS_REST_URL=http://127.0.0.1:54329#UPSTASH_REDIS_REST_URL=http://host.docker.internal:54329#' "$FUNCTION_ENV"
+sed -i 's#FCM_EMULATOR_URL=http://127.0.0.1:54330#FCM_EMULATOR_URL=http://host.docker.internal:54330#' "$FUNCTION_ENV"
+sed -i 's#CLOUDINARY_API_BASE_URL=http://127.0.0.1:54330#CLOUDINARY_API_BASE_URL=http://host.docker.internal:54330#' "$FUNCTION_ENV"
+sed -i 's#EDGE_FUNCTION_DELETE_URL=http://127.0.0.1:54321#EDGE_FUNCTION_DELETE_URL=http://host.docker.internal:54321#' "$FUNCTION_ENV"
+sed -i 's#EDGE_FUNCTION_OUTBOX_URL=http://127.0.0.1:54321#EDGE_FUNCTION_OUTBOX_URL=http://host.docker.internal:54321#' "$FUNCTION_ENV"
 chmod 600 "$FUNCTION_ENV"
 ORIGIN_SECRET="$(grep '^EDGE_ORIGIN_SECRET=' "$TEMP_ENV" | head -n 1 | cut -d= -f2-)"
 
@@ -235,6 +249,21 @@ done
 if [[ "${status:-}" != "200" ]]; then
   cat "$UPSTASH_LOG" >&2
   echo "Local Upstash REST test server did not become ready." >&2
+  exit 1
+fi
+
+echo "[integration] Starting isolated FCM test receiver"
+"$DENO_COMMAND" run --allow-env --allow-net scripts/external-provider-test-server.ts >"$FCM_LOG" 2>&1 &
+FCM_PID="$!"
+fcm_status=""
+for _ in $(seq 1 30); do
+  fcm_status="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:54330/__requests || true)"
+  [[ "$fcm_status" == "200" ]] && break
+  sleep 1
+done
+if [[ "$fcm_status" != "200" ]]; then
+  cat "$FCM_LOG" >&2
+  echo "Local FCM test receiver did not become ready." >&2
   exit 1
 fi
 

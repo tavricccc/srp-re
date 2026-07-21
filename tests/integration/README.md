@@ -33,3 +33,9 @@ using the compatibility runtime bundled for Windows Edge type checks.
 New actions must include asserted positive and denial cases. The coverage guard
 fails when a registered action is not referenced. Full maintenance rules:
 [official contributing guide](https://tavricccc.github.io/novae-website/docs/contributing.html).
+
+The verifier also starts isolated Upstash and external-provider receivers. Notification tests
+assert in-app recipients, FCM topic/token payloads, preference filtering, and
+deep links without contacting production providers. Retention tests seed both
+sides of every configured expiry boundary and assert deletion, preservation,
+Cloudinary deletion execution, worker chaining, and silent scheduled cleanup.

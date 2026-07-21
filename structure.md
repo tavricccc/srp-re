@@ -143,11 +143,11 @@
 - `.nvmrc` / `.node-version` / `package.json#engines` — 本機、版本管理器與套件安裝統一使用 Node.js 24 LTS
 - `public/` — favicon、PWA icons
 - `scripts/generate-rate-limits.mjs` / `generate-data-retention.mjs` / `generate-backend-actions.mjs`
-- `scripts/upstash-test-server.ts` — 整合驗證專用的隔離式 Upstash REST／pipeline 相容計數器
+- `scripts/upstash-test-server.ts` / `external-provider-test-server.ts` — 整合驗證專用的隔離式 Upstash REST／pipeline 相容計數器與外部服務收件器；後者記錄 FCM topic／token／payload／深層連結及 Cloudinary 刪除請求，避免測試連到正式服務
 - `scripts/check-i18n.mjs` — 驗證中英文 key 完整對齊、英文無中文殘留、Vue 模板無任何語言的靜態可見文案／屬性、前端無硬編碼中文字串、無缺漏或直接顯示的 `text.*` key；納入 `verify:local`
 - `scripts/check-ui-primitives.mjs` — 阻止舊 dropdown 類別、任意陰影、手組卡片與各頁自行設定 viewport gutter，並確認共用 primitive 與三階陰影 token 完整；納入 `verify:local`
-- `scripts/verify-integration-local.mjs` / `verify-integration-local.sh` — Windows 自動轉入 WSL、Linux/CI 直接執行的本地 Supabase 全自動重設、database lint、Edge 啟動與整合驗證入口；`npm run test:env` 會以相同基礎再啟動 Firebase Auth emulator、Cloudflare gateway 與 Vite，並以 `scripts/check-local-auth-emulator.mjs` 驗證登入、custom claim、僅由 `ADMIN_EMAILS` 決定的平台總管理員與 Setup 路由前置狀態後才回報 Ready；Google 登入模擬器可快速建立任意 `@integration.invalid` 新使用者，一律使用隔離測試值，不載入正式 provider credentials；本機 Firebase debug log 由 `.gitignore` 排除
+- `scripts/verify-integration-local.mjs` / `verify-integration-local.sh` — Windows 自動轉入 WSL、Linux/CI 直接執行的本地 Supabase 全自動重設、database lint、Edge 啟動與整合驗證入口；`npm run test:env` 會以相同基礎再啟動 Firebase Auth emulator、Cloudflare gateway 與 Vite，並以 `scripts/check-local-auth-emulator.mjs` 驗證登入、custom claim、僅由 `ADMIN_EMAILS` 決定的平台總管理員與 Setup 路由前置狀態後才回報 Ready；Google 登入模擬器可快速建立任意 `@integration.invalid` 新使用者，一律使用隔離測試值，不載入正式 provider credentials；自動驗證模式另啟動 FCM 收件器，實際驗證站外 topic／個人推播與通知偏好；本機 Firebase debug log 由 `.gitignore` 排除
 - 動態壓測：`npm run verify:stress` 以目前資料庫分類展開 `tests/integration/stress-workflows.test.ts`；規模可用 `--stress-scale 2..20` 調整，涵蓋多人多權限、各分類內容、巢狀留言、通知、圖片與分類刪除
 - `tests/architecture.test.mjs` — 靜態架構回歸
-- `tests/integration/` — 全 backend action、管理員／一般／領域與分類權限、冪等、RLS、通知偏好、worker lifecycle 與 Edge HTTP trust boundary；`action-coverage.test.ts` 防止新增 action 未被領域測試引用，精簡 `README.md` 只保留入口，完整維護規則位於官方網站貢獻指南
+- `tests/integration/` — 全 backend action、管理員／一般／領域與分類權限、冪等、RLS、站內通知、FCM topic／個人站外通知、分類收件人、worker lifecycle 與 Edge HTTP trust boundary；`retention-cleanup.test.ts` 逐表驗證過期刪除、未過期保留、Cloudinary／Notion 清理排程與無聲保留期刪除，`action-coverage.test.ts` 防止新增 action 未被領域測試引用，精簡 `README.md` 只保留入口，完整維護規則位於官方網站貢獻指南
 - `.github/workflows/` — `verify-pr` 同時執行靜態／build、Cloudflare Worker 與完整本地 Supabase 整合測試；`deploy-backend` 在推送 migration／Edge 前再次執行相同整合驗證；所有 JavaScript Action 使用目前 Node.js 24 世代（Checkout／Setup Node v7、Cache v6、Supabase Setup CLI v3）；另有 `deploy-frontend`、`reset-db`、`reset-cloudinary`

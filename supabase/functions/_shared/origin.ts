@@ -1,4 +1,4 @@
-import { requireEnv } from "./env.ts";
+import { optionalEnv, requireEnv } from "./env.ts";
 import { textResponse } from "./http.ts";
 
 function timingSafeEqual(left: string, right: string) {
@@ -25,5 +25,7 @@ export function edgeFunctionName(role: "api" | "sync" | "media" | "outbox" | "de
 }
 
 export function edgeFunctionUrl(role: Parameters<typeof edgeFunctionName>[0]) {
+  const explicitUrl = optionalEnv(`EDGE_FUNCTION_${role.toUpperCase()}_URL`);
+  if (explicitUrl) return explicitUrl;
   return `${requireEnv("SUPABASE_URL").replace(/\/+$/u, "")}/functions/v1/${edgeFunctionName(role)}`;
 }
