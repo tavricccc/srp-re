@@ -53,12 +53,16 @@ async function getIssue(
 ) {
   const issueId = asUuid(payload.issueId);
   if (!issueId) throw new Error("not-found");
-  const category = await selectIssueCategory(supabase, issueId);
+  const [category, policyParams] = await Promise.all([
+    selectIssueCategory(supabase, issueId),
+    issueReadPolicyParams(supabase, auth),
+  ]);
   const actorCanManage = canManageIssueCategory(auth, category);
 
   const { data, error } = await supabase.schema("app_api").rpc("backend_get_issue", {
     issue_id: issueId,
-    ...await issueReadPolicyParams(supabase, auth, actorCanManage),
+    ...policyParams,
+    actor_is_admin: actorCanManage,
   });
   if (error) throw error;
   return { issue: data };

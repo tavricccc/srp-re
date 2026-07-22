@@ -52,7 +52,13 @@
         <p v-else>{{ noticeContent }}</p>
       </ContentNoticePanel>
 
-      <MarkdownMediaContent :content="content" :fallback-alt="title" />
+      <div v-if="contentLoading" class="space-y-3 py-1" role="status" :aria-label="t('common.loading')">
+        <SkeletonBlock class="block h-4 w-full rounded" />
+        <SkeletonBlock class="block h-4 w-11/12 rounded" />
+        <SkeletonBlock class="block h-4 w-4/5 rounded" />
+        <SkeletonBlock class="mt-5 block h-32 w-full rounded-2xl" />
+      </div>
+      <MarkdownMediaContent v-else :content="content" :fallback-alt="title" />
     </div>
   </div>
 </template>
@@ -73,6 +79,7 @@ const props = withDefaults(defineProps<{
   authorUid?: string | null;
   compact?: boolean;
   content: string;
+  contentLoading?: boolean;
   contextContent?: string;
   contextTitle?: string;
   contextTone?: 'error' | 'neutral' | 'success';
@@ -88,6 +95,7 @@ const props = withDefaults(defineProps<{
   authorSecondary: '',
   authorUid: null,
   compact: false,
+  contentLoading: false,
   contextContent: '',
   contextTitle: '',
   contextTone: 'neutral',

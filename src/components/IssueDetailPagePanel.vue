@@ -5,6 +5,7 @@
     back-label="issue.returnToProposalList"
     :comment-count="mobileCommentCount"
     :content="issue.content"
+    :content-loading="contentLoading"
     details-label="issue.proposalContent"
     :notice-content="issueNotice?.content"
     :notice-fallback-alt="t('issue.resultImage', { title: issue.title })"
@@ -58,7 +59,13 @@
     </template>
 
     <template #comments="{ compactHeader }">
+      <div v-if="contentLoading" class="space-y-3 py-2" role="status" :aria-label="t('comments.loadingComments')">
+        <SkeletonBlock class="block h-4 w-2/3 rounded" />
+        <SkeletonBlock class="block h-16 w-full rounded-2xl" />
+        <SkeletonBlock class="block h-16 w-11/12 rounded-2xl" />
+      </div>
       <IssueComments
+        v-else
         :accessible="commentsReadable"
         :can-compose="commentsEnabled"
         :category="issue.category"
@@ -100,6 +107,7 @@ import { getIssueNotice } from '@/lib/issue-notice';
 import type { IssueRecord } from '@/types';
 
 import TagBadge from '@/components/ui/atoms/TagBadge.vue';
+import SkeletonBlock from '@/components/ui/atoms/SkeletonBlock.vue';
 import ContentDetailPagePanel from '@/components/ContentDetailPagePanel.vue';
 import IssueDetailSupportFooter from '@/components/IssueDetailSupportFooter.vue';
 import IssueComments from '@/components/IssueComments.vue';
@@ -115,6 +123,7 @@ import IssueStatusDialog from '@/components/IssueStatusDialog.vue';
 
 const props = withDefaults(
   defineProps<{
+    contentLoading?: boolean;
     issue: IssueRecord;
     currentUserSupported: boolean;
     focusCommentId?: string;
@@ -123,6 +132,7 @@ const props = withDefaults(
     initialTab?: 'details' | 'comments';
   }>(),
   {
+    contentLoading: false,
     focusCommentId: '',
     initialTab: 'details',
   }

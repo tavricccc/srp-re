@@ -6,6 +6,7 @@ import { getDerivedIssueStatus } from '@/lib/issue-status';
 import { getIssueStatusBucket } from '@/lib/issue-timeline';
 import { normalizeRouteParam } from '@/lib/route';
 import { useActionFeedback } from '@/composables/useActionFeedback';
+import { useIssueDetailCacheScope } from '@/composables/useIssueDetailCacheScope';
 import { useSession } from '@/composables/useSession';
 import { registerAppResumeHandler } from '@/composables/useAppResume';
 import { useNetworkStatus } from '@/composables/useNetworkStatus';
@@ -13,6 +14,7 @@ import { fetchIssueRecordById } from '@/services/issues';
 import { subscribeContentRealtimeEvents } from '@/services/realtime-events';
 import type { IssueRecord } from '@/types';
 import { isAbortFailure } from '@/lib/request';
+import { takeIssueDetailPreview } from '@/lib/issue-detail-preview';
 import { subscribeContentRevisionChanges } from '@/services/content-revisions';
 import {
   createContentCacheKey,
@@ -32,17 +34,15 @@ export function useIssueRouteDetail(
   const route = useRoute();
   const router = useRouter();
   const { show } = useActionFeedback();
-  const { managedIssueCategoryIds, roleLoading, roles, user } = useSession();
+  const { roleLoading } = useSession();
   const { isOnline } = useNetworkStatus();
   const routeIssue = ref<IssueRecord | null>(null);
   const routeIssueLoading = ref(false);
+  const routeIssuePreview = ref(false);
   let requestId = 0;
   let realtimeUnsubscribe: (() => void) | null = null;
   let realtimeRefreshTimer = 0;
-  const detailCacheScope = computed(() => createContentCacheKey([
-    user.value?.uid ?? '',
-    roles.value.includes('platform-admin') ? 'platform-admin' : managedIssueCategoryIds.value.slice().sort().join(','),
-  ]));
+  const detailCacheScope = useIssueDetailCacheScope();
   function detailCacheKey(issueId: string) {
     return createContentCacheKey(['issue-detail', detailCacheScope.value, issueId]);
   }
@@ -92,6 +92,7 @@ export function useIssueRouteDetail(
     const currentIssue = routeIssue.value;
     requestId += 1;
     routeIssueLoading.value = false;
+    routeIssuePreview.value = false;
     if (returnToNavigationOrigin(router)) return;
     router.replace(issueListRoute(currentIssue));
   }
@@ -100,6 +101,7 @@ export function useIssueRouteDetail(
     requestId += 1;
     routeIssue.value = issueWithSupportState(issue);
     routeIssueLoading.value = false;
+    routeIssuePreview.value = false;
   }
 
   function updateRouteIssueSupport(supported: boolean, supportCount?: number) {
@@ -136,12 +138,14 @@ export function useIssueRouteDetail(
   function patchRouteIssue(issue: IssueRecord) {
     if (routeIssue.value?.id !== issue.id) return;
     routeIssue.value = issueWithSupportState(issue);
+    routeIssuePreview.value = false;
   }
 
   async function handleRouteIssueError(currentRequestId: number) {
     if (currentRequestId !== requestId) return;
     routeIssue.value = null;
     routeIssueLoading.value = false;
+    routeIssuePreview.value = false;
     show('issue.thisPageDoesNotExistOrCannotBeViewed', 'error');
     await router.replace(issueListRoute());
   }
@@ -155,17 +159,26 @@ export function useIssueRouteDetail(
         requestId += 1;
         routeIssue.value = null;
         routeIssueLoading.value = false;
+        routeIssuePreview.value = false;
         return;
       }
 
       if (routeIssue.value?.id !== issueId) {
         routeIssue.value = null;
+        routeIssuePreview.value = false;
+      }
+
+      const preview = takeIssueDetailPreview(issueId);
+      if (preview) {
+        routeIssue.value = issueWithSupportState(preview);
+        routeIssuePreview.value = true;
       }
 
       if (issues && issues.value) {
         const listedIssue = issues.value.find((i) => i.id === issueId);
         if (listedIssue) {
           routeIssue.value = issueWithSupportState(listedIssue);
+          routeIssuePreview.value = true;
         }
       }
 
@@ -175,6 +188,7 @@ export function useIssueRouteDetail(
         const issue = await fetchIssueRecordById(issueId, { cacheScope: detailCacheScope.value });
         if (currentRequestId !== requestId) return;
         routeIssue.value = issueWithSupportState(issue);
+        routeIssuePreview.value = false;
       } catch (error) {
         if (isAbortFailure(error)) return;
         await handleRouteIssueError(currentRequestId);
@@ -199,6 +213,7 @@ export function useIssueRouteDetail(
       });
       if (currentRequestId !== requestId) return;
       routeIssue.value = issueWithSupportState(issue);
+      routeIssuePreview.value = false;
       markContentRealtimeReliable();
     } catch (error) {
       if (isAbortFailure(error)) return;
@@ -274,6 +289,7 @@ export function useIssueRouteDetail(
   return {
     routeIssue,
     routeIssueLoading,
+    routeIssuePreview,
     routeIssueSupportClosed,
     closeRouteIssue,
     prefillRouteIssue,

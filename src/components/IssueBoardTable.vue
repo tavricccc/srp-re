@@ -22,6 +22,7 @@
       :key="issue.id"
       :issue="issue"
       :highlight-query="highlightQuery"
+      @detail-intent="emit('detail-intent', $event)"
       @open-details="emit('open-details', $event)"
       @support-changed="emit('support-changed', $event)"
       @issue-updated="emit('issue-updated', $event)"
@@ -51,6 +52,7 @@ withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
+  'detail-intent': [issue: IssueRecord];
   'support-changed': [payload: { issueId: string; supported: boolean; supportCount: number }];
   'open-details': [payload: { issue: IssueRecord; initialTab: 'details' | 'comments' }];
   'issue-updated': [issue: IssueRecord];

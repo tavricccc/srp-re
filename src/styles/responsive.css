@@ -1,4 +1,5 @@
 .dialog-overlay {
+  --dialog-backdrop-alpha: 0.56;
   box-sizing: border-box;
   height: 100dvh;
   min-height: 0;
@@ -6,15 +7,18 @@
   width: 100dvw;
 }
 
-.dialog-overlay::before {
+.dialog-backdrop {
+  background-color: rgb(var(--color-shadow) / var(--dialog-backdrop-alpha));
+  backdrop-filter: blur(12px) saturate(0.88);
+  -webkit-backdrop-filter: blur(12px) saturate(0.88);
   position: fixed;
-  inset: 0 0 auto;
-  height: env(safe-area-inset-top);
-  background: rgb(33 31 29 / 0.52);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  content: '';
+  inset: 0;
   pointer-events: none;
+  z-index: 0;
+}
+
+.dialog-overlay[data-backdrop='none'] > .dialog-backdrop {
+  display: none;
 }
 
 .dialog-overlay[data-padding='padded'] {
@@ -27,6 +31,8 @@
 .dialog-overlay > [data-dialog-root] {
   max-height: 100%;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .dialog-surface.surface-pad-lg {
@@ -136,14 +142,6 @@
 
   .dialog-overlay:is([data-padding='none'], [data-padding='responsive']) {
     background-color: rgb(var(--dialog-page-background));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
-  .dialog-overlay:is([data-padding='none'], [data-padding='responsive'])::before {
-    background: rgb(var(--dialog-page-background));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
   .dialog-overlay:is([data-padding='none'], [data-padding='responsive']) > [data-dialog-root] {
@@ -182,10 +180,10 @@
 }
 
 .dialog-overlay[data-presentation='sheet'] {
+  --dialog-backdrop-alpha: calc(0.56 - var(--sheet-drag-progress, 0) * 0.38);
   align-items: flex-end;
   justify-content: center;
   padding: 0 max(0.5rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
-  background-color: rgb(var(--color-on-surface) / calc(0.5 - var(--sheet-drag-progress, 0) * 0.32));
 }
 
 .dialog-overlay[data-presentation='sheet'] > [data-dialog-root] {
@@ -285,18 +283,24 @@
   }
 }
 
-.dialog-enter-active {
-  transition: opacity 0.36s var(--motion-ease-enter);
+.dialog-enter-active .dialog-backdrop {
+  transition:
+    opacity 0.24s var(--motion-ease-enter) 0.09s,
+    backdrop-filter 0.24s var(--motion-ease-enter) 0.09s,
+    -webkit-backdrop-filter 0.24s var(--motion-ease-enter) 0.09s;
 }
 
-.dialog-leave-active {
-  transition: opacity 0.22s var(--motion-ease-exit);
+.dialog-leave-active .dialog-backdrop {
+  transition:
+    opacity 0.18s var(--motion-ease-exit),
+    backdrop-filter 0.18s var(--motion-ease-exit),
+    -webkit-backdrop-filter 0.18s var(--motion-ease-exit);
 }
 
 .dialog-enter-active [data-dialog-root] {
   transition:
-    opacity 0.36s var(--motion-ease-enter),
-    transform 0.36s var(--motion-ease-enter);
+    opacity 0.3s var(--motion-ease-enter) 0.06s,
+    transform 0.3s var(--motion-ease-enter) 0.06s;
 }
 
 .dialog-leave-active [data-dialog-root] {
@@ -305,9 +309,11 @@
     transform 0.22s var(--motion-ease-exit);
 }
 
-.dialog-enter-from,
-.dialog-leave-to {
+.dialog-enter-from .dialog-backdrop,
+.dialog-leave-to .dialog-backdrop {
   opacity: 0;
+  backdrop-filter: blur(0) saturate(1);
+  -webkit-backdrop-filter: blur(0) saturate(1);
 }
 
 .dialog-enter-from [data-dialog-root] {

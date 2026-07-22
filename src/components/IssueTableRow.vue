@@ -8,6 +8,7 @@
     :time-label="primaryTimeValueLabel"
     :title="issue.title"
     :long-press-enabled="isAdmin"
+    @intent="emit('detail-intent', issue)"
     @long-press="adminMenuRef?.open()"
     @open="openDetails()"
   >
@@ -114,6 +115,7 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
+  'detail-intent': [issue: IssueRecord];
   'support-changed': [payload: { issueId: string; supported: boolean; supportCount: number }];
   'open-details': [payload: { issue: IssueRecord; initialTab: 'details' | 'comments' }];
   'issue-updated': [issue: IssueRecord];

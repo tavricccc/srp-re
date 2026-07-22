@@ -19,6 +19,7 @@
         :author-uid="authorUid"
         :compact="compact"
         :content="content"
+        :content-loading="contentLoading"
         :context-content="contextContent"
         :context-title="contextTitle"
         :context-tone="contextTone"
@@ -54,6 +55,7 @@ withDefaults(defineProps<{
   commentCount?: number;
   commentsLabel?: string;
   content: string;
+  contentLoading?: boolean;
   contextContent?: string;
   contextTitle?: string;
   contextTone?: 'error' | 'neutral' | 'success';
@@ -73,6 +75,7 @@ withDefaults(defineProps<{
   authorUid: null,
   commentCount: 0,
   commentsLabel: 'comments.title',
+  contentLoading: false,
   contextContent: '',
   contextTitle: '',
   contextTone: 'neutral',

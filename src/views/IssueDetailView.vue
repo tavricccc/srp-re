@@ -2,7 +2,7 @@
   <RoutePageFrame as="div" bottom-safe layout="fill">
     <DetailRouteState
       :allowed="isAllowedUser"
-      :loading="sessionLoading || routeIssueLoading"
+      :loading="sessionLoading || (routeIssueLoading && !routeIssue)"
       loading-label="issue.loadingProposals"
       :problem="sessionLoadingHasProblem"
       :problem-title="sessionProblemTitle"
@@ -13,6 +13,7 @@
       <IssueDetailPagePanel
         v-if="routeIssue"
         :issue="routeIssue"
+        :content-loading="routeIssuePreview"
         :current-user-supported="Boolean(routeIssue.currentUserSupported)"
         :support-count="routeIssue.support_count"
         :support-closed="routeIssueSupportClosed"
@@ -73,6 +74,7 @@ const { show } = useActionFeedback();
 const {
   routeIssue,
   routeIssueLoading,
+  routeIssuePreview,
   routeIssueSupportClosed,
   closeRouteIssue,
   patchRouteIssue,

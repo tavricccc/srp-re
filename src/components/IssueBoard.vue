@@ -56,6 +56,7 @@
           error=""
           :show-author="showAuthorCol"
           :highlight-query="committedSearchQuery"
+          @detail-intent="prefetchIssueDetail"
           @open-details="openIssueDetails"
           @support-changed="handleSupportChanged"
           @issue-updated="handleIssueUpdatedFromList"
@@ -78,11 +79,14 @@ import IssueBoardTable from '@/components/IssueBoardTable.vue';
 import ContentListState from '@/components/ui/organisms/ContentListState.vue';
 import { useIssueBoardData } from '@/composables/useIssueBoardData';
 import { useContentListRuntime } from '@/composables/useContentListRuntime';
+import { useIssueDetailCacheScope } from '@/composables/useIssueDetailCacheScope';
 import { useSession } from '@/composables/useSession';
 import { useActionFeedback } from '@/composables/useActionFeedback';
 import { isIssueCategory, issueIsPrivateToOwner, issueStoresAuthorPrivately } from '@/constants/categories';
 import type { IssueRecord } from '@/types';
 import { useI18n } from '@/i18n';
+import { rememberIssueDetailPreview } from '@/lib/issue-detail-preview';
+import { fetchIssueRecordById } from '@/services/issues';
 
 type IssueDetailsOpenPayload = {
   issue: IssueRecord;
@@ -97,6 +101,7 @@ const { show } = useActionFeedback();
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
+const detailCacheScope = useIssueDetailCacheScope();
 const boardScrollRef = ref<HTMLElement | null>(null);
 const restoreBoardScrollPending = ref(false);
 
@@ -194,6 +199,8 @@ function issueStatusQuery() {
 async function openIssueDetails(payload: IssueDetailsOpenPayload) {
   savedIssueBoardScrollKey = issueBoardScrollKey();
   savedIssueBoardScrollTop = boardScrollRef.value?.scrollTop ?? 0;
+  rememberIssueDetailPreview(payload.issue);
+  prefetchIssueDetail(payload.issue);
   await router.push({
     name: 'issue-detail',
     params: {
@@ -225,6 +232,10 @@ function handleIssueUpdatedFromList(issue: IssueRecord) {
 function openComposerForActiveCategory() {
   if (!isIssueCategory(activeFilter.value)) return;
   void router.push({ name: 'issue-create', params: { filter: activeFilter.value } });
+}
+
+function prefetchIssueDetail(issue: IssueRecord) {
+  void fetchIssueRecordById(issue.id, { cacheScope: detailCacheScope.value }).catch(() => undefined);
 }
 
 watch(

@@ -56,7 +56,7 @@
 - `styles/primitives.css` — viewport、control／card／floating 表面與陰影、list、dropdown、control frame 的單一可復用視覺契約；Tailwind 陰影名稱同樣只使用 `shadow-control`、`shadow-card`、`shadow-floating`
 - `styles/components.css` / `controls.css` — 共用表面、互動狀態、按鈕與欄位；全域點擊回饋使用無位移的輕微放大與 spring-like 回彈，大型表面降低幅度，不叠加縮小、下沉或 inset shadow
 - `styles/navigation.css` — 桌面側欄與手機底部導覽
-- `styles/content.css` / `responsive.css` — 列表、設定、統計、Dialog 與跨裝置覆寫
+- `styles/content.css` / `responsive.css` — 列表、設定、統計、Dialog 與跨裝置覆寫；Dialog 使用獨立全畫面 backdrop，延後漸進壓暗／模糊，避免覆蓋尚未完成的按壓回彈
 - `assets/fonts/` — JetBrains Mono 與 Material Symbols 子集
 - `router/index.ts` / `router/default-route.ts` / `router/route-components.ts` / `router/navigation-hierarchy.ts` — 組合 modules、依啟用功能選擇登入預設頁並阻擋已關閉入口、abort 上一頁、session guard、主要頁面與三領域新增頁 chunk 預載，以及 root／新增／子頁／巢狀詳情深度與通知來源返回
 - `router/authRoutes.ts` / `issueRoutes.ts` / `facilityRoutes.ts` / `announcementRoutes.ts` / `adminRoutes.ts` / `notificationRoutes.ts` / `settingsRoutes.ts`
@@ -83,10 +83,10 @@
 - `organisms/` — 可直接供 route view 或領域元件填入資料／slots 的完整區塊：內容卡集合與 skeleton、列表狀態、詳情殼與 route 狀態、`DialogShell`、Composer、Markdown／表格編輯器、狀態 Dialog、`ViewportFrame` 與 `RoutePageFrame`
 - 依賴方向固定為 `atoms → molecules → organisms`；同層可組合，低層不得反向 import 高層，`check:ui` 會阻止 flat path 與逆向依賴
 - `organisms/ViewportFrame.vue` / `organisms/RoutePageFrame.vue` — AppShell 只用 safe-area-aware padding 提供唯一 viewport gutter，route page 只負責 max-width、全高 flex、垂直 padding與底部導覽安全距離；不以負 margin、bleed 或頁面級 `overflow-x-hidden` 推出／裁切內容。手機 `bottom-safe` 共用 Bottom Tab 實際螢幕底距，使 Detail 的時間／操作列到 Tab 與 Tab 到螢幕底部保持相同留白
-- `organisms/ContentCardCollection.vue` / `ContentCardShell.vue` / `ContentCardSkeleton.vue` — 提案、公告、設備共用的列表狀態、卡片表面、作者／標題／時間／狀態與操作區；支援不取代可見入口的長按／右鍵快捷操作；列表與 load-more 骨架共用無陰影內層的 opacity 進場（`skeleton-card`／`skeleton-enter`），保留卡片陰影並避免 iOS WebKit 卸載殘影，領域元件只填資料及差異 slots
+- `organisms/ContentCardCollection.vue` / `ContentCardShell.vue` / `ContentCardSkeleton.vue` — 提案、公告、設備共用的列表狀態、卡片表面、作者／標題／時間／狀態與操作區；支援不取代可見入口的長按／右鍵快捷操作，並向領域層轉發 pointer／focus intent 供單筆資料預抓；列表與 load-more 骨架共用無陰影內層的 opacity 進場（`skeleton-card`／`skeleton-enter`），保留卡片陰影並避免 iOS WebKit 卸載殘影，領域元件只填資料及差異 slots
 - `organisms/DetailRouteState.vue` / `DetailPageShell.vue` / `SkeletonDetail.vue` — 三領域詳情共用的完整高度鏈、狀態、操作與 responsive panel；手機內容／留言切換只使用短 opacity crossfade，不做左右位移；Detail 本體不再疊加 article/actions 底距，底部時間與操作列只由 RoutePageFrame 的 Bottom Tab safe gap 定位
 - `organisms/EntryComposerShell.vue` / `MarkdownImageEditor.vue` / `VisualTableEditor.vue` — 三領域共用的路由新增頁、鍵盤可視高度、未儲存離頁攔截與 Markdown／表格編輯流程；較小控制留在 molecules
-- `organisms/DialogShell.vue` / `AdaptiveActionMenu.vue` — Dialog overlay、card surface、scroll lock、focus trap、ARIA、返回鍵堆疊與 dismiss/persistent 行為的唯一完整外殼；一般浮層在手機自適應為可向下拖曳的 Bottom Sheet，選單共用同一份 slots 並在桌面使用 Dropdown、手機使用 Sheet；領域元件只填內容與 actions
+- `organisms/DialogShell.vue` / `AdaptiveActionMenu.vue` — Dialog overlay、獨立全螢幕 backdrop、card surface、scroll lock、focus trap、ARIA、返回鍵堆疊與 dismiss/persistent 行為的唯一完整外殼；backdrop 與 surface 分開進場，使按壓回彈先完成再漸進模糊／壓暗；一般浮層在手機自適應為可向下拖曳的 Bottom Sheet，選單共用同一份 slots 並在桌面使用 Dropdown、手機使用 Sheet；領域元件只填內容與 actions
 
 ---
 
@@ -112,7 +112,7 @@
 - 分類：`useCategories` — 動態 catalog、平台功能開關、預設分類與標籤查找的前端單一狀態來源
 - 權限：`useMemberAccessManagement` — 分類／公告 scope 的負責人載入、精確查找、競態防護與單一範圍授權流程
 - 看板：`useIssueBoardData`、`useIssueBuckets`、`useIssueBoardPagination`、`useIssueSearch`、`useUserIssuesData`、`useIssueRouteFilter`、`useDocumentTitle`、`useFilter`
-- 詳情／列：`useIssueRouteDetail`、`useIssueDisplay`、`useIssueSupport`、`useIssueItemController`、`useIssueComposerForm`、`useVoteSupport`、`useDeleteIssue`、`useStatusStyling`
+- 詳情／列：`useIssueRouteDetail`、`useIssueDetailCacheScope`（列表 intent 預抓與詳情讀取共用的權限範圍 key）、`useIssueDisplay`、`useIssueSupport`、`useIssueItemController`、`useIssueComposerForm`、`useVoteSupport`、`useDeleteIssue`、`useStatusStyling`
 - 留言：`useIssueComments`、`useAnnouncementComments`、`useDiscussionComments`（共用 core，依提案／公告領域權限判斷管理操作）
 - 公告：`useAnnouncements`、`useAnnouncementManagement`、`useAnnouncementDetail`（詳情讀取、快取、Realtime、按讚與刪除流程）
 - 設備：`useFacilities`、`useFacilityDetail`、`useFacilityComposerForm`
@@ -128,7 +128,7 @@
 
 - `constants/app.ts` / `constants/input-limits.ts` — Novae 品牌名稱、學校顯示設定與前端輸入長度
 - `constants/categories.ts` / `statuses.ts` — 動態分類衍生規則與提案／設備狀態判斷
-- `lib/` — `firebase`、`google-identity`（lazy GIS Token Client）、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-notice`（列表與詳情共用的結案內容／標題／tone 正規化）、`issue-sort`、`persistent-cache`（IndexedDB 跨 reload 快取）、`press-feedback`（共用 pointer 按壓狀態、12px 捲動取消與放開後固定 160ms 可見時間）、`touch-zoom`（以 capture touchend 座標與 dblclick 雙層攔截雙擊放大，仍保留 pinch zoom）、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
+- `lib/` — `firebase`、`google-identity`（lazy GIS Token Client）、`firebase-messaging`、`firebase-app-check`、`auth-token`、`supabase`、`request`、`request-id`、`route-request`、`reconnect`、`route`、`page-size`、`format`、`search`、`issue-status`、`issue-timeline`、`issue-notice`（列表與詳情共用的結案內容／標題／tone 正規化）、`issue-sort`、`issue-detail-preview`（列表到詳情的一次性同步摘要 seed）、`persistent-cache`（IndexedDB 跨 reload 快取）、`press-feedback`（共用 pointer 按壓狀態、12px 捲動取消與放開後固定 160ms 可見時間）、`touch-zoom`（以 capture touchend 座標與 dblclick 雙層攔截雙擊放大，仍保留 pinch zoom）、`in-app-browser`、`pwa-install`、`caret`、`markdown-*`、`image-processing`
 - `types/index.ts` / `types/categories.ts` / `types/pwa.d.ts` / `types/google-identity.d.ts` — 共通型別、動態分類契約、設備領域型別與 GIS Token Client 型別
 
 ---

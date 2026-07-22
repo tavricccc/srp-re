@@ -141,6 +141,29 @@
     filter: brightness(1.16) saturate(1.06);
   }
 
+  /* A click may synchronously set busy/disabled. Keep the captured press
+     surface alive until press-feedback removes the class after release. */
+  .button-icon.is-pressing,
+  .button-icon-pill.is-pressing,
+  .button-secondary.is-pressing,
+  .button-contextual.is-pressing,
+  .button-toolbar.is-pressing,
+  .segmented-control__button.is-pressing {
+    background-color: rgb(var(--color-secondary-container) / 0.92);
+    box-shadow: var(--shadow-card);
+    filter: brightness(1.08) saturate(1.04);
+  }
+
+  .button-icon-filled.is-pressing,
+  .button-icon-pill-filled.is-pressing,
+  .button-primary.is-pressing,
+  .button-danger.is-pressing,
+  .button-remove-image.is-pressing,
+  .button-danger-icon.is-pressing {
+    box-shadow: var(--shadow-card);
+    filter: brightness(1.16) saturate(1.06);
+  }
+
   .interactive-surface {
     @apply border-0 bg-surface text-ink-800 shadow-control dark:bg-surface dark:text-ink-100;
   }

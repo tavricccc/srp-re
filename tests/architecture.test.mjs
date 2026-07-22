@@ -1712,6 +1712,26 @@ test('public API errors use a generated code-only contract', async () => {
   }
 });
 
+test('proposal detail intent prefetches data and renders an immediate summary preview', async () => {
+  const board = await read('src/components/IssueBoard.vue');
+  const boardTable = await read('src/components/IssueBoardTable.vue');
+  const row = await read('src/components/IssueTableRow.vue');
+  const card = await read('src/components/ui/organisms/ContentCardShell.vue');
+  const detail = await read('src/composables/useIssueRouteDetail.ts');
+  const detailView = await read('src/views/IssueDetailView.vue');
+  const preview = await read('src/lib/issue-detail-preview.ts');
+  const backendRead = await read('supabase/functions/backendAction/issue-read.ts');
+
+  assert.match(card, /@focusin="emit\('intent'\)"[\s\S]*@pointerenter="emit\('intent'\)"/u);
+  assert.match(row, /@intent="emit\('detail-intent', issue\)"/u);
+  assert.match(boardTable, /@detail-intent="emit\('detail-intent', \$event\)"/u);
+  assert.match(board, /@detail-intent="prefetchIssueDetail"[\s\S]*rememberIssueDetailPreview\(payload\.issue\)[\s\S]*fetchIssueRecordById\(issue\.id/u);
+  assert.match(preview, /rememberIssueDetailPreview[\s\S]*takeIssueDetailPreview/u);
+  assert.match(detail, /takeIssueDetailPreview\(issueId\)[\s\S]*routeIssuePreview\.value = true[\s\S]*fetchIssueRecordById/u);
+  assert.match(detailView, /routeIssueLoading && !routeIssue[\s\S]*:content-loading="routeIssuePreview"/u);
+  assert.match(backendRead, /Promise\.all\(\[[\s\S]*selectIssueCategory[\s\S]*issueReadPolicyParams[\s\S]*actor_is_admin: actorCanManage/u);
+});
+
 test('navigation and contextual creation share the same responsive information architecture', async () => {
   const appShell = await read('src/components/AppShell.vue');
   const mobileHeader = await read('src/components/app-shell/AppMobileHeader.vue');
@@ -1900,7 +1920,9 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   const contentCard = await read('src/components/ui/organisms/ContentCardShell.vue');
   const contentCardCollection = await read('src/components/ui/organisms/ContentCardCollection.vue');
   const tableGridPicker = await read('src/components/ui/molecules/TableGridPicker.vue');
+  const dialogOverlay = await read('src/components/ui/molecules/DialogOverlay.vue');
   const dialogShell = await read('src/components/ui/organisms/DialogShell.vue');
+  const responsiveStyles = await read('src/styles/responsive.css');
   const confirmDialog = await read('src/components/ConfirmDialog.vue');
   const entryComposer = await read('src/components/ui/organisms/EntryComposerShell.vue');
   const markdownImageEditor = await read('src/components/ui/organisms/MarkdownImageEditor.vue');
@@ -2024,6 +2046,9 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   }
   assert.match(tableGridPicker, /event\.key === ' '/u);
   assert.match(dialogShell, /<DialogOverlay[\s\S]*ref="dialogRef"[\s\S]*useBodyScrollLock[\s\S]*useDialogFocus/u);
+  assert.match(dialogOverlay, /:data-backdrop="isFullScreen \? 'none' : 'dimmed'"[\s\S]*class="dialog-backdrop"/u);
+  assert.match(responsiveStyles, /\.dialog-backdrop \{[\s\S]*blur\(12px\) saturate\(0\.88\)[\s\S]*position: fixed;[\s\S]*inset: 0;/u);
+  assert.match(responsiveStyles, /\.dialog-enter-active \.dialog-backdrop \{[\s\S]*0\.09s/u);
   assert.match(confirmDialog, /<DialogShell[\s\S]*described-by="confirm-dialog-message"/u);
   assert.match(confirmDialog, /<DialogActionRow>[\s\S]*<AppButton/u);
   assert.match(confirmDialog, /<DialogHeading[\s\S]*description-id="confirm-dialog-message"/u);

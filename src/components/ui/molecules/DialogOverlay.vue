@@ -3,12 +3,14 @@
     <Transition :name="transitionName" appear>
       <div
         v-if="open"
-        class="dialog-overlay fixed inset-0 flex items-center justify-center bg-ink-900/50"
-        :class="[zIndexClass, overlayClass, { 'backdrop-blur-sm': !isFullScreen }]"
+        class="dialog-overlay fixed inset-0 flex items-center justify-center"
+        :class="[zIndexClass, overlayClass]"
+        :data-backdrop="isFullScreen ? 'none' : 'dimmed'"
         :data-padding="paddingMode"
         :data-presentation="presentation"
         @click.self="handleOverlayClick"
       >
+        <div class="dialog-backdrop" aria-hidden="true"></div>
         <slot />
       </div>
     </Transition>

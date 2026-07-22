@@ -5,6 +5,8 @@
       data-list-row-trigger
       @click="handleCardClick"
       @contextmenu="handleContextMenu"
+      @focusin="emit('intent')"
+      @pointerenter="emit('intent')"
       @pointerdown="handlePointerDown"
       @pointermove="onPointerMove"
       @pointerup="cancel"
@@ -96,6 +98,7 @@ const authorName = computed(() => (
 ));
 
 const emit = defineEmits<{
+  intent: [];
   longPress: [];
   open: [];
 }>();
