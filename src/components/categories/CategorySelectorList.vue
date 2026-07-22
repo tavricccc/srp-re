@@ -28,10 +28,7 @@
             {{ category.id || t('adminCenter.notSavedYet') }}
           </span>
         </span>
-        <div v-if="showStatus" class="flex shrink-0 flex-col items-end gap-1">
-          <span class="text-[11px] font-semibold" :class="category.isActive ? 'text-success' : 'text-ink-400'">
-            {{ t(category.isActive ? 'categoryAdmin.active' : 'categoryAdmin.archived') }}
-          </span>
+        <div v-if="showDefault" class="flex shrink-0 flex-col items-end gap-1">
           <span
             v-if="category.isDefault"
             class="rounded-full bg-primary-50 px-1.5 py-0.5 text-[9px] font-bold text-primary-700 dark:bg-primary-950/30 dark:text-primary-400"
@@ -49,16 +46,15 @@ import { useI18n } from '@/i18n';
 
 interface CategorySelectorItem {
   id: string;
-  isActive?: boolean;
   isDefault?: boolean;
   label: string;
 }
 
 withDefaults(defineProps<{
   categories: CategorySelectorItem[];
-  showStatus?: boolean;
+  showDefault?: boolean;
 }>(), {
-  showStatus: false,
+  showDefault: false,
 });
 
 const selectedIndex = defineModel<number>('selectedIndex', { required: true });

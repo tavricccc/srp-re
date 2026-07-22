@@ -293,7 +293,6 @@ const form = reactive({
   supportDeadlineDays: 30 as number | null,
   responseDeadlineDays: 14 as number | null,
   commentsEnabled: true,
-  isActive: true,
   isDefault: false,
 });
 
@@ -431,7 +430,6 @@ async function submit() {
         supportDeadlineDays: form.supportEnabled ? Number(form.supportDeadlineDays) : null,
         responseDeadlineDays: form.responseDeadlineDays ? Number(form.responseDeadlineDays) : null,
         commentsEnabled: form.commentsEnabled,
-        isActive: form.isActive,
         isDefault: form.isDefault,
         sortOrder: props.sortOrder,
       });
@@ -439,7 +437,6 @@ async function submit() {
       result = await saveFacilityCategory({
         id: form.id,
         label: form.label,
-        isActive: form.isActive,
         isDefault: form.isDefault,
         sortOrder: props.sortOrder,
       });

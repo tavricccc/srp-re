@@ -1,5 +1,5 @@
 const messages = {
-  'apiError.invalidFacilityCategory': 'This facility-report category does not exist or has been archived.',
+  'apiError.invalidFacilityCategory': 'This facility-report category does not exist.',
   'apiError.commentsDisabled': 'New comments are closed for this proposal. Existing comments remain available.',
   'apiError.immutableCategoryPolicy': 'Read access and author visibility cannot be changed after a category is created.',
   'apiError.setupAlreadyCompleted': 'Initial setup is complete. Use category management to make changes.',

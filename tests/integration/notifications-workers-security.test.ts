@@ -164,7 +164,6 @@ integrationTest("new proposal and facility notifications are personal to categor
       authorVisible: true,
       commentsEnabled: true,
       id: issueCategoryId,
-      isActive: true,
       isDefault: false,
       label: "通知測試提案",
       readAccess: "school",
@@ -179,7 +178,6 @@ integrationTest("new proposal and facility notifications are personal to categor
   await callAction("saveFacilityCategory", {
     category: {
       id: facilityCategoryId,
-      isActive: true,
       isDefault: false,
       label: "通知測試設備",
       sortOrder: 20_000,

@@ -10,7 +10,6 @@ export interface RuntimeIssueCategory {
   authorVisible: boolean;
   commentsEnabled: boolean;
   id: string;
-  isActive: boolean;
   isDefault: boolean;
   label: string;
   readAccess: "owner-admin" | "reviewed-school" | "school";
@@ -23,7 +22,6 @@ export interface RuntimeIssueCategory {
 
 export interface RuntimeFacilityCategory {
   id: string;
-  isActive: boolean;
   isDefault: boolean;
   label: string;
   sortOrder: number;
@@ -86,7 +84,6 @@ function issueCategoryResponse(row: Record<string, unknown>): RuntimeIssueCatego
     authorVisible: row.author_visible === true,
     commentsEnabled: row.comments_enabled !== false,
     id: asString(row.id),
-    isActive: row.is_active !== false,
     isDefault: row.is_default === true,
     label: asString(row.label),
     readAccess: READ_ACCESS_VALUES.has(asString(row.read_access))
@@ -103,7 +100,6 @@ function issueCategoryResponse(row: Record<string, unknown>): RuntimeIssueCatego
 function facilityCategoryResponse(row: Record<string, unknown>): RuntimeFacilityCategory {
   return {
     id: asString(row.id),
-    isActive: row.is_active !== false,
     isDefault: row.is_default === true,
     label: asString(row.label),
     sortOrder: asNumber(row.sort_order, 0),
@@ -205,7 +201,7 @@ async function saveIssueCategory(payload: JsonRecord, auth: AuthContext, supabas
     comments_enabled: input.commentsEnabled,
     created_by: existing ? existing.created_by : auth.uid,
     id: input.id,
-    is_active: existing ? asBoolean(requested.isActive, existing.is_active !== false) : true,
+    is_active: true,
     is_default: asBoolean(requested.isDefault, existing?.is_default === true),
     label: input.label,
     read_access: input.readAccess,
@@ -238,7 +234,7 @@ async function saveFacilityCategory(payload: JsonRecord, auth: AuthContext, supa
   const row = {
     created_by: existing ? existing.created_by : auth.uid,
     id: input.id,
-    is_active: existing ? asBoolean(requested.isActive, existing.is_active !== false) : true,
+    is_active: true,
     is_default: asBoolean(requested.isDefault, existing?.is_default === true),
     label: input.label,
     sort_order: input.sortOrder,
@@ -276,7 +272,6 @@ export async function handleCategoryAction(
       const requested = asRecord(value);
       return {
         ...issueCategoryInput(requested, index),
-        isActive: asBoolean(requested.isActive, true),
         isDefault: asBoolean(requested.isDefault),
       };
     });
@@ -284,7 +279,6 @@ export async function handleCategoryAction(
       const requested = asRecord(value);
       return {
         ...facilityCategoryInput(requested, index),
-        isActive: asBoolean(requested.isActive, true),
         isDefault: asBoolean(requested.isDefault),
       };
     });
@@ -345,19 +339,31 @@ export async function handleCategoryAction(
     const issuesEnabled = asBoolean(payload.issuesEnabled, true);
     const facilitiesEnabled = asBoolean(payload.facilitiesEnabled, true);
     const issueCategories = issuesEnabled
-      ? rawIssueCategories.map((value, index) => issueCategoryInput(value, index))
+      ? rawIssueCategories.map((value, index) => ({
+        ...issueCategoryInput(value, index),
+        isDefault: asBoolean(asRecord(value).isDefault, index === 0),
+      }))
       : [];
     const facilityCategories = facilitiesEnabled
-      ? rawFacilityCategories.map((value, index) => facilityCategoryInput(value, index))
+      ? rawFacilityCategories.map((value, index) => ({
+        ...facilityCategoryInput(value, index),
+        isDefault: asBoolean(asRecord(value).isDefault, index === 0),
+      }))
       : [];
     if ((issuesEnabled && issueCategories.length < 1) || (facilitiesEnabled && facilityCategories.length < 1)) {
       throw new Error("validation-required");
     }
+    assertCategoryCollection(issueCategories);
+    assertCategoryCollection(facilityCategories);
+    const defaultFirst = <T extends { isDefault: boolean }>(categories: T[]) => [
+      ...categories.filter((category) => category.isDefault),
+      ...categories.filter((category) => !category.isDefault),
+    ];
     const { data, error } = await supabase.schema("app_api").rpc("backend_complete_initial_setup", {
       actor_uid: auth.uid,
       facilities_enabled: facilitiesEnabled,
-      issue_categories: issueCategories,
-      facility_categories: facilityCategories,
+      issue_categories: defaultFirst(issueCategories),
+      facility_categories: defaultFirst(facilityCategories),
       issues_enabled: issuesEnabled,
     });
     if (error) throw error;

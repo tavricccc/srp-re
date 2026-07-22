@@ -16,8 +16,6 @@ const messages = {
   'adminCenter.privacyRule': '隱私規則',
   'adminCenter.categoryListCount': '共 {count} 個分類',
   'adminCenter.notSavedYet': '尚未儲存',
-  'adminCenter.acceptNewRecords': '接受新案件',
-  'adminCenter.acceptNewRecordsHelp': '關閉後會封存分類；既有案件仍可查看與處理。',
   'adminCenter.defaultCategoryHelp': '新增案件時優先選取此分類。每種案件類型僅能有一個預設分類。',
   'adminCenter.saveCategoryHelp': '功能開關與分類設定會在儲存後一併套用。',
   'adminCenter.featureDisabledDraftHelp': '此功能目前設為關閉；分類設定已暫時鎖定，儲存所有變更後才會套用到前台。',

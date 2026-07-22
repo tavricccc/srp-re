@@ -21,7 +21,7 @@
         <CategorySelectorList
           v-model:selected-index="selectedIndex"
           :categories="model"
-          show-status
+          show-default
         />
 
         <div v-if="selectedCategory" class="min-w-0 space-y-2">
@@ -32,7 +32,7 @@
             :id-locked="Boolean(selectedCategory.id && originalIds.has(selectedCategory.id))"
             :privacy-locked="kind === 'issue' && Boolean(selectedCategory.id && originalIds.has(selectedCategory.id))"
             :removable="false"
-            management-controls
+            default-control
             :deletable="Boolean(onDelete)"
             :deleting="deletingIndex === selectedIndex"
             @delete="confirmDelete(selectedIndex)"

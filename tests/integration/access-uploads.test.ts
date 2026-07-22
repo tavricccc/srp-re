@@ -3,6 +3,7 @@ import {
   asRecord,
   callAction,
   expectActionError,
+  insertReadyUpload,
   integrationTest,
   refreshActor,
   requestId,
@@ -402,7 +403,7 @@ integrationTest("runtime category setup and management enforce platform permissi
 
   const savedFacility = asRecord(await callAction("saveFacilityCategory", {
     category: {
-      id: "general", isActive: true, isDefault: true, label: "一般設備-修改", sortOrder: 0,
+      id: "general", isDefault: true, label: "一般設備-修改", sortOrder: 0,
     },
     requestId: requestId("save-facility-category"),
   }, admin.auth));
@@ -494,18 +495,21 @@ integrationTest("category deletion removes category and all associated resources
       label: "臨時分類",
       readAccess: "school",
       authorVisible: true,
-      supportEnabled: false,
-      supportGoal: null,
-      supportDeadlineDays: null,
+      supportEnabled: true,
+      supportGoal: 10,
+      supportDeadlineDays: 30,
       responseDeadlineDays: null,
       commentsEnabled: true,
-      isActive: true,
       isDefault: false,
       sortOrder: 99,
     },
     requestId: requestId("create-temp-category"),
   };
   await callAction("saveIssueCategory", tempCategoryPayload, admin.auth);
+  const { error: archiveAttemptError } = await supabase.schema("app_private").from("issue_categories")
+    .update({ is_active: false }).eq("id", "temp-cat-to-delete");
+  assert.ok(archiveAttemptError, "database must reject attempts to archive a retained category");
+  assert.equal((await tableRow("issue_categories", "id", "temp-cat-to-delete"))?.is_active, true);
 
   // 3. User tries to delete temporary category - expect permission-denied
   await expectActionError("permission-denied", () => callAction("deleteCategory", {
@@ -513,9 +517,10 @@ integrationTest("category deletion removes category and all associated resources
   }, user.auth));
 
   // 4. Create an issue in temporary category to verify cascade deletion
+  const upload = await insertReadyUpload(user.auth.uid, "category-hard-delete");
   const issuePayload = {
     title: "測試提案案件",
-    content: "這是一個測試提案",
+    content: `這是一個測試提案\n\n![測試圖片](srp-upload://${upload.id})`,
     category: "temp-cat-to-delete",
     authorName: "測試者",
     requestId: requestId("create-issue-to-delete"),
@@ -523,6 +528,34 @@ integrationTest("category deletion removes category and all associated resources
   const createdIssue = asRecord(await callAction("createIssue", issuePayload, user.auth));
   const issueId = asRecord(createdIssue.issue).id;
   assert.ok(issueId);
+
+  const commentResult = asRecord(await callAction("createComment", {
+    content: "分類刪除時也必須移除此留言",
+    issueId: String(issueId),
+    requestId: requestId("create-comment-to-delete"),
+  }, user.auth));
+  const commentId = String(asRecord(commentResult.comment).id);
+  const supporter = await seedActor("delete-cat-supporter");
+  await callAction("toggleSupport", {
+    issueId: String(issueId),
+    requestId: requestId("create-support-to-delete"),
+  }, supporter.auth);
+  const notificationId = crypto.randomUUID();
+  const { error: notificationError } = await supabase.schema("app_private").from("notifications").insert({
+    id: notificationId,
+    recipient_uid: user.auth.uid,
+    source: "user",
+    target_id: String(issueId),
+    target_type: "issue",
+    title: "分類刪除測試通知",
+    type: "issue.updated",
+  });
+  if (notificationError) throw notificationError;
+
+  assert.ok(await tableRow("comments", "id", commentId));
+  assert.ok(await tableRow("supports", "issue_id", String(issueId)));
+  assert.ok(await tableRow("uploads", "id", upload.id));
+  assert.ok(await tableRow("notifications", "id", notificationId));
 
   // 5. Admin deletes temporary category
   const res = asRecord(await callAction("deleteCategory", {
@@ -537,6 +570,11 @@ integrationTest("category deletion removes category and all associated resources
 
   // 7. Verify issue is cascade deleted
   assert.equal(await tableRow("issues", "id", String(issueId)), null);
+  assert.equal(await tableRow("comments", "id", commentId), null);
+  assert.equal(await tableRow("supports", "issue_id", String(issueId)), null);
+  assert.equal(await tableRow("uploads", "id", upload.id), null);
+  assert.equal(await tableRow("notifications", "id", notificationId), null);
+  assert.ok(await tableRow("deletion_jobs", "cloudinary_public_id", upload.cloudinaryPublicId));
 
   // 8. Verify outbox event is queued
   const { data: outboxRows, error: outboxError } = await supabase
@@ -562,4 +600,56 @@ integrationTest("category deletion removes category and all associated resources
   if (deletionAuditError) throw deletionAuditError;
   assert.equal(deletionAudit.length, 1);
   assert.equal(deletionAudit[0]?.actor_uid, admin.auth.uid);
+
+  await callAction("saveFacilityCategory", {
+    category: {
+      id: "temp-facility-to-delete",
+      isDefault: false,
+      label: "臨時設備分類",
+      sortOrder: 99,
+    },
+    requestId: requestId("create-temp-facility-category"),
+  }, admin.auth);
+  const facilityUpload = await insertReadyUpload(user.auth.uid, "facility-category-hard-delete");
+  const facilityResult = asRecord(await callAction("createFacility", {
+    categoryId: "temp-facility-to-delete",
+    content: `設備分類刪除測試\n\n![測試圖片](srp-upload://${facilityUpload.id})`,
+    location: "測試位置",
+    requestId: requestId("create-facility-to-delete"),
+    title: "測試設備案件",
+  }, user.auth));
+  const facilityId = String(asRecord(facilityResult.facility).id);
+  await callAction("toggleFacilityAffected", {
+    facilityId,
+    requestId: requestId("create-facility-affected-to-delete"),
+  }, supporter.auth);
+  const facilityNotificationId = crypto.randomUUID();
+  const { error: facilityNotificationError } = await supabase.schema("app_private").from("notifications").insert({
+    id: facilityNotificationId,
+    recipient_uid: user.auth.uid,
+    source: "user",
+    target_id: facilityId,
+    target_type: "facility",
+    title: "設備分類刪除測試通知",
+    type: "facility.updated",
+  });
+  if (facilityNotificationError) throw facilityNotificationError;
+  assert.ok(await tableRow("facility_report_affected_users", "facility_id", facilityId));
+
+  const facilityDelete = asRecord(await callAction("deleteCategory", {
+    kind: "facility",
+    id: "temp-facility-to-delete",
+    requestId: requestId("del-facility-success"),
+  }, admin.auth));
+  assert.equal(facilityDelete.success, true);
+  assert.equal(await tableRow("facility_reports", "id", facilityId), null);
+  assert.equal(await tableRow("facility_report_affected_users", "facility_id", facilityId), null);
+  assert.equal(await tableRow("uploads", "id", facilityUpload.id), null);
+  assert.equal(await tableRow("notifications", "id", facilityNotificationId), null);
+  assert.ok(await tableRow("deletion_jobs", "cloudinary_public_id", facilityUpload.cloudinaryPublicId));
+
+  const { data: facilityOutbox, error: facilityOutboxError } = await supabase.schema("app_private")
+    .from("outbox_events").select("event_type").eq("target_id", facilityId).eq("event_type", "facility.deleted");
+  if (facilityOutboxError) throw facilityOutboxError;
+  assert.equal(facilityOutbox.length, 1);
 });

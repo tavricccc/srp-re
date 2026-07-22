@@ -76,12 +76,12 @@ export function findFacilityCategory(categoryId: string | null | undefined) {
 }
 
 export function getDefaultIssueCategoryId() {
-  const active = issueCategories.value.filter((category) => category.isActive);
+  const active = issueCategories.value;
   return active.find((category) => category.isDefault)?.id ?? active[0]?.id ?? '';
 }
 
 export function getDefaultFacilityCategoryId() {
-  const active = facilityCategories.value.filter((category) => category.isActive);
+  const active = facilityCategories.value;
   return active.find((category) => category.isDefault)?.id ?? active[0]?.id ?? '';
 }
 
@@ -102,8 +102,8 @@ export function useCategories() {
     issuesEnabled: computed(() => features.value.issuesEnabled),
     issueCategories: readonly(issueCategories),
     loading: readonly(loading),
-    activeFacilityCategories: computed(() => facilityCategories.value.filter((category) => category.isActive)),
-    activeIssueCategories: computed(() => issueCategories.value.filter((category) => category.isActive)),
+    activeFacilityCategories: computed(() => facilityCategories.value),
+    activeIssueCategories: computed(() => issueCategories.value),
     refresh: () => ensureCategoryCatalog(true),
   };
 }

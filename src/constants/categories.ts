@@ -15,7 +15,7 @@ export function getIssueFilterOptions(): CategoryOption<IssueFilter>[] {
   for (const category of getIssueCategorySnapshot()) {
     if (category && !seen.has(category.id)) categories.push(category);
   }
-  return categories.filter((category) => category.isActive).map((category) => ({
+  return categories.map((category) => ({
     value: category.id,
     label: category.label,
   }));
@@ -26,7 +26,7 @@ export function getDefaultIssueRouteFilter(): IssueRouteFilter {
 }
 
 export function isIssueCategory(value: unknown): value is IssueCategory {
-  return typeof value === 'string' && findIssueCategory(value)?.isActive === true;
+  return typeof value === 'string' && Boolean(findIssueCategory(value));
 }
 
 export function isKnownIssueCategory(value: unknown): value is IssueCategory {

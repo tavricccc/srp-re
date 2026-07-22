@@ -1572,24 +1572,25 @@ test('initial setup reuses the settings-style selected category editor', async (
   const categorySelectorList = await read('src/components/categories/CategorySelectorList.vue');
   const categoryEditor = await read('src/components/categories/CategoryEditorCard.vue');
 
-  assert.match(setup, /<PlatformFeatureToggle[\s\S]*<SelectionOptionButton[\s\S]*<SetupCategorySection/u);
-  assert.doesNotMatch(setup, /PillSegmentedControl/u);
+  assert.match(setup, /<PillSegmentedControl[\s\S]*layout="equal"[\s\S]*<SetupCategorySection/u);
+  assert.match(setup, /<SetupCategorySection[\s\S]*#header-actions[\s\S]*<PlatformFeatureToggle/u);
   assert.match(setup, /:disabled="saving \|\| !isSetupValid"/u);
   assert.match(setup, /!issuesEnabled\.value \|\| issueSetupValid\.value/u);
   assert.match(setup, /!facilitiesEnabled\.value \|\| facilitySetupValid\.value/u);
   assert.match(setup, /issueCategories: issuesEnabled\.value \? issueCategories\.value : \[\]/u);
-  assert.doesNotMatch(setup, /categoryAdmin\.(?:managerAssignment|skippedForNow|managerSkipHelp)/u);
+  assert.match(setup, /<ConfirmDialog[\s\S]*setupManagersSkippedTitle[\s\S]*setupManagersSkippedDescription[\s\S]*skipManagersAndComplete/u);
   assert.doesNotMatch(setup, /v-for="\(category, index\) in (?:issue|facility)Categories"/u);
   assert.match(setupCategorySection, /lg:grid-cols-\[15rem_minmax\(0,1fr\)\]/u);
   assert.match(setupCategorySection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"/u);
-  assert.match(categoryManagementSection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"[\s\S]*show-status/u);
+  assert.match(categoryManagementSection, /<CategorySelectorList[\s\S]*v-model:selected-index="selectedIndex"[\s\S]*:categories="model"[\s\S]*show-default/u);
   assert.match(categoryManagementSection, /<fieldset[\s\S]*:disabled="disabled"[\s\S]*<CategoryEditorCard/u);
   assert.match(categorySelectorList, /v-for="\(category, index\) in categories"[\s\S]*content-trigger/u);
   assert.match(categorySelectorList, /overflow-x-auto[\s\S]*lg:overflow-visible/u);
   assert.match(categorySelectorList, /:aria-current="selectedIndex === index \? 'true' : undefined"/u);
   assert.match(setupCategorySection, /<CategoryEditorCard[\s\S]*flat/u);
   assert.match(categoryEditor, /:is="flat \? 'article' : SurfacePanel"/u);
-  assert.match(categoryEditor, /v-if="managementDraft"[\s\S]*role="switch"[\s\S]*categoryAdmin\.defaultCategory[\s\S]*<SwitchIndicator/u);
+  assert.match(categoryEditor, /v-if="defaultDraft"[\s\S]*role="switch"[\s\S]*categoryAdmin\.defaultCategory[\s\S]*<SwitchIndicator/u);
+  assert.doesNotMatch(categoryEditor, /acceptNewRecords|isActive|archived/u);
   assert.match(categoryEditor, /@click="makeDefault"[\s\S]*emit\('makeDefault'\)/u);
   assert.match(setup, /continueToPlatform[\s\S]*router\.replace\(getDefaultAuthenticatedRoute\(\)\)/u);
   assert.match(setup, /if \(setupCompleted\.value\) await continueToPlatform\(\)/u);
@@ -1605,6 +1606,7 @@ test('platform feature switches persist atomically and remain configurable after
   const categoryAction = await read('supabase/functions/backendAction/categories.ts');
   const categoryManagement = await read('src/components/admin/CategoryWorkflowPanel.vue');
   const categoryState = await read('src/composables/useCategories.ts');
+  const noArchivingMigration = await read('supabase/migrations/202607220002_remove_category_archiving.sql');
 
   assert.match(migration, /issues_enabled boolean not null default true/u);
   assert.match(migration, /facilities_enabled boolean not null default true/u);
@@ -1617,6 +1619,13 @@ test('platform feature switches persist atomically and remain configurable after
   assert.match(categoryManagement, /SkeletonBlock[\s\S]*skeleton-enter|SkeletonBlock[\s\S]*aria-busy/u);
   assert.match(atomicManagementMigration, /backend_save_category_management[\s\S]*for update[\s\S]*backend_update_platform_features/u);
   assert.match(categoryState, /const loaded = ref\(false\)[\s\S]*if \(!force && loaded\.value\) return/u);
+  assert.match(noArchivingMigration, /update app_private\.issue_categories set is_active = true/u);
+  assert.match(noArchivingMigration, /issue_categories_always_active_check check \(is_active\)/u);
+  assert.match(noArchivingMigration, /facility_categories_always_active_check check \(is_active\)/u);
+  assert.match(noArchivingMigration, /backend_save_category_management[\s\S]*comments_enabled=excluded\.comments_enabled,is_active=true/u);
+  assert.doesNotMatch(noArchivingMigration, /category->>'isActive'/u);
+  assert.match(categoryAction, /saveIssueCategory[\s\S]*is_active: true/u);
+  assert.match(categoryAction, /saveFacilityCategory[\s\S]*is_active: true/u);
 });
 
 test('public API errors use a generated code-only contract', async () => {

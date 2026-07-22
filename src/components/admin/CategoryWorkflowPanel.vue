@@ -153,14 +153,14 @@ function newIssue(index: number): IssueCategoryConfig {
   return {
     id: '', label: '', readAccess: 'school', authorVisible: true,
     supportEnabled: false, supportGoal: null, supportDeadlineDays: null,
-    responseDeadlineDays: null, commentsEnabled: true, isActive: true,
+    responseDeadlineDays: null, commentsEnabled: true,
     isDefault: issueCategories.value.length === 0, sortOrder: index,
   };
 }
 
 function newFacility(index: number): FacilityCategoryConfig {
   return {
-    id: '', label: '', isActive: true,
+    id: '', label: '',
     isDefault: facilityCategories.value.length === 0, sortOrder: index,
   };
 }

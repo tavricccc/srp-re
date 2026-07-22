@@ -20,7 +20,7 @@ const route = useRoute();
 const router = useRouter();
 const categoryId = computed(() => {
   const value = Array.isArray(route.query.category) ? route.query.category[0] : route.query.category;
-  return typeof value === 'string' && findFacilityCategory(value)?.isActive
+  return typeof value === 'string' && Boolean(findFacilityCategory(value))
     ? value
     : getDefaultFacilityCategoryId();
 });

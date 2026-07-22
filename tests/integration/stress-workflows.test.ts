@@ -115,7 +115,6 @@ integrationTest(`dynamic full workflow stress matrix (scale ${stressScale})`, as
       authorVisible: true,
       commentsEnabled: true,
       id: issueCategoryId,
-      isActive: true,
       isDefault: false,
       label: `壓測提案 ${runId}`,
       readAccess: "school",
@@ -130,7 +129,6 @@ integrationTest(`dynamic full workflow stress matrix (scale ${stressScale})`, as
   await callAction("saveFacilityCategory", {
     category: {
       id: facilityCategoryId,
-      isActive: true,
       isDefault: false,
       label: `壓測設備 ${runId}`,
       sortOrder: 10_000,
@@ -139,8 +137,8 @@ integrationTest(`dynamic full workflow stress matrix (scale ${stressScale})`, as
   }, admins[1].auth);
 
   const management = asRecord(await callAction("getCategoryManagement", {}, admins[0].auth));
-  const issueCategories = records(management.issueCategories).filter((category) => category.isActive !== false);
-  const facilityCategories = records(management.facilityCategories).filter((category) => category.isActive !== false);
+  const issueCategories = records(management.issueCategories);
+  const facilityCategories = records(management.facilityCategories);
   const issueIds = issueCategories.map((category) => String(category.id));
   const facilityIds = facilityCategories.map((category) => String(category.id));
   assert.ok(issueIds.includes(issueCategoryId));

@@ -101,7 +101,7 @@ const router = useRouter();
 const { t } = useI18n();
 const { activeFacilityCategories } = useCategories();
 const routeCategory = Array.isArray(route.query.category) ? route.query.category[0] : route.query.category;
-const category = ref(findFacilityCategory(routeCategory)?.isActive ? routeCategory as string : getDefaultFacilityCategoryId());
+const category = ref(findFacilityCategory(routeCategory) ? routeCategory as string : getDefaultFacilityCategoryId());
 const activeCategoryLabel = computed(() => findFacilityCategory(category.value)?.label ?? t('facility.facility'));
 const categoryOptions = computed(() => activeFacilityCategories.value.map((entry) => ({
   label: entry.label,
@@ -166,7 +166,7 @@ const emptyDescription = computed(() => committedQuery.value.trim()
   : t('facility.noFacilityReportsInStatus', { status: t(bucket.value === 'closed' ? 'facility.caseClosed' : 'facility.processing') }));
 
 watch(category, (value) => {
-  if (!findFacilityCategory(value)?.isActive) {
+  if (!findFacilityCategory(value)) {
     category.value = getDefaultFacilityCategoryId();
     return;
   }
@@ -176,7 +176,7 @@ watch(category, (value) => {
 });
 watch(() => route.query.category, (value) => {
   const requested = Array.isArray(value) ? value[0] : value;
-  if (requested && findFacilityCategory(requested)?.isActive && requested !== category.value) {
+  if (requested && findFacilityCategory(requested) && requested !== category.value) {
     category.value = requested;
   }
 });

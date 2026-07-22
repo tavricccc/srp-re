@@ -2,28 +2,41 @@
   <section class="space-y-3">
     <SectionHeader :title="title" :description="description">
       <template #trailing>
-        <AppButton type="button" variant="secondary" @click="emit('add')">
-          {{ t('categoryAdmin.addCategory') }}
-        </AppButton>
+        <div class="flex shrink-0 flex-wrap items-center justify-end gap-3">
+          <slot name="header-actions" />
+          <AppButton type="button" variant="secondary" :disabled="disabled" @click="emit('add')">
+            {{ t('categoryAdmin.addCategory') }}
+          </AppButton>
+        </div>
       </template>
     </SectionHeader>
 
-    <div class="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <CategorySelectorList
-        v-model:selected-index="selectedIndex"
-        :categories="model"
-      />
+    <fieldset
+      class="min-w-0 border-0 p-0 transition-opacity"
+      :class="disabled ? 'opacity-45' : ''"
+      :disabled="disabled"
+      :aria-disabled="disabled || undefined"
+    >
+      <div class="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <CategorySelectorList
+          v-model:selected-index="selectedIndex"
+          :categories="model"
+          show-default
+        />
 
-      <CategoryEditorCard
-        v-if="selectedCategory"
-        v-model="model[selectedIndex]"
-        flat
-        :field-id="`setup-${kind}-${selectedIndex}`"
-        :kind="kind"
-        :removable="model.length > 1"
-        @remove="removeSelected"
-      />
-    </div>
+        <CategoryEditorCard
+          v-if="selectedCategory"
+          v-model="model[selectedIndex]"
+          flat
+          default-control
+          :field-id="`setup-${kind}-${selectedIndex}`"
+          :kind="kind"
+          :removable="model.length > 1"
+          @make-default="makeDefault"
+          @remove="removeSelected"
+        />
+      </div>
+    </fieldset>
   </section>
 </template>
 
@@ -38,6 +51,7 @@ import type { FacilityCategoryDraft, IssueCategoryDraft } from '@/types/categori
 
 defineProps<{
   description: string;
+  disabled?: boolean;
   kind: 'facility' | 'issue';
   title: string;
 }>();
@@ -53,6 +67,12 @@ watch(() => model.value.length, (length) => {
 
 function removeSelected() {
   if (model.value.length <= 1) return;
+  const removedWasDefault = model.value[selectedIndex.value]?.isDefault === true;
   model.value.splice(selectedIndex.value, 1);
+  if (removedWasDefault && model.value.length > 0) makeDefault(0);
+}
+
+function makeDefault(index = selectedIndex.value) {
+  model.value.forEach((category, categoryIndex) => { category.isDefault = categoryIndex === index; });
 }
 </script>

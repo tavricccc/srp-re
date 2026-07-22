@@ -47,33 +47,21 @@
         </div>
       </div>
 
-      <SurfacePanel v-if="managementDraft" variant="inset" class="overflow-hidden">
+      <SurfacePanel v-if="defaultDraft" variant="inset" class="overflow-hidden">
         <ListSurfaceRow
           interactive
           role="switch"
-          :aria-checked="managementDraft.isActive"
-          @click="managementDraft.isActive = !managementDraft.isActive"
-        >
-          <span class="min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('adminCenter.acceptNewRecords') }}</span>
-            <span class="mt-0.5 block text-xs leading-5 text-ink-500">{{ t('adminCenter.acceptNewRecordsHelp') }}</span>
-          </span>
-          <SwitchIndicator :checked="managementDraft.isActive" />
-        </ListSurfaceRow>
-        <ListSurfaceRow
-          interactive
-          role="switch"
-          :aria-checked="managementDraft.isDefault"
-          :aria-disabled="managementDraft.isDefault || undefined"
-          :disabled="managementDraft.isDefault || undefined"
-          :class="managementDraft.isDefault ? 'cursor-default' : ''"
+          :aria-checked="defaultDraft.isDefault"
+          :aria-disabled="defaultDraft.isDefault || undefined"
+          :disabled="defaultDraft.isDefault || undefined"
+          :class="defaultDraft.isDefault ? 'cursor-default' : ''"
           @click="makeDefault"
         >
           <span class="min-w-0 flex-1">
             <span class="block text-sm font-semibold text-ink-900 dark:text-ink-100">{{ t('categoryAdmin.defaultCategory') }}</span>
             <span class="mt-0.5 block text-xs leading-5 text-ink-500">{{ t('adminCenter.defaultCategoryHelp') }}</span>
           </span>
-          <SwitchIndicator :checked="managementDraft.isDefault" />
+          <SwitchIndicator :checked="defaultDraft.isDefault" />
         </ListSurfaceRow>
       </SurfacePanel>
     </div>
@@ -163,12 +151,12 @@
 
     <div v-if="deletable" class="flex flex-col gap-3 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-xs leading-5 text-ink-500">
-        {{ t(managementDraft?.isDefault ? 'categoryAdmin.cannotDeleteDefaultCategoryHelp' : 'categoryAdmin.saveAllChangesHelp') }}
+        {{ t(defaultDraft?.isDefault ? 'categoryAdmin.cannotDeleteDefaultCategoryHelp' : 'categoryAdmin.saveAllChangesHelp') }}
       </p>
       <AppButton
         variant="danger"
         class="shrink-0"
-        :disabled="managementDraft?.isDefault || deleting"
+        :disabled="defaultDraft?.isDefault || deleting"
         @click="emit('delete')"
       >
         <BusyButtonContent :busy="deleting" :label="t('categoryAdmin.deleteCategory')" :busy-label="t('common.deleting')" />
@@ -190,26 +178,20 @@ import SurfacePanel from '@/components/ui/molecules/SurfacePanel.vue';
 import PillSegmentedControl from '@/components/ui/molecules/PillSegmentedControl.vue';
 import type { PillSegmentedControlOption } from '@/components/ui/molecules/PillSegmentedControl.vue';
 import { useI18n } from '@/i18n';
-import type {
-  FacilityCategoryConfig,
-  FacilityCategoryDraft,
-  IssueCategoryConfig,
-  IssueCategoryDraft,
-  IssueReadAccess,
-} from '@/types/categories';
+import type { FacilityCategoryDraft, IssueCategoryDraft, IssueReadAccess } from '@/types/categories';
 
 const props = withDefaults(defineProps<{
   fieldId: string;
   deletable?: boolean;
   deleting?: boolean;
+  defaultControl?: boolean;
   flat?: boolean;
   idLocked?: boolean;
   kind: 'facility' | 'issue';
-  managementControls?: boolean;
   modelValue: FacilityCategoryDraft | IssueCategoryDraft;
   privacyLocked?: boolean;
   removable?: boolean;
-}>(), { deletable: false, deleting: false, flat: false, idLocked: false, managementControls: false, privacyLocked: false, removable: true });
+}>(), { defaultControl: false, deletable: false, deleting: false, flat: false, idLocked: false, privacyLocked: false, removable: true });
 
 const emit = defineEmits<{
   delete: [];
@@ -238,8 +220,8 @@ const draft = computed({
 });
 
 const issueDraft = computed(() => props.kind === 'issue' ? draft.value as IssueCategoryDraft : null);
-const managementDraft = computed(() => props.managementControls
-  ? draft.value as FacilityCategoryConfig | IssueCategoryConfig
+const defaultDraft = computed(() => props.defaultControl
+  ? draft.value as FacilityCategoryDraft | IssueCategoryDraft
   : null);
 const kindLabel = computed(() => t(props.kind === 'issue' ? 'categoryAdmin.proposalCategory' : 'categoryAdmin.facilityCategory'));
 const readAccessOptions: Array<{ value: IssueReadAccess; label: string; description: string }> = [
@@ -269,7 +251,7 @@ function toggleSupport() {
 }
 
 function makeDefault() {
-  if (!managementDraft.value || managementDraft.value.isDefault) return;
+  if (!defaultDraft.value || defaultDraft.value.isDefault) return;
   emit('makeDefault');
 }
 </script>

@@ -10,7 +10,6 @@ export interface IssueCategoryConfig {
   supportDeadlineDays: number | null;
   responseDeadlineDays: number | null;
   commentsEnabled: boolean;
-  isActive: boolean;
   isDefault: boolean;
   sortOrder: number;
 }
@@ -18,7 +17,6 @@ export interface IssueCategoryConfig {
 export interface FacilityCategoryConfig {
   id: string;
   label: string;
-  isActive: boolean;
   isDefault: boolean;
   sortOrder: number;
 }
@@ -45,9 +43,11 @@ export interface IssueCategoryDraft {
   supportDeadlineDays: number | null;
   responseDeadlineDays: number | null;
   commentsEnabled: boolean;
+  isDefault: boolean;
 }
 
 export interface FacilityCategoryDraft {
   id: string;
+  isDefault: boolean;
   label: string;
 }
