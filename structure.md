@@ -49,7 +49,7 @@
 
 - `main.ts` — 掛載 app、resume、PWA、session
 - `i18n/` — `messages/<locale>/<domain>.ts` 依語系與領域拆分的 catalog（含 API error code 對應文案）、系統語言首次偵測、localStorage 語言偏好、日期 locale 與共用 `t()`；所有前端可見字串只放語系目錄，key 使用短而穩定的語意命名
-- `App.vue` — startup gate + AppShell；route stage 依導覽深度套用手機 push／pop、同層 fade，桌面維持輕量網頁轉場
+- `App.vue` — startup gate + AppShell；route stage 依導覽深度套用 push／pop、同層 fade，桌面維持輕量轉場
 - `sw.ts` — PWA SW、快取策略、FCM 背景通知
 - `style.css` — 全域樣式載入入口；依序載入 base、primitives 與領域樣式
 - `styles/base.css` — design tokens、全域基礎與頁面骨架
@@ -83,17 +83,17 @@
 - `organisms/` — 可直接供 route view 或領域元件填入資料／slots 的完整區塊：內容卡集合與 skeleton、列表狀態、詳情殼與 route 狀態、`DialogShell`、Composer、Markdown／表格編輯器、狀態 Dialog、`ViewportFrame` 與 `RoutePageFrame`
 - 依賴方向固定為 `atoms → molecules → organisms`；同層可組合，低層不得反向 import 高層，`check:ui` 會阻止 flat path 與逆向依賴
 - `organisms/ViewportFrame.vue` / `organisms/RoutePageFrame.vue` — AppShell 的 viewport gutter／safe-area 寬度與 route page 的 max-width、全高 flex、垂直 padding、底部導覽安全距離入口；route view 不自行計算 viewport 或拼裝頁面骨架
-- `organisms/ContentCardCollection.vue` / `ContentCardShell.vue` / `ContentCardSkeleton.vue` — 提案、公告、設備共用的列表狀態、卡片表面、作者／標題／時間／狀態與操作區；列表與 load-more 骨架共用 opacity 進場（`skeleton-card`／`skeleton-enter`），領域元件只填資料及差異 slots
+- `organisms/ContentCardCollection.vue` / `ContentCardShell.vue` / `ContentCardSkeleton.vue` — 提案、公告、設備共用的列表狀態、卡片表面、作者／標題／時間／狀態與操作區；支援不取代可見入口的長按／右鍵快捷操作；列表與 load-more 骨架共用 opacity 進場（`skeleton-card`／`skeleton-enter`），領域元件只填資料及差異 slots
 - `organisms/DetailRouteState.vue` / `DetailPageShell.vue` / `SkeletonDetail.vue` — 三領域詳情共用的完整高度鏈、狀態、操作與 responsive panel
 - `organisms/EntryComposerShell.vue` / `MarkdownImageEditor.vue` / `VisualTableEditor.vue` — 三領域 Composer 與 Markdown／表格編輯流程；較小控制留在 molecules
-- `organisms/DialogShell.vue` — Dialog overlay、card surface、scroll lock、focus trap、ARIA 與 dismiss/persistent 行為的唯一完整外殼；領域 Dialog 只填內容與 actions
+- `organisms/DialogShell.vue` / `AdaptiveActionMenu.vue` — Dialog overlay、card surface、scroll lock、focus trap、ARIA、返回鍵堆疊與 dismiss/persistent 行為的唯一完整外殼；一般浮層在手機自適應為可向下拖曳的 Bottom Sheet，選單共用同一份 slots 並在桌面使用 Dropdown、手機使用 Sheet；領域元件只填內容與 actions
 
 ---
 
 ## components（應用）
 
-- Shell：`AppShell.vue`（共用導覽狀態、返回與捲動記憶）、`app-shell/AppDesktopSidebar.vue`、`app-shell/AppMobileHeader.vue`、`app-shell/AppMobileBottomNav.vue`、`app-shell/types.ts`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ActionFeedbackBar.vue`
-- 設定／通知：`SettingsPanelContent.vue`；通知與設定使用獨立路由頁
+- Shell：`AppShell.vue`（共用導覽狀態、返回、捲動記憶與桌面 utility popup）、`app-shell/AppDesktopSidebar.vue`、`app-shell/AppMobileHeader.vue`、`app-shell/AppMobileBottomNav.vue`、`app-shell/types.ts`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ActionFeedbackBar.vue`
+- 設定／通知：`SettingsPanelContent.vue`、`DesktopUtilityDialog.vue`；手機與深層連結保留獨立路由頁，桌面側欄由通知／頭像開啟共用大型 popup 並以左側分頁切換
 - Dialog：`ConfirmDialog`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`IssueComposer`、`FacilityComposer`、`FacilityStatusDialog`、`AnnouncementComposerDialog`、`IssueReviewDialog`、`IssueStatusDialog`
 - 留言：`CommentThreadPanel`、`CommentItem`、`CommentComposer`、`IssueComments`、`AnnouncementComments`
 - 內容：`MarkdownRenderer`、`MarkdownMediaContent`、`AuthorAvatar`、`VoteButtons`
@@ -116,7 +116,7 @@
 - 公告：`useAnnouncements`、`useAnnouncementManagement`、`useAnnouncementDetail`（詳情讀取、快取、Realtime、按讚與刪除流程）
 - 設備：`useFacilities`、`useFacilityDetail`、`useFacilityComposerForm`
 - 通知／推播：`useNotificationBadge`、`useNotifications`、`useNotificationNavigation`（開啟內容時保留通知 root 來源，詳情返回會 pop 回通知）、`useNotificationDisplay`（依目前語系組合通知標題、狀態與舊資料內容）、`usePushNotifications`、`usePushPermissionPrompt`
-- UI 流程：`useActionFeedback`、`useActiveNavigationRefresh`、`useAuthenticatedDetailState`、`useDetailRouteQuery`、`useContentListRuntime`（三領域共用最短載入、逾時／斷線、重試、無限捲動與導覽重新整理）、`useBodyScrollLock`、`useDialogFocus`、`useDialogThemeColor`、`useDropdownPosition`、`useClickOutside`、`useInfiniteScroll`、`useMinimumLoading`、`useLoadingTimeout`、`useTimedMessage`、`useNetworkStatus`、`useCompactTableLayout`
+- UI 流程：`useActionFeedback`、`useActiveNavigationRefresh`、`useAuthenticatedDetailState`、`useDetailRouteQuery`、`useContentListRuntime`（三領域共用最短載入、逾時／斷線、重試、無限捲動與導覽重新整理）、`useBodyScrollLock`、`useBottomSheetDrag`（距離／速度門檻與跟手回彈）、`useOverlayBack`（LIFO 系統返回）、`useLongPress`（移動容差與 click 抑制）、`useVisualViewport`（手機鍵盤可視高度）、`useDialogFocus`、`useDialogThemeColor`、`useDropdownPosition`、`useClickOutside`、`useInfiniteScroll`、`useMinimumLoading`、`useLoadingTimeout`、`useTimedMessage`、`useNetworkStatus`、`useCompactTableLayout`
 - App：`useAppResume`、`useAppStartupGate`、`useAppUpdate`、`useAppInstallPrompt`、`useShareUrl`、`useAuthorProfile`
 - Markdown／圖：`useMarkdown`、`useResolvedMarkdown`、`useImageUpload`、`useMarkdownImageUpload`、`useMarkdownImageEditor`
 - Dashboard：`usePlatformDashboard`、`useDashboardMetrics`

@@ -1,5 +1,5 @@
 <template>
-  <DropdownMenu :fallback-height="96">
+  <AdaptiveActionMenu ref="menuRef" :title="t(title)" :fallback-height="96">
     <template #trigger="{ open, toggle }">
       <AppButton
         variant="toolbar"
@@ -25,14 +25,15 @@
         <span>{{ t(deleteLabel) }}</span>
       </button>
     </template>
-  </DropdownMenu>
+  </AdaptiveActionMenu>
 </template>
 
 <script setup lang="ts">
 import AppButton from '@/components/ui/atoms/AppButton.vue';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
-import DropdownMenu from '@/components/ui/molecules/DropdownMenu.vue';
+import AdaptiveActionMenu from '@/components/ui/organisms/AdaptiveActionMenu.vue';
 import { useI18n } from '@/i18n';
+import { ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -49,10 +50,12 @@ withDefaults(defineProps<{
 const emit = defineEmits<{
   delete: [];
 }>();
+const menuRef = ref<InstanceType<typeof AdaptiveActionMenu> | null>(null);
 
 function select(close: () => void) {
   close();
   emit('delete');
 }
+defineExpose({ open: () => menuRef.value?.open() });
 
 </script>

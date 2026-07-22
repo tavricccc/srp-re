@@ -1,5 +1,7 @@
 <template>
-  <RoutePageFrame>
+  <RoutePageFrame
+    :class="embedded ? 'scrollbar-subtle flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-6 md:px-8' : ''"
+  >
     <div v-if="loading" class="space-y-6 py-4">
       <!-- Account Skeleton -->
       <SurfacePanel variant="list" padding="md" class="flex items-center gap-3">
@@ -58,8 +60,9 @@
       :push-error="pushError"
       :push-loading="pushLoading"
       :push-status-description="pushStatusDescription"
-      :show-close="false"
+      :show-close="embedded"
       :flat="true"
+      @close="emit('close')"
       @logout="handleLogout"
       @restart-app="handleRestartApp"
       @set-preference="handleSetPersonalPushPreference"
@@ -92,6 +95,9 @@ import { useSession } from "@/composables/useSession";
 import { useActionFeedback } from "@/composables/useActionFeedback";
 import { useI18n } from "@/i18n";
 import type { PersonalPushPreferenceKey } from "@/services/notifications";
+
+withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false });
+const emit = defineEmits<{ close: [] }>();
 
 const router = useRouter();
 const { user, customPhotoUrl, loading, login, logout, can } = useSession();

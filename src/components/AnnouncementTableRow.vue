@@ -5,10 +5,12 @@
     status-label="announcement.announcement"
     :time-label="dateLabel"
     :title="announcement.title"
+    :long-press-enabled="canManage"
+    @long-press="adminMenuRef?.open()"
     @open="emit('open', announcement)"
   >
     <template v-if="canManage" #admin>
-      <CompactActionMenu title="announcement.manageAnnouncement" @delete="emit('delete', announcement)" />
+      <CompactActionMenu ref="adminMenuRef" title="announcement.manageAnnouncement" @delete="emit('delete', announcement)" />
     </template>
 
     <template #actions>
@@ -37,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { AnnouncementRecord } from '@/types';
 import CompactActionMenu from '@/components/CompactActionMenu.vue';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
@@ -52,6 +54,7 @@ const props = defineProps<{
   liking?: boolean;
 }>();
 const { t } = useI18n();
+const adminMenuRef = ref<InstanceType<typeof CompactActionMenu> | null>(null);
 
 const emit = defineEmits<{
   delete: [announcement: AnnouncementRecord];

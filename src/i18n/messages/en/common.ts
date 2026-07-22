@@ -78,6 +78,9 @@ const messages = {
   'common.yes': 'Yes',
   'common.no': 'No',
   'common.reset': 'Reset',
+  'common.discard': 'Discard',
+  'common.discardChanges': 'Discard changes?',
+  'common.unsavedChangesWillBeLost': 'Your unsaved changes will be lost.',
 } as const;
 
 export default messages;

@@ -1,5 +1,5 @@
 <template>
-  <DropdownMenu v-if="facility.canManageFacility" :fallback-height="120">
+  <AdaptiveActionMenu v-if="facility.canManageFacility" ref="menuRef" :title="t('facility.manageFacilities')" :fallback-height="120">
     <template #trigger="{ open, toggle }">
       <AppButton
         variant="toolbar"
@@ -26,14 +26,14 @@
         </button>
       </div>
     </template>
-  </DropdownMenu>
+  </AdaptiveActionMenu>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
-import DropdownMenu from '@/components/ui/molecules/DropdownMenu.vue';
+import AdaptiveActionMenu from '@/components/ui/organisms/AdaptiveActionMenu.vue';
 import { isFacilityClosed } from '@/constants/statuses';
 import type { FacilitySummary } from '@/types';
 import { useI18n } from '@/i18n';
@@ -41,8 +41,10 @@ import { useI18n } from '@/i18n';
 const props = defineProps<{ facility: FacilitySummary }>();
 const { t } = useI18n();
 const emit = defineEmits<{ status: []; delete: [] }>();
+const menuRef = ref<InstanceType<typeof AdaptiveActionMenu> | null>(null);
 const closed = computed(() => isFacilityClosed(props.facility.status));
 
 function selectStatus(close: () => void) { close(); emit('status'); }
 function selectDelete(close: () => void) { close(); emit('delete'); }
+defineExpose({ open: () => menuRef.value?.open() });
 </script>

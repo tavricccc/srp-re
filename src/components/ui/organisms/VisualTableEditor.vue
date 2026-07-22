@@ -58,7 +58,7 @@
         </div>
 
         <!-- Table grid -->
-        <div class="overflow-x-auto p-4 scrollbar-thin">
+        <div class="scrollbar-subtle overflow-x-auto p-4">
           <table class="min-w-full border-collapse">
             <thead>
               <!-- Header Row -->

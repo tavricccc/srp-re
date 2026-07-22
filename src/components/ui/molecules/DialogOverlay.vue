@@ -6,6 +6,7 @@
         class="dialog-overlay fixed inset-0 flex items-center justify-center bg-ink-900/50"
         :class="[zIndexClass, overlayClass, { 'backdrop-blur-sm': !isFullScreen }]"
         :data-padding="paddingMode"
+        :data-presentation="presentation"
         @click.self="handleOverlayClick"
       >
         <slot />
@@ -26,6 +27,7 @@ const props = withDefaults(defineProps<{
   transitionName?: string;
   zIndexClass?: string;
   persistent?: boolean;
+  presentation?: 'dialog' | 'fullscreen' | 'sheet';
 }>(), {
   noPadding: false,
   overlayClass: '',
@@ -33,6 +35,7 @@ const props = withDefaults(defineProps<{
   transitionName: 'dialog',
   zIndexClass: 'z-50',
   persistent: false,
+  presentation: 'dialog',
 });
 
 

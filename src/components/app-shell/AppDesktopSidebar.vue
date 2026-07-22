@@ -39,35 +39,39 @@
         <AppIcon :name="item.icon" :size="5" :stroke-width="1.9" />
         <span class="app-sidebar__label">{{ item.label }}</span>
       </RouterLink>
+    </nav>
 
-      <RouterLink
-        to="/notifications"
+    <div class="flex w-full flex-col gap-2 px-3">
+      <button
+        type="button"
         class="app-sidebar__item"
         :class="{ 'app-sidebar__item--active': notificationsActive }"
         :aria-label="t(hasUnread ? 'notification.notificationsUnread' : 'navigation.notify')"
         :data-label="t('navigation.notify')"
+        @click="$emit('openNotifications')"
       >
         <span class="relative inline-flex" aria-hidden="true">
           <AppIcon name="bell" :size="5" :stroke-width="1.9" />
           <span v-if="hasUnread" class="app-sidebar__badge"></span>
         </span>
         <span class="app-sidebar__label">{{ t('navigation.notify') }}</span>
-      </RouterLink>
-    </nav>
+      </button>
 
-    <RouterLink
-      to="/settings"
-      class="app-sidebar__profile"
-      :class="{ 'app-sidebar__item--active': profileActive }"
-      :aria-label="t('settings.mine')"
-      :data-label="t('settings.mine')"
-    >
-      <UserAvatar :photo-url="photoUrl" :name="userName" size="sm" :alt-text="t('settings.userAvatar')" class="!h-8 !w-8 rounded-full" />
-      <span class="app-sidebar__profile-copy">
-        <strong>{{ userName }}</strong>
-        <span>{{ schoolLabel }}</span>
-      </span>
-    </RouterLink>
+      <button
+        type="button"
+        class="app-sidebar__profile"
+        :class="{ 'app-sidebar__item--active': profileActive }"
+        :aria-label="t('settings.mine')"
+        :data-label="t('settings.mine')"
+        @click="$emit('openProfile')"
+      >
+        <UserAvatar :photo-url="photoUrl" :name="userName" size="sm" :alt-text="t('settings.userAvatar')" class="!h-8 !w-8 rounded-full" />
+        <span class="app-sidebar__profile-copy">
+          <strong>{{ userName }}</strong>
+          <span>{{ schoolLabel }}</span>
+        </span>
+      </button>
+    </div>
   </aside>
 </template>
 
@@ -96,6 +100,8 @@ defineProps<{
 const emit = defineEmits<{
   navigate: [isActive: boolean];
   'navigate-link': [];
+  openNotifications: [];
+  openProfile: [];
   toggle: [];
 }>();
 

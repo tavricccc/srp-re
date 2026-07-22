@@ -7,10 +7,13 @@
     :status-label="statusLabel"
     :time-label="primaryTimeValueLabel"
     :title="issue.title"
+    :long-press-enabled="isAdmin"
+    @long-press="adminMenuRef?.open()"
     @open="openDetails()"
   >
     <template v-if="isAdmin" #admin>
       <IssueAdminMenu
+        ref="adminMenuRef"
         :issue="issue"
         :compact="true"
         class="!space-y-0"
@@ -79,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRef } from 'vue';
+import { ref, toRef } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IssueAdminMenu from '@/components/IssueAdminMenu.vue';
 import VoteButtons from '@/components/VoteButtons.vue';
@@ -105,6 +108,7 @@ const emit = defineEmits<{
   'issue-deleted': [issueId: string];
 }>();
 const { t } = useI18n();
+const adminMenuRef = ref<InstanceType<typeof IssueAdminMenu> | null>(null);
 
 const {
   statusLabel,

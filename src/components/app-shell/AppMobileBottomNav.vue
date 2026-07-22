@@ -11,7 +11,7 @@
     >
       <div
         class="pointer-events-none absolute rounded-full bg-ink-100/90 shadow-control dark:bg-ink-800/80"
-        :style="[indicatorStyle, { transition: 'all 280ms cubic-bezier(0.16, 1, 0.3, 1)' }]"
+        :style="indicatorStyle"
       ></div>
 
       <RouterLink
@@ -84,7 +84,7 @@ defineEmits<{
 
 const navRef = ref<HTMLDivElement | null>(null);
 const navElements = new Map<string, HTMLElement>();
-const indicatorStyle = ref({ height: '0px', left: '0px', top: '0px', width: '0px' });
+const indicatorStyle = ref({ height: '0px', top: '0px', transform: 'translate3d(0,0,0)', width: '0px' });
 
 function resolveElement(element: Element | { $el?: Element } | null) {
   if (!element) return null;
@@ -101,15 +101,15 @@ async function updateIndicator() {
   await nextTick();
   const activeElement = navElements.get(props.activeKey);
   if (!activeElement || !navRef.value) {
-    indicatorStyle.value = { height: '0px', left: '0px', top: '0px', width: '0px' };
+    indicatorStyle.value = { height: '0px', top: '0px', transform: 'translate3d(0,0,0)', width: '0px' };
     return;
   }
   const navRect = navRef.value.getBoundingClientRect();
   const itemRect = activeElement.getBoundingClientRect();
   indicatorStyle.value = {
     height: `${itemRect.height}px`,
-    left: `${itemRect.left - navRect.left}px`,
     top: `${itemRect.top - navRect.top}px`,
+    transform: `translate3d(${itemRect.left - navRect.left}px,0,0)`,
     width: `${itemRect.width}px`,
   };
 }

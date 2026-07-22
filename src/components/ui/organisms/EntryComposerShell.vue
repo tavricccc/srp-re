@@ -3,8 +3,9 @@
     :open="open"
     :busy="blocked"
     :padded="false"
+    presentation="adaptive"
     labelled-by="entry-composer-title"
-    surface-class="entry-composer flex h-full w-full flex-col overflow-hidden rounded-none border-none md:fixed md:inset-0 md:h-screen md:max-h-screen md:rounded-none md:border-none"
+    surface-class="entry-composer flex h-[min(92dvh,52rem)] w-full flex-col overflow-hidden border-none px-4 pb-4 md:fixed md:inset-0 md:h-screen md:max-h-screen md:rounded-none md:border-none md:px-6 md:pb-6"
     @close="requestClose"
   >
     <div class="flex shrink-0 items-center justify-between border-b border-ink-200 pb-4 dark:border-ink-800">
@@ -106,10 +107,19 @@
       </div>
     </form>
   </DialogShell>
+  <ConfirmDialog
+    :open="discardDialogOpen"
+    :title="t('common.discardChanges')"
+    :message="t('common.unsavedChangesWillBeLost')"
+    :confirm-label="t('common.discard')"
+    @cancel="discardDialogOpen = false"
+    @confirm="confirmClose"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import BusyButtonContent from '@/components/ui/atoms/BusyButtonContent.vue';
@@ -177,9 +187,26 @@ const emit = defineEmits<{
 }>();
 
 const blocked = computed(() => props.busy || props.uploading);
+const discardDialogOpen = ref(false);
+const dirty = computed(() => Boolean(
+  entryTitle.value.trim()
+  || content.value.trim()
+  || location.value.trim()
+  || props.images.length,
+));
 const { t } = useI18n();
 function requestClose() {
-  if (!blocked.value) emit('close');
+  if (blocked.value) return;
+  if (dirty.value) {
+    discardDialogOpen.value = true;
+    return;
+  }
+  emit('close');
+}
+
+function confirmClose() {
+  discardDialogOpen.value = false;
+  emit('close');
 }
 
 </script>

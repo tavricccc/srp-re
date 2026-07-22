@@ -109,6 +109,13 @@ function toggle() {
   void nextTick(() => focusItem(menuItems()[0] ?? panelRef.value ?? undefined));
 }
 
+function openMenu() {
+  if (open.value) return;
+  triggerElement = resolveTriggerElement();
+  open.value = true;
+  void nextTick(() => focusItem(menuItems()[0] ?? panelRef.value ?? undefined));
+}
+
 function handlePanelKeydown(event: KeyboardEvent) {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
   const items = menuItems();
@@ -134,6 +141,8 @@ useClickOutside(
   () => close(focusIsWithinMenu()),
   { escape: true },
 );
+
+defineExpose({ close, open: openMenu, toggle });
 
 defineSlots<{
   default(props: { close: () => void }): unknown;

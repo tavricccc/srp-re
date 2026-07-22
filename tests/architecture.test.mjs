@@ -1370,7 +1370,8 @@ test('primary navigation keeps desktop chrome and persistent mobile navigation',
   assert.match(routeComponents, /preloadRequests/u);
   assert.match(routeComponents, /for \(const routeName of routeNames\)/u);
   assert.doesNotMatch(responsiveStyles, /\.page-content-(?:enter|leave)/u);
-  assert.match(app, /class="route-stage[^"\n]*h-full[\s\S]*<Transition name="route-swap" mode="out-in"/u);
+  assert.match(app, /class="route-stage[^"\n]*h-full[\s\S]*<Transition :name="routeTransitionName" mode="out-in"/u);
+  assert.match(app, /getRouteNavigationDepth[\s\S]*route-forward[\s\S]*route-back/u);
   assert.match(app, /class="route-content-frame[^"\n]*flex h-full[^"\n]*flex-col/u);
   assert.match(appShell, /:data-bottom-nav="showMobileBottomNavigation/u);
   assert.match(appShell, /:data-sidebar="showAuthenticatedChrome/u);
@@ -1435,6 +1436,7 @@ test('proposals, announcements, and facilities share list cards and detail panel
     read('src/components/AnnouncementDetailPagePanel.vue'),
     read('src/components/FacilityDetailPagePanel.vue'),
   ]);
+  const issueDetailPanel = detailPanels[0];
   const cardCollection = await read('src/components/ui/organisms/ContentCardCollection.vue');
   const cardShell = await read('src/components/ui/organisms/ContentCardShell.vue');
   const cardSkeleton = await read('src/components/ui/organisms/ContentCardSkeleton.vue');
@@ -1462,6 +1464,9 @@ test('proposals, announcements, and facilities share list cards and detail panel
   listComponents.forEach((component) => assert.match(component, /ContentCardSkeleton/u));
   rowComponents.forEach((component) => assert.match(component, /ContentCardShell/u));
   detailPanels.forEach((component) => assert.match(component, /ContentDetailPagePanel/u));
+  assert.match(issueDetailPanel, /:accessible="commentsReadable"/u);
+  assert.match(issueDetailPanel, /const commentsReadable = commentsAllowedForStatus/u);
+  assert.doesNotMatch(issueDetailPanel, /const commentsReadable = computed/u);
   detailActionComponents.forEach((component) => assert.match(component, /DetailActionGroup/u));
   contentListConsumers.forEach((component) => {
     assert.match(component, /ContentListState/u);
@@ -1657,8 +1662,9 @@ test('navigation and contextual creation share the same responsive information a
   assert.doesNotMatch(desktopSidebar, /CreateActionMenu|新增/u);
   assert.ok(mobileNav.indexOf('v-for="item in items"') < mobileNav.indexOf('to="/notifications"'));
   assert.ok(mobileNav.indexOf('to="/notifications"') < mobileNav.indexOf('to="/settings"'));
-  assert.ok(desktopSidebar.indexOf('v-for="item in items"') < desktopSidebar.indexOf('to="/notifications"'));
-  assert.ok(desktopSidebar.indexOf('to="/notifications"') < desktopSidebar.indexOf('to="/settings"'));
+  assert.ok(desktopSidebar.indexOf('v-for="item in items"') < desktopSidebar.indexOf("$emit('openNotifications')"));
+  assert.ok(desktopSidebar.indexOf("$emit('openNotifications')") < desktopSidebar.indexOf("$emit('openProfile')"));
+  assert.match(appShell, /<DesktopUtilityDialog[\s\S]*@select="desktopUtilityPanel = \$event"/u);
   assert.match(boardControls, /v-if="createLabel"[\s\S]*name="plus"/u);
   assert.ok(boardControls.indexOf('name="search"') < boardControls.indexOf('v-if="createLabel"'));
   assert.match(boardControls, /<AppButton[\s\S]{0,120}variant="contextual"[\s\S]{0,120}class="tap-target shrink-0 p-0"[\s\S]*name="plus"/u);
@@ -1889,7 +1895,7 @@ test('reusable UI primitives own buttons, surfaces, lists, dropdowns, controls, 
   assert.match(confirmDialog, /<DialogActionRow>[\s\S]*<AppButton/u);
   assert.match(confirmDialog, /<DialogHeading[\s\S]*description-id="confirm-dialog-message"/u);
   assert.match(entryComposer, /<DialogShell[\s\S]*labelled-by="entry-composer-title"/u);
-  [compactMenu, issueMenu, facilityMenu].forEach((menu) => assert.match(menu, /<DropdownMenu/u));
+  [compactMenu, issueMenu, facilityMenu].forEach((menu) => assert.match(menu, /<AdaptiveActionMenu/u));
   assert.match(issueMenu, /@click\.stop="toggle"/u);
   assert.doesNotMatch(issueMenu, /useDropdownPosition|useClickOutside/u);
   assert.match(boardControls, /<DropdownPanel/u);

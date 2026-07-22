@@ -75,6 +75,8 @@
     --control-padding-y: 0.75rem;
     --app-bottom-nav-safe-padding: max(0.5rem, env(safe-area-inset-bottom));
     --app-bottom-nav-height: calc(4.5rem + var(--app-bottom-nav-safe-padding));
+    --visual-viewport-height: 100dvh;
+    --visual-viewport-offset-top: 0px;
   }
 
   @media (min-width: 640px) {
@@ -342,7 +344,11 @@
   }
 
   .route-swap-enter-active,
-  .route-swap-leave-active {
+  .route-swap-leave-active,
+  .route-forward-enter-active,
+  .route-forward-leave-active,
+  .route-back-enter-active,
+  .route-back-leave-active {
     transition:
       opacity 180ms var(--motion-ease-enter),
       transform 180ms var(--motion-ease-enter);
@@ -363,6 +369,26 @@
     opacity: 0;
   }
 
+  .route-forward-enter-from {
+    opacity: 0;
+    transform: translate3d(1rem, 0, 0);
+  }
+
+  .route-forward-leave-to {
+    opacity: 0;
+    transform: translate3d(-0.35rem, 0, 0);
+  }
+
+  .route-back-enter-from {
+    opacity: 0;
+    transform: translate3d(-0.65rem, 0, 0);
+  }
+
+  .route-back-leave-to {
+    opacity: 0;
+    transform: translate3d(0.75rem, 0, 0);
+  }
+
   @media (max-width: 767px) {
     :root {
       --app-header-height: 3rem;
@@ -373,10 +399,43 @@
       box-shadow: none;
     }
 
+    .app-root[data-content-scrolled='true'] .app-header {
+      border-bottom: 1px solid rgb(var(--color-outline) / 0.08);
+      box-shadow: var(--shadow-control);
+    }
+
     .app-main-content {
       padding-top: calc(var(--app-header-height) + env(safe-area-inset-top) + 0.25rem);
     }
 
+  }
+
+  @media (min-width: 768px) {
+    .app-main-content,
+    .scrollbar-subtle {
+      scrollbar-color: rgb(var(--color-outline) / 0.38) transparent;
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+    }
+
+    .app-main-content::-webkit-scrollbar,
+    .scrollbar-subtle::-webkit-scrollbar {
+      height: 0.55rem;
+      width: 0.55rem;
+    }
+
+    .app-main-content::-webkit-scrollbar-thumb,
+    .scrollbar-subtle::-webkit-scrollbar-thumb {
+      border: 2px solid transparent;
+      border-radius: 9999px;
+      background: rgb(var(--color-outline) / 0.32);
+      background-clip: padding-box;
+    }
+
+    .app-main-content::-webkit-scrollbar-track,
+    .scrollbar-subtle::-webkit-scrollbar-track {
+      background: transparent;
+    }
   }
 
   body.dialog-open .app-main-content {

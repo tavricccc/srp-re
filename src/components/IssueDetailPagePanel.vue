@@ -171,12 +171,9 @@ const commentsAllowedForStatus = computed(() => issueAllowsCommentsForStatus(
   props.issue.read_access,
   props.issue.status,
 ));
-// Backend blocks public comment reads only while a proposal is under review or rejected.
-// Managers/authors keep access; everyone else skips the failing list call and sees the disabled state.
-const commentsReadable = computed(() => {
-  if (isAdmin.value || props.issue.canManageIssue || props.issue.isOwnIssue) return true;
-  return props.issue.status !== 'under-review' && props.issue.status !== 'review-rejected';
-});
+// Do not load or subscribe to comments before the proposal reaches a commentable status.
+// Management access affects proposal visibility, not whether the comments panel should issue reads.
+const commentsReadable = commentsAllowedForStatus;
 const commentsEnabled = computed(() => props.issue.comments_enabled && commentsAllowedForStatus.value);
 
 function handleModerate() {

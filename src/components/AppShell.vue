@@ -4,10 +4,12 @@
     :data-bottom-nav="showMobileBottomNavigation ? 'true' : 'false'"
     :data-sidebar="showAuthenticatedChrome ? 'true' : 'false'"
     :data-sidebar-expanded="isSidebarExpanded ? 'true' : 'false'"
+    :data-content-scrolled="contentScrolled ? 'true' : 'false'"
     :style="rootStyle"
     @focusin.capture="handleNavigationIntent"
     @pointerdown.capture="handleNavigationIntent"
     @pointerover.capture="handleNavigationIntent"
+    @scroll.capture="handleCapturedScroll"
   >
     <div class="app-background-fill pointer-events-none absolute inset-0"></div>
     <div class="app-background-wash pointer-events-none absolute inset-x-0 top-0 h-80 dark:hidden"></div>
@@ -29,13 +31,15 @@
       :has-unread="hasUnread"
       :home-route="homeRoute"
       :items="primaryRouteNavItems"
-      :notifications-active="route.name === 'notifications'"
+      :notifications-active="route.name === 'notifications' || (desktopUtilityOpen && desktopUtilityPanel === 'notifications')"
       :photo-url="displayPhotoUrl"
-      :profile-active="isProfileRouteActive"
+      :profile-active="isProfileRouteActive || (desktopUtilityOpen && desktopUtilityPanel === 'settings')"
       :school-label="schoolLabel"
       :user-name="userName"
       @navigate="handleNavigationClick"
       @navigate-link="closeSidebarDrawerIfNeeded"
+      @open-notifications="openDesktopUtility('notifications')"
+      @open-profile="openDesktopUtility('settings')"
       @toggle="toggleSidebar"
     />
 
@@ -64,6 +68,17 @@
         @navigate="handleNavigationClick"
       />
     </Transition>
+
+    <DesktopUtilityDialog
+      :active-panel="desktopUtilityPanel"
+      :has-unread="hasUnread"
+      :open="desktopUtilityOpen"
+      :photo-url="displayPhotoUrl"
+      :school-label="schoolLabel"
+      :user-name="userName"
+      @close="closeDesktopUtility"
+      @select="desktopUtilityPanel = $event"
+    />
   </div>
 </template>
 
@@ -73,6 +88,7 @@ import { useRoute, useRouter } from 'vue-router';
 import AppDesktopSidebar from '@/components/app-shell/AppDesktopSidebar.vue';
 import AppMobileBottomNav from '@/components/app-shell/AppMobileBottomNav.vue';
 import AppMobileHeader from '@/components/app-shell/AppMobileHeader.vue';
+import DesktopUtilityDialog from '@/components/DesktopUtilityDialog.vue';
 import ViewportFrame from '@/components/ui/organisms/ViewportFrame.vue';
 import { SCHOOL_NAME } from '@/constants/app';
 import { getIssueCategoryLabel, isIssueCategory } from '@/constants/categories';
@@ -86,6 +102,7 @@ import { preloadRoutePath } from '@/router/route-components';
 import { returnToNavigationOrigin } from '@/router/navigation-hierarchy';
 import { getDefaultAuthenticatedRoute } from '@/router/default-route';
 import { useI18n } from '@/i18n';
+import { useVisualViewport } from '@/composables/useVisualViewport';
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'novae:desktop-sidebar-expanded';
 const MOBILE_NAV_HEIGHT = 60;
@@ -101,7 +118,13 @@ const { t } = useI18n();
 const mainContentRef = ref<HTMLDivElement | null>(null);
 const hasSafeIndicator = ref(false);
 const isSidebarExpanded = ref(false);
+const desktopUtilityOpen = ref(false);
+const desktopUtilityPanel = ref<'notifications' | 'settings'>('settings');
 const mainScrollPositions = new Map<string, number>();
+const contentScrolled = ref(false);
+const desktopViewport = ref(false);
+let desktopViewportQuery: MediaQueryList | null = null;
+useVisualViewport();
 
 // Wait for role/bootstrap so login does not flash nav chrome with an unseeded home route.
 const showAuthenticatedChrome = computed(() => isAllowedUser.value && !roleLoading.value);
@@ -202,6 +225,10 @@ function handleNavigationIntent(event: Event) {
   void preloadRoutePath(url.pathname);
 }
 
+function handleCapturedScroll(event: Event) {
+  if (event.target instanceof HTMLElement) contentScrolled.value = event.target.scrollTop > 8;
+}
+
 function setSidebarExpanded(expanded: boolean) {
   isSidebarExpanded.value = expanded;
   window.localStorage.setItem(SIDEBAR_EXPANDED_STORAGE_KEY, expanded ? 'true' : 'false');
@@ -213,6 +240,26 @@ function toggleSidebar() {
 
 function closeSidebar() {
   setSidebarExpanded(false);
+}
+
+function openDesktopUtility(panel: 'notifications' | 'settings') {
+  desktopUtilityPanel.value = panel;
+  desktopUtilityOpen.value = true;
+  closeSidebarDrawerIfNeeded();
+}
+
+function closeDesktopUtility() {
+  desktopUtilityOpen.value = false;
+  if (route.name === 'settings' || route.name === 'notifications') {
+    void router.replace(getDefaultAuthenticatedRoute());
+  }
+}
+
+function syncDesktopViewport() {
+  desktopViewport.value = desktopViewportQuery?.matches ?? false;
+  if (!desktopViewport.value) return;
+  if (route.name === 'settings') openDesktopUtility('settings');
+  if (route.name === 'notifications') openDesktopUtility('notifications');
 }
 
 function closeSidebarDrawerIfNeeded() {
@@ -237,6 +284,9 @@ async function handleMobileBack() {
 }
 
 watch(() => route.fullPath, (newPath, oldPath) => {
+  if (desktopViewport.value && route.name === 'settings') openDesktopUtility('settings');
+  else if (desktopViewport.value && route.name === 'notifications') openDesktopUtility('notifications');
+  else desktopUtilityOpen.value = false;
   routeAnnouncement.value = '';
   if (oldPath && mainContentRef.value) {
     mainScrollPositions.set(oldPath, mainContentRef.value.scrollTop);
@@ -258,8 +308,14 @@ onMounted(() => {
   document.body.appendChild(probe);
   hasSafeIndicator.value = parseFloat(window.getComputedStyle(probe).paddingBottom) > 0;
   probe.remove();
+  desktopViewportQuery = window.matchMedia('(min-width: 768px)');
+  syncDesktopViewport();
+  desktopViewportQuery.addEventListener('change', syncDesktopViewport);
   window.addEventListener('keydown', handleSidebarKeydown);
 });
 
-onBeforeUnmount(() => window.removeEventListener('keydown', handleSidebarKeydown));
+onBeforeUnmount(() => {
+  desktopViewportQuery?.removeEventListener('change', syncDesktopViewport);
+  window.removeEventListener('keydown', handleSidebarKeydown);
+});
 </script>

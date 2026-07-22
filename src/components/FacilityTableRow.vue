@@ -6,10 +6,13 @@
     :status-label="statusLabel"
     :time-label="formatDate(facility.created_at)"
     :title="facility.title"
+    :long-press-enabled="facility.canManageFacility"
+    @long-press="adminMenuRef?.open()"
     @open="emit('open-details', facility)"
   >
     <template v-if="facility.canManageFacility" #admin>
       <FacilityAdminMenu
+        ref="adminMenuRef"
         :facility="facility"
         @status="emit('manage-status', facility)"
         @delete="emit('delete', facility)"
@@ -41,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRef } from 'vue';
+import { computed, ref, toRef } from 'vue';
 import FacilityAdminMenu from '@/components/FacilityAdminMenu.vue';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
@@ -69,6 +72,7 @@ const emit = defineEmits<{
   delete: [facility: FacilitySummary];
 }>();
 const { t } = useI18n();
+const adminMenuRef = ref<InstanceType<typeof FacilityAdminMenu> | null>(null);
 const status = computed(() => props.facility.status);
 const statusLabel = computed(() => t(FACILITY_STATUS_LABELS[status.value]));
 const isClosed = computed(() => isFacilityClosed(status.value));

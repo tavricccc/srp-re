@@ -13,7 +13,7 @@
       @clear-search="clearSearch"
     />
 
-    <div ref="boardScrollRef" class="route-scroll-through scroll-shadow-bleed scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
+    <div ref="boardScrollRef" class="route-scroll-through scroll-shadow-bleed scrollbar-subtle min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
       <ContentListState
         :empty="currentIssues.length === 0"
         :empty-description="emptyStateDescription"

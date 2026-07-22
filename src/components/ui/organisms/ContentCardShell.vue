@@ -4,6 +4,11 @@
       class="issue-card surface-card surface-card--interactive list-row-trigger relative overflow-hidden"
       data-list-row-trigger
       @click="handleCardClick"
+      @contextmenu="handleContextMenu"
+      @pointerdown="handlePointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="cancel"
+      @pointercancel="cancel"
     >
       <button
         type="button"
@@ -60,8 +65,9 @@ import TagBadge from '@/components/ui/atoms/TagBadge.vue';
 import SearchHighlight from '@/components/ui/molecules/SearchHighlight.vue';
 import SkeletonBlock from '@/components/ui/atoms/SkeletonBlock.vue';
 import { useI18n } from '@/i18n';
-import { computed } from 'vue';
+import { computed, toRef } from 'vue';
 import { useAuthorProfile } from '@/composables/useAuthorProfile';
+import { useLongPress } from '@/composables/useLongPress';
 
 const { t } = useI18n();
 
@@ -73,11 +79,13 @@ const props = withDefaults(defineProps<{
   statusLabel: string;
   timeLabel: string;
   title: string;
+  longPressEnabled?: boolean;
 }>(), {
   authorUid: null,
   highlightQuery: '',
   showAuthor: true,
   statusClass: '',
+  longPressEnabled: false,
 });
 
 const authorProfile = useAuthorProfile(() => props.authorUid);
@@ -88,8 +96,13 @@ const authorName = computed(() => (
 ));
 
 const emit = defineEmits<{
+  longPress: [];
   open: [];
 }>();
+const { cancel, consumeClick, onPointerDown, onPointerMove } = useLongPress({
+  enabled: toRef(props, 'longPressEnabled'),
+  onLongPress: () => emit('longPress'),
+});
 
 const NESTED_INTERACTIVE_SELECTOR = [
   'a[href]',
@@ -105,10 +118,22 @@ const NESTED_INTERACTIVE_SELECTOR = [
 ].join(',');
 
 function handleCardClick(event: MouseEvent) {
+  if (consumeClick(event)) return;
   if (!(event.target instanceof Element) || !(event.currentTarget instanceof HTMLElement)) return;
   const nestedControl = event.target.closest(NESTED_INTERACTIVE_SELECTOR);
   if (nestedControl && nestedControl !== event.currentTarget) return;
   emit('open');
+}
+
+function handlePointerDown(event: PointerEvent) {
+  if (!(event.target instanceof Element) || event.target.closest(NESTED_INTERACTIVE_SELECTOR)) return;
+  onPointerDown(event);
+}
+
+function handleContextMenu(event: MouseEvent) {
+  if (!props.longPressEnabled || !(event.target instanceof Element) || event.target.closest(NESTED_INTERACTIVE_SELECTOR)) return;
+  event.preventDefault();
+  emit('longPress');
 }
 
 defineSlots<{

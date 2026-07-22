@@ -111,6 +111,14 @@ integrationTest("issue reads, scoped moderation, support, comments, and deletion
   assert.ok((ownIssues.issues as JsonRecord[]).some((issue) => issue.id === publicIssueId));
 
   await expectActionError(
+    "not-found",
+    () => callAction("listComments", {
+      issueId: publicIssueId,
+      pageSize: 30,
+    }, publicManager.auth),
+  );
+
+  await expectActionError(
     "permission-denied",
     () => callAction("moderateIssueStatus", {
       issueId: publicIssueId,

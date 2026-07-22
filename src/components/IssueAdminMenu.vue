@@ -4,7 +4,7 @@
     :class="compact ? 'relative inline-block text-left' : 'space-y-3 relative'"
   >
     <p v-if="!compact" class="field-label">{{ t('issue.admin.title') }}</p>
-    <DropdownMenu :fallback-height="compact ? 280 : 240" :width="compact ? 176 : 240" :size="compact ? 'compact' : 'default'">
+    <AdaptiveActionMenu ref="menuRef" :title="t('issue.manageProposals')" :fallback-height="compact ? 280 : 240" :width="compact ? 176 : 240" :size="compact ? 'compact' : 'default'">
       <template #trigger="{ open, toggle }">
         <AppButton
           v-if="compact"
@@ -49,7 +49,7 @@
           </button>
         </div>
       </template>
-    </DropdownMenu>
+    </AdaptiveActionMenu>
   </div>
 
   <!-- Shared Moderation Dialogs -->
@@ -78,7 +78,7 @@ import { ISSUE_STATUS_LABELS } from '@/constants/statuses';
 import { useStatusStyling } from '@/composables/useStatusStyling';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import AppButton from '@/components/ui/atoms/AppButton.vue';
-import DropdownMenu from '@/components/ui/molecules/DropdownMenu.vue';
+import AdaptiveActionMenu from '@/components/ui/organisms/AdaptiveActionMenu.vue';
 import type { IssueRecord, IssueStatus } from '@/types';
 import { useI18n } from '@/i18n';
 
@@ -100,6 +100,7 @@ const emit = defineEmits<{
 }>();
 
 const isReviewDialogOpen = ref(false);
+const menuRef = ref<InstanceType<typeof AdaptiveActionMenu> | null>(null);
 const isStatusDialogOpen = ref(false);
 const statusDialogInitialAction = ref<'processing' | 'closed'>('processing');
 
@@ -150,4 +151,5 @@ function getStatusDotClass(status: IssueStatus) {
 function getStatusLabel(status: IssueStatus) {
   return t(ISSUE_STATUS_LABELS[status] || status);
 }
+defineExpose({ open: () => menuRef.value?.open() });
 </script>

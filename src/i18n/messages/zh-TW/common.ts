@@ -78,6 +78,9 @@ const messages = {
   'common.yes': '是',
   'common.no': '否',
   'common.reset': '重設',
+  'common.discard': '放棄',
+  'common.discardChanges': '放棄變更？',
+  'common.unsavedChangesWillBeLost': '尚未儲存的內容將會遺失。',
 } as const;
 
 export default messages;
