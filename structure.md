@@ -49,7 +49,7 @@
 
 - `main.ts` — 掛載 app、resume、PWA、session
 - `i18n/` — `messages/<locale>/<domain>.ts` 依語系與領域拆分的 catalog（含 API error code 對應文案）、系統語言首次偵測、localStorage 語言偏好、日期 locale 與共用 `t()`；所有前端可見字串只放語系目錄，key 使用短而穩定的語意命名
-- `App.vue` — startup gate + AppShell；route stage 使用固定 Grid 疊放新舊頁的純 opacity crossfade，避免轉場中切換 absolute 定位造成 viewport 短暫裁切，也避免 `out-in` 卸載空檔、左右滑動與 transform 陰影合成層
+- `App.vue` — startup gate + AppShell；route stage 使用固定 Grid 疊放新舊頁，依 navigation depth 套用短距離左右位移與 opacity，且不切換 absolute 定位、不使用 transform 合成陰影層或 `out-in` 卸載空檔；同層 route 維持純 crossfade
 - `sw.ts` — PWA SW、快取策略、FCM 背景通知
 - `style.css` — 全域樣式載入入口；依序載入 base、primitives 與領域樣式
 - `styles/base.css` — design tokens、全域基礎與頁面骨架
