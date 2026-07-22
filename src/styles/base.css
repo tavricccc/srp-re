@@ -339,24 +339,23 @@
   }
 
   .route-stage {
+    display: grid;
     isolation: isolate;
   }
 
   .route-content-frame {
     background-color: rgb(var(--color-page-background));
+    grid-area: 1 / 1;
     min-height: 100%;
   }
 
   .route-fade-enter-active {
-    position: relative;
     z-index: 2;
     transition: opacity 220ms var(--motion-ease-enter);
     will-change: opacity;
   }
 
   .route-fade-leave-active {
-    position: absolute;
-    inset: 0;
     z-index: 1;
     pointer-events: none;
     transition: opacity 160ms var(--motion-ease-exit);

@@ -49,7 +49,7 @@
 
 - `main.ts` — 掛載 app、resume、PWA、session
 - `i18n/` — `messages/<locale>/<domain>.ts` 依語系與領域拆分的 catalog（含 API error code 對應文案）、系統語言首次偵測、localStorage 語言偏好、日期 locale 與共用 `t()`；所有前端可見字串只放語系目錄，key 使用短而穩定的語意命名
-- `App.vue` — startup gate + AppShell；route stage 使用新舊頁重疊的純 opacity crossfade，避免 `out-in` 卸載空檔與左右滑動，也不建立 transform 陰影合成層
+- `App.vue` — startup gate + AppShell；route stage 使用固定 Grid 疊放新舊頁的純 opacity crossfade，避免轉場中切換 absolute 定位造成 viewport 短暫裁切，也避免 `out-in` 卸載空檔、左右滑動與 transform 陰影合成層
 - `sw.ts` — PWA SW、快取策略、FCM 背景通知
 - `style.css` — 全域樣式載入入口；依序載入 base、primitives 與領域樣式
 - `styles/base.css` — design tokens、全域基礎與頁面骨架
@@ -92,7 +92,7 @@
 
 ## components（應用）
 
-- Shell：`AppShell.vue`（共用導覽狀態、返回、捲動記憶與桌面 utility popup；顯示 Bottom Tab 時不再額外加 main-content 底距）、`app-shell/AppDesktopSidebar.vue`、`app-shell/AppMobileHeader.vue`（返回鍵保留單一 DOM，槽位與 44px 點擊區同寬並以寬度／opacity 收合，避免按鈕溢出壓字；標題維持單一內容實例）、`app-shell/AppMobileBottomNav.vue`、`app-shell/types.ts`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ActionFeedbackBar.vue`
+- Shell：`AppShell.vue`（共用導覽狀態、返回、捲動記憶與桌面 utility popup；顯示 Bottom Tab 時不再額外加 main-content 底距）、`app-shell/AppDesktopSidebar.vue`、`app-shell/AppMobileHeader.vue`（返回鍵保留單一 DOM，槽位與 44px 點擊區同寬並以寬度／opacity 收合，避免按鈕溢出壓字；標題維持單一內容實例）、`app-shell/AppMobileBottomNav.vue`（每個項目自行顯示靜態選中底色，不量測 DOM 或搬移共用灰色 indicator）、`app-shell/types.ts`、`AppStartupScreen.vue`、`LoginPanel.vue`、`ActionFeedbackBar.vue`
 - 設定／通知：`SettingsPanelContent.vue`、`DesktopUtilityDialog.vue`；手機與深層連結保留獨立路由頁，桌面側欄的通知與頭像分別開啟各自尺寸與內容的獨立大型 popup
 - 新增頁：`IssueComposer`、`FacilityComposer`、`AnnouncementComposer` 搭配 `views/IssueComposerView.vue`、`FacilityComposerView.vue`、`AnnouncementComposerView.vue`；手機隱藏 Bottom Nav，手機與桌面皆以 full-bleed 頁面填滿可用內容區；共用 Composer 在桌面為按鈕陰影預留底部繪製空間，手機採 1rem iOS 式側距並只保留扣除多餘安全區後的緊湊底距，送出後 replace 至新內容詳情
 - Dialog：`ConfirmDialog`、`AppInstallPromptDialog`、`AppUpdatePromptDialog`、`PushPermissionPromptDialog`、`FacilityStatusDialog`、`IssueReviewDialog`、`IssueStatusDialog`

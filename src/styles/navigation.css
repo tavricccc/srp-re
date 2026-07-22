@@ -37,7 +37,7 @@
   }
 
   .app-bottom-nav__item--active {
-    @apply text-ink-900 dark:text-ink-100;
+    @apply bg-ink-100/90 text-ink-900 shadow-control dark:bg-ink-800/80 dark:text-ink-100;
   }
 
   .app-bottom-nav__item--active:active:not([aria-disabled='true']) {

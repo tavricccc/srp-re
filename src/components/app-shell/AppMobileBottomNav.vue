@@ -5,19 +5,12 @@
     :aria-label="t('navigation.primaryNavigation')"
   >
     <div
-      ref="navRef"
       class="app-bottom-nav__inner relative mx-auto grid gap-1"
       :style="{ gridTemplateColumns: `repeat(${items.length + 2}, minmax(0, 1fr))` }"
     >
-      <div
-        class="pointer-events-none absolute rounded-full bg-ink-100/90 shadow-control dark:bg-ink-800/80"
-        :style="indicatorStyle"
-      ></div>
-
       <RouterLink
         v-for="item in items"
         :key="item.key"
-        :ref="element => setNavElement(item.key, element)"
         :to="item.to"
         class="app-bottom-nav__item"
         :class="{ 'app-bottom-nav__item--active': item.isActive }"
@@ -30,7 +23,6 @@
       </RouterLink>
 
       <RouterLink
-        :ref="element => setNavElement('notifications', element)"
         to="/notifications"
         class="app-bottom-nav__item"
         :class="{ 'app-bottom-nav__item--active': activeKey === 'notifications' }"
@@ -45,7 +37,6 @@
       </RouterLink>
 
       <RouterLink
-        :ref="element => setNavElement('settings', element)"
         to="/settings"
         class="app-bottom-nav__item overflow-visible"
         :class="{ 'app-bottom-nav__item--active': profileActive }"
@@ -60,7 +51,6 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import AppIcon from '@/components/ui/atoms/AppIcon.vue';
 import UserAvatar from '@/components/ui/atoms/UserAvatar.vue';
@@ -81,49 +71,4 @@ const { t } = useI18n();
 defineEmits<{
   navigate: [isActive: boolean];
 }>();
-
-const navRef = ref<HTMLDivElement | null>(null);
-const navElements = new Map<string, HTMLElement>();
-const indicatorStyle = ref({ height: '0px', top: '0px', transform: 'translate3d(0,0,0)', width: '0px' });
-
-function resolveElement(element: Element | { $el?: Element } | null) {
-  if (!element) return null;
-  return '$el' in element ? element.$el ?? null : element;
-}
-
-function setNavElement(key: string, element: Element | { $el?: Element } | null) {
-  const resolved = resolveElement(element);
-  if (resolved instanceof HTMLElement) navElements.set(key, resolved);
-  else navElements.delete(key);
-}
-
-async function updateIndicator() {
-  await nextTick();
-  const activeElement = navElements.get(props.activeKey);
-  if (!activeElement || !navRef.value) {
-    indicatorStyle.value = { height: '0px', top: '0px', transform: 'translate3d(0,0,0)', width: '0px' };
-    return;
-  }
-  const navRect = navRef.value.getBoundingClientRect();
-  const itemRect = activeElement.getBoundingClientRect();
-  indicatorStyle.value = {
-    height: `${itemRect.height}px`,
-    top: `${itemRect.top - navRect.top}px`,
-    transform: `translate3d(${itemRect.left - navRect.left}px,0,0)`,
-    width: `${itemRect.width}px`,
-  };
-}
-
-watch(
-  [() => props.activeKey, () => props.items.map((item) => item.key).join('|')],
-  updateIndicator,
-  { immediate: true },
-);
-
-onMounted(() => {
-  window.addEventListener('resize', updateIndicator);
-  window.setTimeout(updateIndicator, 100);
-});
-
-onBeforeUnmount(() => window.removeEventListener('resize', updateIndicator));
 </script>

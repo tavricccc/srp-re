@@ -1394,8 +1394,9 @@ test('primary navigation keeps desktop chrome and persistent mobile navigation',
   assert.match(app, /roleLoading[\s\S]*publicOnly[\s\S]*ensureCategoryCatalog|publicOnly[\s\S]*roleLoading[\s\S]*ensureCategoryCatalog/u);
   assert.match(router, /publicOnly && user\.value[\s\S]*waitForRoleReady[\s\S]*setupCompleted/u);
   assert.match(baseStyles, /\.route-content-frame \{[\s\S]*background-color: rgb\(var\(--color-page-background\)\)/u);
-  assert.match(baseStyles, /\.route-stage \{[\s\S]*isolation: isolate/u);
+  assert.match(baseStyles, /\.route-stage \{[\s\S]*display: grid;[\s\S]*isolation: isolate/u);
   assert.doesNotMatch(baseStyles, /\.route-stage \{[\s\S]{0,120}(?:contain: paint|overflow: hidden)/u);
+  assert.match(baseStyles, /\.route-content-frame \{[\s\S]*grid-area: 1 \/ 1/u);
   assert.doesNotMatch(baseStyles, /\.route-content-frame \{[\s\S]{0,200}(?:backface-visibility|transform-origin)/u);
   assert.doesNotMatch(baseStyles, /\.app-root\[data-bottom-nav='true'\] \.route-content-frame \{[\s\S]*padding-bottom/u);
   assert.match(primitives, /\.route-page-frame--flow,[\s\S]*\.route-page-frame--bottom-safe \{\s*padding-bottom: max\(0px, calc\(var\(--app-bottom-nav-height\) \+ var\(--app-bottom-nav-gap\) - 0\.375rem\)\);/u);
@@ -1404,9 +1405,12 @@ test('primary navigation keeps desktop chrome and persistent mobile navigation',
   assert.match(facilitiesView, /route-scroll-through[\s\S]*overflow-y-auto/u);
   assert.doesNotMatch(baseStyles, /\.app-root\[data-bottom-nav='true'\] \.app-main-content \{[\s\S]{0,160}calc\(var\(--app-bottom-nav-height\) \+ 1rem\)/u);
   assert.match(baseStyles, /\.route-fade-enter-active \{[\s\S]*opacity 220ms[\s\S]*will-change: opacity/u);
-  assert.match(baseStyles, /\.route-fade-leave-active \{[\s\S]*position: absolute;[\s\S]*opacity 160ms[\s\S]*will-change: opacity/u);
+  assert.match(baseStyles, /\.route-fade-leave-active \{[\s\S]*opacity 160ms[\s\S]*will-change: opacity/u);
+  assert.doesNotMatch(baseStyles, /\.route-fade-(?:enter|leave)-active \{[\s\S]{0,160}position: absolute/u);
   assert.match(baseStyles, /\.route-fade-enter-from,[\s\S]*\.route-fade-leave-to \{[\s\S]*opacity: 0;/u);
   assert.doesNotMatch(baseStyles, /route-(?:swap|forward|back|push|pop)|route-fade[\s\S]{0,180}transform/u);
+  assert.doesNotMatch(mobileBottomNav, /indicatorStyle|translate3d|getBoundingClientRect|setNavElement/u);
+  assert.match(navigationStyles, /\.app-bottom-nav__item--active \{[\s\S]*bg-ink-100\/90[\s\S]*shadow-control/u);
   assert.match(baseStyles, /\.app-root\[data-sidebar='false'\] \.app-main-content/u);
   assert.match(appShell, /<ViewportFrame as="main" class="flex min-h-0 flex-1 flex-col">/u);
   assert.match(navigationStyles, /\.mobile-nav-enter-from,[\s\S]*translateY\(18px\) scale\(0\.96\)/u);

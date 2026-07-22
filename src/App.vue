@@ -7,7 +7,7 @@
     @retry="reloadApp({ reason: 'restart' })"
   />
   <AppShell v-else>
-    <div class="route-stage relative flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
+    <div class="route-stage relative h-full min-h-0 min-w-0 w-full max-w-full flex-1">
       <RouterView v-slot="{ Component, route: viewRoute }">
         <Transition name="route-fade">
           <div
