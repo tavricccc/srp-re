@@ -25,7 +25,7 @@
       </AppButton>
       <AppButton
         :variant="announcement.currentUserLiked ? 'icon-pill-filled' : 'icon-pill'"
-        class="!h-8 !gap-1 !px-2.5 text-xs"
+        class="button-card-count"
         :disabled="liking"
         :title="t(announcement.currentUserLiked ? 'announcement.removeLike' : 'announcement.like')"
         :aria-label="t(announcement.currentUserLiked ? 'announcement.removeLike' : 'announcement.like')"

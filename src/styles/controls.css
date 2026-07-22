@@ -84,6 +84,16 @@
     min-width: var(--tap-target);
   }
 
+  .button-card-count {
+    @apply !h-8 !min-h-0 !gap-1 !px-2.5 text-xs;
+  }
+
+  .button-card-count::after {
+    content: '';
+    position: absolute;
+    inset: -0.375rem 0;
+  }
+
   .button-action {
     @apply flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold;
   }

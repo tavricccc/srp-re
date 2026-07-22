@@ -54,7 +54,7 @@ const messages = {
   'facility.brieflyDescribeTheFacilityIssue': 'Briefly describe the facility issue…',
   'facility.processing': 'Processing',
   'facility.facilityAffectedCountPeopleEncountered': '{count} people encountered this',
-  'facility.pleaseEnterADetailedDescriptionOrAddAnImage': 'Enter a detailed description or add an image.',
+  'facility.optionalDetails': 'Details (optional)',
   'facility.caseClosed': 'Closed',
   'facility.facilityStatusUpdated': 'Facility status updated',
   'facility.uploadingImages': 'Uploading images',

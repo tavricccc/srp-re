@@ -31,7 +31,7 @@
     <template #actions>
       <AppButton
         :variant="facility.currentUserAffected ? 'icon-pill-filled' : 'icon-pill'"
-        class="!h-8 !gap-1 !px-2.5 text-xs"
+        class="button-card-count"
         :disabled="affecting || facility.isOwnFacility || isClosed"
         :title="t(facility.isOwnFacility ? 'facility.authorIncludedInAffectedCount' : 'facility.iAlsoEncountered')"
         @click="emit('toggle-affected', facility)"

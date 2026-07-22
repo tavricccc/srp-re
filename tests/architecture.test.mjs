@@ -846,7 +846,9 @@ test('facility next actions and account UID use existing detail controls', async
   assert.match(detailActionGroup, /label="common\.share"/u);
   assert.match(facilityPanel, /ContentDetailPagePanel/u);
   assert.match(facilityPanel, /:context-content="facility\.location"[\s\S]*context-title="facility\.place"/u);
-  assert.doesNotMatch(facilityPanel, /categoryLabel|findFacilityCategory|authorSecondary/u);
+  assert.match(facilityPanel, /<TagBadge[\s\S]*categoryLabel/u);
+  assert.match(facilityPanel, /findFacilityCategory\(props\.facility\.category_id\)/u);
+  assert.doesNotMatch(facilityPanel, /authorSecondary/u);
   assert.match(facilityTableRow, /ContentNoticePanel compact[\s\S]*facility\.location[\s\S]*#trailing[\s\S]*affectedCount/u);
   assert.doesNotMatch(facilityTableRow, /categoryLabel|findFacilityCategory/u);
   assert.match(detailPagePanel, /ContentDetailBody/u);
@@ -1307,6 +1309,7 @@ test('entry and comment limits are enforced across UI, Edge, and a new migration
   assert.match(frontendLimits, /content: 1_000/u);
   assert.match(frontendLimits, /comment: 70/u);
   assert.match(backendValidation, /requiredMediaContent/u);
+  assert.match(backendValidation, /optionalMediaContent/u);
   assert.match(databaseLimits, /visible_media_text_length/u);
   assert.match(databaseLimits, /between 1 and 30/u);
   assert.match(databaseLimits, /> 1000/u);

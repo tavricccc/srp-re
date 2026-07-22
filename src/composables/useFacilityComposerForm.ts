@@ -45,11 +45,6 @@ export function useFacilityComposerForm(initialCategoryId: Ref<string>, onClose:
       show(error.value, 'error');
       return;
     }
-    if (!images.contentWithImages.value.trim()) {
-      error.value = 'facility.pleaseEnterADetailedDescriptionOrAddAnImage';
-      show(error.value, 'error');
-      return;
-    }
     submitting.value = true;
     const feedback = start('facility.submittingFacilityReport');
     let uploaded: Awaited<ReturnType<typeof images.uploadImagesAndBuildContent>>['uploadedImages'] = [];

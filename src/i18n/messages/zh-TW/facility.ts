@@ -54,7 +54,7 @@ const messages = {
   'facility.brieflyDescribeTheFacilityIssue': '簡短描述設備問題…',
   'facility.processing': '處理中',
   'facility.facilityAffectedCountPeopleEncountered': '{count} 人遇到',
-  'facility.pleaseEnterADetailedDescriptionOrAddAnImage': '請輸入詳細說明或加入圖片。',
+  'facility.optionalDetails': '詳細說明（選填）',
   'facility.caseClosed': '已結案',
   'facility.facilityStatusUpdated': '設備狀態已更新',
   'facility.uploadingImages': '正在上傳圖片',

@@ -78,7 +78,7 @@
 
 ## components/ui（Atomic Design，無業務）
 
-- `atoms/` — 不依賴其他 UI 組裝層的最小視覺與互動單位：`AppButton.vue`、`AppIcon.vue`、`ImageRemoveButton.vue`、`IconTile.vue`、`TagBadge.vue`、`SwitchIndicator.vue`、`CharacterCount.vue`、`InlineAlert.vue`、`InlineMessage.vue`、`SkeletonBlock.vue`、`BrandMark.vue`、`BusyButtonContent.vue`、`DecorativeGlow.vue`、`LoadingSpinner.vue`、`DecodedImage.vue`（下載與 decode 完成前隱藏漸進繪製並顯示 spinner）、`SelectionMark.vue`、`UserAvatar.vue`；新頁面不得自行複製按鈕、圖片移除鍵、圖示容器、徽章、switch、字數顯示、alert／inline message、skeleton、品牌、avatar、圖片載入或 loading 樣式
+- `atoms/` — 不依賴其他 UI 組裝層的最小視覺與互動單位：`AppButton.vue`、`AppIcon.vue`、`ImageRemoveButton.vue`、`IconTile.vue`、`TagBadge.vue`、`SwitchIndicator.vue`、`CharacterCount.vue`、`InlineAlert.vue`、`InlineMessage.vue`、`SkeletonBlock.vue`、`BrandMark.vue`、`BusyButtonContent.vue`、`DecorativeGlow.vue`、`LoadingSpinner.vue`、`DecodedImage.vue`（下載與 decode 完成前隱藏漸進繪製並顯示 spinner）、`SelectionMark.vue`、`UserAvatar.vue`；列表計數操作統一套用 `button-card-count` 緊湊高度；新頁面不得自行複製按鈕、圖片移除鍵、圖示容器、徽章、switch、字數顯示、alert／inline message、skeleton、品牌、avatar、圖片載入或 loading 樣式
 - `molecules/` — 由 atoms 組成、可獨立重用的局部控制與狀態：`SurfacePanel`／`ContentNoticePanel`（列表補充列與詳情結果／地點共用的 neutral、success、error 表面）／`EditorSurface`／dropdown、`EditorModeBar`、`ListSurfaceRow`、`IconListRow`、`LabeledListSection`、`SectionHeader`、`WorkflowStepHeader`、`CountedTextField`、`CountedTextareaField`、`NumberField`、`DialogHeading`、`DialogActionRow`、選取控制、詳情操作、空狀態／錯誤、Markdown 工具列與圖片預覽；molecule 不得依賴 organism
 - `organisms/` — 可直接供 route view 或領域元件填入資料／slots 的完整區塊：內容卡集合與 skeleton、列表狀態、詳情殼與 route 狀態、`DialogShell`、Composer、Markdown／表格編輯器、狀態 Dialog、`ViewportFrame` 與 `RoutePageFrame`
 - 依賴方向固定為 `atoms → molecules → organisms`；同層可組合，低層不得反向 import 高層，`check:ui` 會阻止 flat path 與逆向依賴
@@ -101,7 +101,7 @@
 - 詳情內容：`ContentDetailPagePanel` / `ContentDetailBody` — 提案、公告、設備共用完整 DetailPageShell、標題、作者、補充訊息與 Markdown 內容排版；可組合 context notice（設備地點）及 result notice（處理結果），留言、操作與領域標籤以 slots 注入
 - 看板：`IssueBoard`、`BoardControls`、`BoardCategorySelector`、`IssueBoardTable`、`IssueTableRow`、`IssueAdminMenu`、`IssueDetailPagePanel`、`IssueDetailSupportFooter`；提案與設備共用分類選擇器
 - 公告：`AnnouncementTable`、`AnnouncementTableRow`、`AnnouncementDetailPagePanel`、`AnnouncementDetailActions`、`CompactActionMenu`
-- 設備：`FacilityComposer`、`FacilityStatusDialog`、`FacilityAdminMenu`、`FacilityTable`、`FacilityTableRow`、`FacilityDetailPagePanel`、`FacilityDetailActions`；列表補充列只顯示地點與遇到人數，分類由 AppShell／BoardControls 顯示；詳情以共用 notice 表面呈現地點且不重複分類。三領域共用 Composer、詳情內容、loading／錯誤、Skeleton、操作列與確認 Dialog
+- 設備：`FacilityComposer`、`FacilityStatusDialog`、`FacilityAdminMenu`、`FacilityTable`、`FacilityTableRow`、`FacilityDetailPagePanel`、`FacilityDetailActions`；列表補充列只顯示地點與遇到人數，分類由 AppShell／BoardControls 顯示；詳情以共用 notice 表面呈現地點，並保留分類徽章。新增時標題與地點必填，詳細說明與圖片為選填；三領域共用 Composer、詳情內容、loading／錯誤、Skeleton、操作列與確認 Dialog
 - 分類：`categories/CategorySelectorList.vue` / `CategoryEditorCard.vue` / `CategoryManagementSection.vue` / `SetupCategorySection.vue` / `PlatformFeatureToggle.vue` — 初始設定與後續管理共用的分類選擇、表單、功能開關、唯一預設控制與永久刪除入口
 
 ---

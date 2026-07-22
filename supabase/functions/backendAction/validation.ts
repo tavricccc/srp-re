@@ -39,3 +39,15 @@ export function requiredMediaContent(
   if (visibleText.length > maxTextLength) throw new Error(`${field}-too-long`);
   return content;
 }
+
+export function optionalMediaContent(
+  value: unknown,
+  field: string,
+  maxTextLength: number,
+  maxStorageLength: number,
+) {
+  const content = optionalText(value, field, maxStorageLength);
+  const visibleText = content.replace(MARKDOWN_IMAGE_PATTERN, "").trim();
+  if (visibleText.length > maxTextLength) throw new Error(`${field}-too-long`);
+  return content;
+}

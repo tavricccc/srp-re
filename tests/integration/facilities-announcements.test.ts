@@ -11,6 +11,7 @@ import {
 async function createFacility(
   actor: Awaited<ReturnType<typeof seedActor>>,
   label: string,
+  content = `Integration facility content ${label}`,
 ) {
   const catalog = asRecord(await callAction("getCategoryCatalog", {}, actor.auth));
   const categories = catalog.facilityCategories as Array<Record<string, unknown>>;
@@ -18,13 +19,19 @@ async function createFacility(
   assert.ok(category, "facility category catalog must not be empty");
   const result = asRecord(await callAction("createFacility", {
     categoryId: String(category.id),
-    content: `Integration facility content ${label}`,
+    content,
     location: `Room ${label}`,
     requestId: requestId(`create-facility-${label}`),
     title: `Facility ${label}`.slice(0, 30),
   }, actor.auth));
   return asRecord(result.facility);
 }
+
+integrationTest("facility details are optional", async () => {
+  const owner = await seedActor("facility-optional-details");
+  const facility = await createFacility(owner, "optional", "");
+  assert.equal(facility.content, "");
+});
 
 integrationTest("facility ownership and category-scoped management permissions", async () => {
   const owner = await seedActor("facility-owner");

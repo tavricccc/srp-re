@@ -4,7 +4,7 @@ import { getFacilityCategories } from "./categories.ts";
 import type { AuthContext, BackendSupabase, JsonRecord } from "./types.ts";
 import { validateMarkdownUploadsBeforeCreate } from "./uploads.ts";
 import { asNumber, asUuid } from "./utils.ts";
-import { INPUT_LIMITS, optionalText, requiredMediaContent, requiredText } from "./validation.ts";
+import { INPUT_LIMITS, optionalMediaContent, optionalText, requiredText } from "./validation.ts";
 
 const VALID_STATUSES = new Set(["processing", "completed", "unable-to-handle"]);
 
@@ -32,7 +32,7 @@ export async function handleFacilityAction(
   if (action === "createFacility") {
     const title = requiredText(payload.title, "title", INPUT_LIMITS.title).trim();
     const location = requiredText(payload.location, "location", INPUT_LIMITS.facilityLocation).trim();
-    const content = requiredMediaContent(payload.content, "content", INPUT_LIMITS.content, INPUT_LIMITS.contentStorage);
+    const content = optionalMediaContent(payload.content, "content", INPUT_LIMITS.content, INPUT_LIMITS.contentStorage);
     const categoryId = asString(payload.categoryId);
     const categories = await getFacilityCategories(supabase);
     if (!categories.some((category) => category.id === categoryId)) throw new Error("invalid-facility-category");

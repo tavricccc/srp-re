@@ -17,7 +17,7 @@
     :location-warning-length="108"
     location-placeholder="facility.locationExample"
     editor-textarea-id="facility-content"
-    editor-label="common.detailedDescription"
+    editor-label="facility.optionalDetails"
     editor-placeholder="facility.describeTheCurrentSituation"
     :images="editorImages"
     :max-images="RATE_LIMITS.imageUploads.facilityMaxImages"

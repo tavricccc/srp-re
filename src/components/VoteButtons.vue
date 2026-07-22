@@ -3,7 +3,7 @@
     <AppButton
       v-if="compact"
       :variant="supportVariant"
-      class="!h-8 !gap-1 !px-2.5 text-xs"
+      class="button-card-count"
       :disabled="busy || supportClosed || authorFixed"
       :title="supportTitle"
       :aria-label="t(authorFixed ? 'issue.theAuthorAutomaticallySupportsThisProposal' : optimisticSupported ? 'common.removeSupport' : 'issue.supportProposal')"
