@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/lib/supabase';
+import { authorizeSupabaseRealtime, getSupabaseClient } from '@/lib/supabase';
 import { auth } from '@/lib/firebase';
 import { isIssueCategory } from '@/constants/categories';
 import { getCachedSessionRole } from '@/services/session-role';
@@ -21,6 +21,7 @@ let sharedRealtimeKey = '';
 let reconnectAttempt = 0;
 let reconnectTimer = 0;
 let resyncAfterReconnect = false;
+let realtimeConnectPending = false;
 
 function clearReconnectTimer() {
   window.clearTimeout(reconnectTimer);
@@ -110,9 +111,11 @@ function normalizeRealtimeEvent(data: Record<string, unknown>): ContentRealtimeE
   };
 }
 
-function ensureSharedRealtimeChannel() {
+async function connectSharedRealtimeChannels() {
   const uid = auth?.currentUser?.uid;
   if (!uid || realtimeSubscribers.size === 0) return;
+  if (!await authorizeSupabaseRealtime()) return;
+  if (auth?.currentUser?.uid !== uid || realtimeSubscribers.size === 0) return;
   const topics = ['content:school'];
   topics.push(getCachedSessionRole() === 'admin' ? 'content:admin' : `content:user:${uid}`);
   const realtimeKey = topics.join('|');
@@ -165,6 +168,22 @@ function ensureSharedRealtimeChannel() {
   });
   sharedRealtimeChannels = channels;
   sharedRealtimeKey = realtimeKey;
+}
+
+function ensureSharedRealtimeChannel() {
+  if (realtimeConnectPending) return;
+  realtimeConnectPending = true;
+  void connectSharedRealtimeChannels()
+    .catch((cause) => {
+      resyncAfterReconnect = true;
+      const error = cause instanceof Error ? cause : new Error('content-realtime-unavailable');
+      realtimeSubscribers.forEach((subscriber) => subscriber.onError?.(error));
+      scheduleReconnect();
+    })
+    .finally(() => {
+      realtimeConnectPending = false;
+      if (sharedRealtimeChannels.length === 0) scheduleReconnect();
+    });
 }
 
 function invalidateRealtimeContent(event: ContentRealtimeEvent) {

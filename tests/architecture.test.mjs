@@ -1080,6 +1080,11 @@ test('Markdown upload images support batch cache bypass for expired URLs', async
 test('notification realtime subscriptions use authorized private broadcasts', async () => {
   const notificationsComposable = await read('src/composables/useNotifications.ts');
   const notificationsService = await read('src/services/notifications.ts');
+  const realtimeEvents = await read('src/services/realtime-events.ts');
+  const supabaseClient = await read('src/lib/supabase.ts');
+  const supabaseAuth = await read('src/services/supabase-auth.ts');
+  const supabaseConfig = await read('supabase/config.toml');
+  const backendDeploy = await read('.github/workflows/deploy-backend.yml');
   const appResume = await read('src/composables/useAppResume.ts');
   const realtimeMigration = await read('supabase/migrations/202607150001_rate_limit_cost_hardening.sql');
   const backendAuth = await read('supabase/functions/backendAction/auth.ts');
@@ -1094,6 +1099,19 @@ test('notification realtime subscriptions use authorized private broadcasts', as
   assert.match(notificationsService, /config: \{ private: true \}/u);
   assert.match(notificationsService, /'notification_insert' \| 'notification_state_changed'/u);
   assert.doesNotMatch(notificationsService, /postgres_changes/u);
+  assert.match(notificationsService, /await authorizeSupabaseRealtime\(\)[\s\S]*client\.channel/u);
+  assert.match(realtimeEvents, /await authorizeSupabaseRealtime\(\)[\s\S]*\.channel\(topic/u);
+  assert.match(supabaseClient, /authorizeSupabaseRealtime[\s\S]*await client\.realtime\.setAuth\(\)/u);
+  assert.match(supabaseClient, /let realtimeAuthPromise: Promise<boolean> \| null/u);
+  assert.match(supabaseAuth, /clearFirebaseIdTokenCache\(\)/u);
+  assert.match(
+    supabaseConfig,
+    /\[auth\.third_party\.firebase\][\s\S]*enabled = true[\s\S]*project_id = "env\(FIREBASE_PROJECT_ID\)"/u,
+  );
+  assert.match(
+    backendDeploy,
+    /Push Supabase authentication configuration[\s\S]*supabase config push --yes/u,
+  );
   assert.match(realtimeMigration, /revoke select on app_private\.notifications from authenticated/u);
   assert.match(realtimeMigration, /realtime\.topic\(\) = 'notifications:user:' \|\| app_private\.firebase_uid\(\)/u);
   assert.match(notificationsComposable, /insertRealtimeNotification/u);

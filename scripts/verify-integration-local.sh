@@ -93,6 +93,9 @@ if [[ "$SERVE" == "true" ]]; then
 fi
 
 cd "$ROOT"
+# config.toml enables Firebase third-party auth for production Realtime. Keep
+# local database setup deterministic without depending on developer secrets.
+export FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID:-integration-project}"
 TEMP_ENV="$(mktemp)"
 FUNCTION_ENV="$(mktemp)"
 FUNCTION_LOG="$(mktemp)"

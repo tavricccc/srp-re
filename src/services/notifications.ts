@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/lib/supabase';
+import { authorizeSupabaseRealtime, getSupabaseClient } from '@/lib/supabase';
 import { isIssueCategory } from '@/constants/categories';
 import type {
   IssueCategory,
@@ -40,6 +40,7 @@ interface NotificationBroadcastListener {
 }
 interface NotificationBroadcastTopic {
   channel: ReturnType<ReturnType<typeof getSupabaseClient>['channel']> | null;
+  connecting: boolean;
   event: NotificationBroadcastEvent;
   listeners: Map<number, NotificationBroadcastListener>;
   needsResync: boolean;
@@ -53,7 +54,18 @@ type NotificationBroadcastEvent = 'notification_insert' | 'notification_state_ch
 const notificationBroadcastTopics = new Map<string, NotificationBroadcastTopic>();
 let notificationBroadcastListenerId = 0;
 
-function connectNotificationBroadcast(subscription: NotificationBroadcastTopic) {
+function scheduleNotificationBroadcastReconnect(subscription: NotificationBroadcastTopic) {
+  if (subscription.reconnectTimer || subscription.listeners.size === 0) return;
+  const delay = Math.min(30_000, 1_000 * 2 ** subscription.reconnectAttempt);
+  subscription.reconnectAttempt += 1;
+  subscription.reconnectTimer = window.setTimeout(() => {
+    subscription.reconnectTimer = 0;
+    connectNotificationBroadcast(subscription);
+  }, delay);
+}
+
+async function createNotificationBroadcastChannel(subscription: NotificationBroadcastTopic) {
+  if (!await authorizeSupabaseRealtime()) return;
   if (subscription.channel || subscription.listeners.size === 0) return;
   const client = getSupabaseClient();
   const channel = client.channel(subscription.topic, { config: { private: true } })
@@ -91,15 +103,25 @@ function connectNotificationBroadcast(subscription: NotificationBroadcastTopic) 
       const error = new Error('notification-realtime-unavailable');
       subscription.listeners.forEach((listener) => listener.onError?.(error));
       void client.removeChannel(channel);
-      if (subscription.reconnectTimer || subscription.listeners.size === 0) return;
-      const delay = Math.min(30_000, 1_000 * 2 ** subscription.reconnectAttempt);
-      subscription.reconnectAttempt += 1;
-      subscription.reconnectTimer = window.setTimeout(() => {
-        subscription.reconnectTimer = 0;
-        connectNotificationBroadcast(subscription);
-      }, delay);
+      scheduleNotificationBroadcastReconnect(subscription);
     });
   subscription.channel = channel;
+}
+
+function connectNotificationBroadcast(subscription: NotificationBroadcastTopic) {
+  if (subscription.channel || subscription.connecting || subscription.listeners.size === 0) return;
+  subscription.connecting = true;
+  void createNotificationBroadcastChannel(subscription)
+    .catch((cause) => {
+      subscription.needsResync = true;
+      const error = cause instanceof Error ? cause : new Error('notification-realtime-unavailable');
+      subscription.listeners.forEach((listener) => listener.onError?.(error));
+      scheduleNotificationBroadcastReconnect(subscription);
+    })
+    .finally(() => {
+      subscription.connecting = false;
+      if (!subscription.channel) scheduleNotificationBroadcastReconnect(subscription);
+    });
 }
 
 function subscribeNotificationBroadcast(
@@ -115,6 +137,7 @@ function subscribeNotificationBroadcast(
   if (!subscription) {
     subscription = {
       channel: null,
+      connecting: false,
       event,
       listeners: new Map(),
       needsResync: false,

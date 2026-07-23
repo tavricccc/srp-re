@@ -1,5 +1,6 @@
 import type { User } from 'firebase/auth';
 import { hasSupabaseConfig } from '@/lib/supabase';
+import { clearFirebaseIdTokenCache } from '@/lib/auth-token';
 import { withRequestTimeout } from '@/lib/request';
 import { apiGatewayUrl, hasApiGatewayConfig } from '@/lib/api-gateway';
 import { ApiRequestError, type ApiErrorResponse } from '@/lib/api-error';
@@ -79,5 +80,8 @@ export async function ensureSupabaseAuthenticatedRole(user: User) {
     if (refreshedToken.claims.role !== 'authenticated') {
       throw new Error('auth.supabaseLoginInitializationHasNotBeenCompleted');
     }
+    // The force-refreshed Firebase token now carries the authenticated role.
+    // Drop the app-level copy so Realtime cannot reuse the pre-sync token.
+    clearFirebaseIdTokenCache();
   }
 }

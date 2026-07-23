@@ -7,6 +7,7 @@ const supabasePublishableKey = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_
 type SupabaseAppClient = ReturnType<typeof createClient<any, 'app_api'>>;
 
 let supabaseClient: SupabaseAppClient | null = null;
+let realtimeAuthPromise: Promise<boolean> | null = null;
 
 export function getSupabaseClient() {
   if (!supabaseUrl || !supabasePublishableKey) {
@@ -31,6 +32,28 @@ export function getSupabaseClient() {
 
 export function hasSupabaseConfig() {
   return Boolean(supabaseUrl && supabasePublishableKey);
+}
+
+/**
+ * Private Broadcast authorization must finish before a channel joins. The
+ * Supabase client starts its access-token callback eagerly, but a channel can
+ * otherwise race that asynchronous Firebase token load during app startup.
+ */
+export function authorizeSupabaseRealtime() {
+  if (realtimeAuthPromise) return realtimeAuthPromise;
+  const client = getSupabaseClient();
+  const pending = getFirebaseIdToken()
+    .then(async (token) => {
+      if (!token) return false;
+      // No explicit token keeps the accessToken callback active for refreshes.
+      await client.realtime.setAuth();
+      return true;
+    })
+    .finally(() => {
+      if (realtimeAuthPromise === pending) realtimeAuthPromise = null;
+    });
+  realtimeAuthPromise = pending;
+  return pending;
 }
 
 export { supabasePublishableKey, supabaseUrl };
