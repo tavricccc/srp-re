@@ -22,7 +22,7 @@
 
 ## Supabase
 
-- `supabase/config.toml` — schema 暴露、Functions JWT 模式與 Firebase Third-Party Auth；正式部署會先 `config push`，讓 private Realtime channel 可驗證 Firebase JWT／JWKS
+- `supabase/config.toml` — schema 暴露、Functions JWT 模式與本地 Firebase Third-Party Auth；Hosted 專案由專用同步腳本只更新 Firebase issuer，讓 private Realtime channel 可驗證 Firebase JWT／JWKS，不以全量 `config push` 連帶修改 Storage／Vector 等無關設定
 - `supabase/migrations/` — 基線 + 增量 SQL（schema／RLS／RPC／Realtime Broadcast／清理／成本限流硬化／設備與 RBAC／輸入長度、附件型別、圖片網址快取、統一 feed 分頁與集合式留言回覆讀取）；`202607190001_dynamic_category_management.sql` 建立動態分類，`202607200002_atomic_user_access.sql` 將角色與分類指派改為單一交易並完整稽核，`202607200003_harden_category_deletion.sql` 統一分類永久刪除、內容／通知／圖片清理與稽核，`202607200004_facility_category_parity_and_personal_notifications.sql` 補齊設備分類篩選／分類管理範圍並將既有設備建立通知改回個人通知，`202607200005_platform_feature_switches.sql` 建立提案／設備功能開關與原子更新 RPC，`202607220001_scoped_user_access.sql` 改為鎖定目標帳號的單一權限範圍更新並保留既有設備通知退訂，`202607220002_remove_category_archiving.sql` 將舊分類全部恢復可用並以資料庫約束移除封存狀態，`202607230001_minimize_outbox_payloads.sql` 移除 outbox 的重複正文並由 Worker 依留言 ID 精準補讀，`202607230002_security_advisor_function_paths.sql` 固定剩餘 private function 的 `search_path` 並重申 private table 的 deny-by-default 授權邊界，較早 migration 細節見 git
 - `supabase/functions/backendAction/` — 受控 action 閘道
   - `index.ts` — origin 驗證、CORS、Firebase 驗證與分派；公開限流由 Cloudflare Worker 先處理
@@ -146,6 +146,7 @@
 - `.nvmrc` / `.node-version` / `package.json#engines` — 本機、版本管理器與套件安裝統一使用 Node.js 24 LTS
 - `public/` — favicon、PWA icons
 - `scripts/generate-rate-limits.mjs` / `generate-data-retention.mjs` / `generate-backend-actions.mjs`
+- `scripts/sync-supabase-firebase-auth.mjs` — 後端部署透過 Management API 冪等同步唯一 Firebase Third-Party Auth issuer，建立後再移除同專案的過期 Firebase issuer 並重新讀取驗證；不觸碰一般 Auth、Storage 或付費 Vector Bucket 設定
 - `scripts/upstash-test-server.ts` / `external-provider-test-server.ts` — 整合驗證專用的隔離式 Upstash REST／pipeline 相容計數器與外部服務收件器；後者記錄 FCM topic／token／payload／深層連結及 Cloudinary 刪除請求，避免測試連到正式服務
 - `scripts/check-i18n.mjs` — 驗證中英文 key 完整對齊、英文無中文殘留、Vue 模板無任何語言的靜態可見文案／屬性、前端無硬編碼中文字串、無缺漏或直接顯示的 `text.*` key；納入 `verify:local`
 - `scripts/check-ui-primitives.mjs` — 阻止舊 dropdown 類別、任意陰影、手組卡片與各頁自行設定 viewport gutter，並確認共用 primitive 與三階陰影 token 完整；納入 `verify:local`

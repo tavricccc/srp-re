@@ -74,7 +74,7 @@ test('Supabase backend deployment owns database and Edge Functions', async () =>
   const workflow = await read('.github/workflows/deploy-backend.yml');
   const config = await read('supabase/config.toml');
 
-  assert.match(workflow, /supabase\/setup-cli@v3[\s\S]*version: latest/u);
+  assert.match(workflow, /supabase\/setup-cli@v3[\s\S]*version: 2\.109\.1/u);
   assert.match(workflow, /actions\/setup-node@v7/u);
   assert.match(workflow, /cache-node-modules/u);
   assert.match(workflow, /npm ci --prefer-offline/u);
@@ -1110,8 +1110,9 @@ test('notification realtime subscriptions use authorized private broadcasts', as
   );
   assert.match(
     backendDeploy,
-    /Push Supabase authentication configuration[\s\S]*supabase config push --yes/u,
+    /Synchronize Firebase third-party authentication[\s\S]*node scripts\/sync-supabase-firebase-auth\.mjs/u,
   );
+  assert.doesNotMatch(backendDeploy, /supabase config push/u);
   assert.match(realtimeMigration, /revoke select on app_private\.notifications from authenticated/u);
   assert.match(realtimeMigration, /realtime\.topic\(\) = 'notifications:user:' \|\| app_private\.firebase_uid\(\)/u);
   assert.match(notificationsComposable, /insertRealtimeNotification/u);
@@ -2166,6 +2167,105 @@ test('pull requests and backend deployments retain the local integration gate', 
   );
   assert.doesNotMatch(deployBackend, /NOVAE_DENO_BIN|\/home\/runner\/\.deno/u);
   assert.match(agents, /新增 backend action 必須在 `tests\/integration\/`/u);
+});
+
+test('backend deployment synchronizes only Firebase third-party auth configuration', async () => {
+  const deployBackend = await read('.github/workflows/deploy-backend.yml');
+  const syncScript = await read('scripts/sync-supabase-firebase-auth.mjs');
+
+  assert.match(
+    deployBackend,
+    /Synchronize Firebase third-party authentication[\s\S]*node scripts\/sync-supabase-firebase-auth\.mjs/u,
+  );
+  assert.match(deployBackend, /'scripts\/sync-supabase-firebase-auth\.mjs'/u);
+  assert.match(deployBackend, /version: 2\.109\.1/u);
+  assert.doesNotMatch(deployBackend, /supabase config push/u);
+  assert.match(syncScript, /\/config\/auth\/third-party-auth/u);
+  assert.match(syncScript, /oidc_issuer_url: desiredIssuer/u);
+  assert.match(syncScript, /method: 'DELETE'/u);
+  assert.doesNotMatch(syncScript, /config\/storage|vectorBuckets/u);
+});
+
+test('Firebase third-party auth synchronization is idempotent and removes stale issuers', async () => {
+  const { syncSupabaseFirebaseAuth } = await import(
+    new URL('../scripts/sync-supabase-firebase-auth.mjs', import.meta.url)
+  );
+  const desired = {
+    id: 'desired-id',
+    type: 'firebase',
+    oidc_issuer_url: 'https://securetoken.google.com/novae-test',
+  };
+  const stale = {
+    id: 'stale-id',
+    type: 'firebase',
+    oidc_issuer_url: 'https://securetoken.google.com/novae-old',
+  };
+  const requests = [];
+  const listResponses = [[stale], [stale, desired], [desired]];
+  const jsonResponse = (body, status) => ({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: '',
+    text: async () => JSON.stringify(body),
+  });
+  const fetchImpl = async (url, init = {}) => {
+    requests.push({ url, init });
+    if ((init.method ?? 'GET') === 'GET') {
+      return jsonResponse(listResponses.shift(), 200);
+    }
+    if (init.method === 'POST') {
+      return jsonResponse(desired, 201);
+    }
+    if (init.method === 'DELETE') {
+      return jsonResponse(stale, 200);
+    }
+    return jsonResponse(null, 405);
+  };
+
+  const result = await syncSupabaseFirebaseAuth({
+    accessToken: 'test-token',
+    projectRef: 'abcdefghijklmnopqrst',
+    firebaseProjectId: 'novae-test',
+    fetchImpl,
+    apiOrigin: 'https://management.test',
+  });
+
+  assert.deepEqual(result, {
+    issuer: desired.oidc_issuer_url,
+    created: true,
+    removedStale: 1,
+  });
+  assert.deepEqual(
+    requests.map(({ init }) => init.method ?? 'GET'),
+    ['GET', 'POST', 'GET', 'DELETE', 'GET'],
+  );
+  assert.equal(
+    JSON.parse(requests[1].init.body).oidc_issuer_url,
+    desired.oidc_issuer_url,
+  );
+  assert.match(requests[3].url, /\/third-party-auth\/stale-id$/u);
+  assert.ok(requests.every(({ init }) => init.headers.authorization === 'Bearer test-token'));
+
+  const repeatRequests = [];
+  const repeatResult = await syncSupabaseFirebaseAuth({
+    accessToken: 'test-token',
+    projectRef: 'abcdefghijklmnopqrst',
+    firebaseProjectId: 'novae-test',
+    apiOrigin: 'https://management.test',
+    fetchImpl: async (url, init = {}) => {
+      repeatRequests.push({ url, init });
+      return jsonResponse([desired], 200);
+    },
+  });
+  assert.deepEqual(repeatResult, {
+    issuer: desired.oidc_issuer_url,
+    created: false,
+    removedStale: 0,
+  });
+  assert.deepEqual(
+    repeatRequests.map(({ init }) => init.method ?? 'GET'),
+    ['GET', 'GET'],
+  );
 });
 
 test('the Windows test environment passes emulator settings out of WSL', async () => {
